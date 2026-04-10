@@ -1,4 +1,4 @@
-# Contributing to openfn
+# Contributing to hostfunc
 
 Thanks for your interest. A few ground rules:
 

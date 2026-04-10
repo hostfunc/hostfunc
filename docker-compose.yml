@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hostfunc-postgres
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5433:5432"
+    environment:
+      POSTGRES_USER: hostfunc
+      POSTGRES_PASSWORD: hostfunc
+      POSTGRES_DB: hostfunc-db
+    volumes:
+      - hostfunc-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hostfunc -d hostfunc-db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  hostfunc-postgres:

@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@hostfunc/executor-core": ["../executor-core/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*"],
+  "references": [{ "path": "../executor-core" }]
+}

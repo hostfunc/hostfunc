@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Email: security@openfn.dev (set up the address before going public)
+Email: security@hostfunc.dev (set up the address before going public)
 
 Please include:
 - A description of the vulnerability
