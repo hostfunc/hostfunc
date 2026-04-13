@@ -5,6 +5,7 @@ const config: NextConfig = {
   transpilePackages: [
     "@hostfunc/db",
     "@hostfunc/fn",
+    "@hostfunc/mcp-tools",
     "@hostfunc/executor-core",
     "@hostfunc/executor-cloudflare",
   ],

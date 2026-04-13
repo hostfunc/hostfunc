@@ -1,7 +1,7 @@
 "use client";
 
 import { SettingsLayout } from "@/components/settings/settings-layout";
-import { Blocks, CreditCard, Settings, Users } from "lucide-react";
+import { Blocks, Bot, CreditCard, KeyRound, Settings, Users } from "lucide-react";
 
 const orgNavItems = [
   {
@@ -23,6 +23,16 @@ const orgNavItems = [
     title: "Integrations",
     href: "/dashboard/settings/integrations",
     icon: Blocks,
+  },
+  {
+    title: "API Tokens",
+    href: "/dashboard/settings/tokens",
+    icon: KeyRound,
+  },
+  {
+    title: "MCP",
+    href: "/dashboard/settings/mcp",
+    icon: Bot,
   },
 ];
 

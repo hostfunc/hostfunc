@@ -30,6 +30,7 @@ const schema = z.object({
   HOSTFUNC_RUNTIME_URL: z.string().url(),
   RUNTIME_LOOKUP_TOKEN: z.string().min(1),
   RUNTIME_INGEST_TOKEN: z.string().min(1).default("dev-ingest-token"),
+  MCP_ALLOWED_ORIGINS: z.string().optional(),
 });
 
 const parsed = schema.safeParse(process.env);
