@@ -13,6 +13,15 @@ const schema = z.object({
     .describe("32 bytes, base64-encoded. Generate with: openssl rand -base64 32"),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  CF_ACCOUNT_ID: z.string().min(1),
+  CF_API_TOKEN: z.string().min(1),
+  CF_DISPATCH_NAMESPACE: z.string().default("hostfunc-dev"),
+  HOSTFUNC_USE_WFP: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
+  HOSTFUNC_RUNTIME_URL: z.string().url(),
+  RUNTIME_LOOKUP_TOKEN: z.string().min(1),
 });
 
 const parsed = schema.safeParse(process.env);

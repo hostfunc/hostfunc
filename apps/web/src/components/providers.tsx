@@ -1,8 +1,8 @@
 "use client";
 
 import { ThemeProvider } from "next-themes";
-import { Toaster } from "sonner"; // Or whatever toaster you are using
 import type { ReactNode } from "react";
+import { Toaster } from "sonner"; // Or whatever toaster you are using
 
 // next-themes renders an inline <script> to prevent theme flicker.
 // React 19 warns about script tags inside components.

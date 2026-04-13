@@ -1,12 +1,12 @@
 import { relations } from "drizzle-orm";
-import { user, session, account } from "./auth.js";
-import { invitation, member, organization } from "./organizations.js";
-import { fn, fnDraft, fnVersion } from "./functions.js";
-import { trigger } from "./triggers.js";
-import { secret } from "./secrets.js";
-import { execution, executionLog } from "./executions.js";
+import { account, session, user } from "./auth.js";
 import { plan, subscription } from "./billing.js";
+import { execution, executionLog } from "./executions.js";
+import { fn, fnDraft, fnVersion } from "./functions.js";
+import { invitation, member, organization } from "./organizations.js";
+import { secret } from "./secrets.js";
 import { apiToken } from "./tokens.js";
+import { trigger } from "./triggers.js";
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
@@ -107,15 +107,15 @@ export const subscriptionRelations = relations(subscription, ({ one }) => ({
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
-    user: one(user, {
-      fields: [session.userId], // Connects the foreign key on session
-      references: [user.id],    // To the primary key on user
-    }),
-  }));
-  
-  export const accountRelations = relations(account, ({ one }) => ({
-    user: one(user, {
-      fields: [account.userId], // Connects the foreign key on account
-      references: [user.id],    // To the primary key on user
-    }),
-  }));
+  user: one(user, {
+    fields: [session.userId], // Connects the foreign key on session
+    references: [user.id], // To the primary key on user
+  }),
+}));
+
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(user, {
+    fields: [account.userId], // Connects the foreign key on account
+    references: [user.id], // To the primary key on user
+  }),
+}));

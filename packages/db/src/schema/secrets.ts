@@ -1,7 +1,7 @@
 import { index, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { user } from "./auth.js";
 import { fn } from "./functions.js";
 import { organization } from "./organizations.js";
-import { user } from "./auth.js";
 
 export const secret = pgTable(
   "secret",

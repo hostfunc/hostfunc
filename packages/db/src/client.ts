@@ -2,8 +2,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema/index.js";
 
-const connectionString =
-  process.env.DATABASE_URL ?? "postgres://127.0.0.1:5432/hostfunc-db";
+const connectionString = process.env.DATABASE_URL ?? "postgres://127.0.0.1:5432/hostfunc-db";
 
 // Reuse the connection across hot reloads in dev.
 declare global {

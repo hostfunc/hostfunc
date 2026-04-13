@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { toast } from "sonner";
 import { deployFunction } from "@/app/dashboard/[fn]/actions";
 import { Button } from "@/components/ui/button";
+import { Copy } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 type DeployState =
   | { phase: "idle" }
@@ -11,7 +12,7 @@ type DeployState =
   | { phase: "bundling" }
   | { phase: "uploading" }
   | { phase: "propagating" }
-  | { phase: "live"; versionId: string }
+  | { phase: "live"; versionId: string; runUrl: string }
   | { phase: "failed"; reason: string };
 
 export function DeployButton({ fnId, onDeploy }: { fnId: string; onDeploy: () => Promise<void> }) {
@@ -22,18 +23,20 @@ export function DeployButton({ fnId, onDeploy }: { fnId: string; onDeploy: () =>
       setState({ phase: "saving" });
       await onDeploy();
 
-      // Fake the rest of the state machine for v0
       setState({ phase: "bundling" });
-      await wait(300);
+      await wait(150);
       setState({ phase: "uploading" });
       const result = await deployFunction(fnId);
       setState({ phase: "propagating" });
       await wait(300);
-      setState({ phase: "live", versionId: result.versionId });
-      toast.success("Deployed", {
-        description: `Version ${result.versionId.slice(0, 12)}`,
+      setState({
+        phase: "live",
+        versionId: result.versionId,
+        runUrl: result.runUrl,
       });
-      setTimeout(() => setState({ phase: "idle" }), 2000);
+      toast.success("Deployed", {
+        description: result.versionId.slice(0, 16),
+      });
     } catch (e) {
       const reason = e instanceof Error ? e.message : "unknown error";
       setState({ phase: "failed", reason });
@@ -41,18 +44,42 @@ export function DeployButton({ fnId, onDeploy }: { fnId: string; onDeploy: () =>
     }
   }
 
-  const busy =
-    state.phase !== "idle" && state.phase !== "live" && state.phase !== "failed";
+  const busy = state.phase !== "idle" && state.phase !== "live" && state.phase !== "failed";
 
   return (
-    <Button onClick={handleClick} disabled={busy}>
-      {labelFor(state)}
-    </Button>
+    <div className="flex items-center gap-2">
+      {state.phase === "live" && (
+        <button
+          type="button"
+          onClick={async () => {
+            await navigator.clipboard.writeText(state.runUrl);
+            toast.success("URL copied");
+          }}
+          className="flex items-center gap-1 rounded-md border border-border px-2 py-1 font-mono text-xs text-muted-foreground transition hover:text-foreground"
+          title={state.runUrl}
+        >
+          <Copy className="size-3" />
+          {truncateUrl(state.runUrl)}
+        </button>
+      )}
+      <Button onClick={handleClick} disabled={busy}>
+        {labelFor(state)}
+      </Button>
+    </div>
   );
 }
 
 function wait(ms: number) {
   return new Promise<void>((r) => setTimeout(r, ms));
+}
+
+function truncateUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.host}${u.pathname.length > 30 ? `${u.pathname.slice(0, 27)}…` : u.pathname}`;
+  } catch {
+    return url;
+  }
 }
 
 function labelFor(state: DeployState): string {

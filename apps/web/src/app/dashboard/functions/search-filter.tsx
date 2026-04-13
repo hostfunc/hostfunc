@@ -1,12 +1,15 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useTransition, useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Search, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Loader2, Search } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
 
-export function FunctionsSearchFilter({ initialQuery = "", initialVisibility = "" }: { initialQuery?: string | undefined, initialVisibility?: string | undefined }) {
+export function FunctionsSearchFilter({
+  initialQuery = "",
+  initialVisibility = "",
+}: { initialQuery?: string | undefined; initialVisibility?: string | undefined }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -24,7 +27,7 @@ export function FunctionsSearchFilter({ initialQuery = "", initialVisibility = "
       } else {
         params.delete("q");
       }
-      
+
       if (visibility) {
         params.set("visibility", visibility);
       } else {
@@ -33,7 +36,7 @@ export function FunctionsSearchFilter({ initialQuery = "", initialVisibility = "
 
       const newParamsStr = params.toString();
       const currentParamsStr = searchParams.toString();
-      
+
       if (newParamsStr !== currentParamsStr) {
         startTransition(() => {
           router.push(`${pathname}?${newParamsStr}`);
@@ -62,16 +65,16 @@ export function FunctionsSearchFilter({ initialQuery = "", initialVisibility = "
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
-      
+
       <div className="flex items-center gap-2 px-2 w-full sm:w-auto overflow-x-auto shrink-0 border-t sm:border-t-0 sm:border-l pt-3 sm:pt-0 sm:pl-3 border-border">
         <button
           type="button"
           onClick={() => setVisibility("")}
           className={cn(
             "rounded-full px-3 py-1 text-xs font-medium transition-colors border",
-            visibility === "" 
-              ? "bg-primary text-primary-foreground border-primary" 
-              : "bg-transparent text-muted-foreground hover:bg-muted"
+            visibility === ""
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-transparent text-muted-foreground hover:bg-muted",
           )}
         >
           All
@@ -81,9 +84,9 @@ export function FunctionsSearchFilter({ initialQuery = "", initialVisibility = "
           onClick={() => setVisibility("public")}
           className={cn(
             "rounded-full px-3 py-1 text-xs font-medium transition-colors border",
-            visibility === "public" 
-              ? "bg-emerald-500 text-white border-emerald-500" 
-              : "bg-transparent text-muted-foreground hover:bg-muted"
+            visibility === "public"
+              ? "bg-emerald-500 text-white border-emerald-500"
+              : "bg-transparent text-muted-foreground hover:bg-muted",
           )}
         >
           Public
@@ -93,9 +96,9 @@ export function FunctionsSearchFilter({ initialQuery = "", initialVisibility = "
           onClick={() => setVisibility("private")}
           className={cn(
             "rounded-full px-3 py-1 text-xs font-medium transition-colors border",
-            visibility === "private" 
-              ? "bg-slate-700 text-white border-slate-700" 
-              : "bg-transparent text-muted-foreground hover:bg-muted"
+            visibility === "private"
+              ? "bg-slate-700 text-white border-slate-700"
+              : "bg-transparent text-muted-foreground hover:bg-muted",
           )}
         >
           Private

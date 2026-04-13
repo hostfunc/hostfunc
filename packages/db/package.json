@@ -16,11 +16,7 @@
       "import": "./dist/schema/index.js"
     }
   },
-  "files": [
-    "dist",
-    "migrations",
-    "drizzle.config.ts"
-  ],
+  "files": ["dist", "migrations", "drizzle.config.ts"],
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc --noEmit",

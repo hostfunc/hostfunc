@@ -1,8 +1,11 @@
+import { db, schema, sql } from "@hostfunc/db";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "./auth";
-import { db, schema } from "@hostfunc/db";
-import { eq } from "drizzle-orm";
+
+function compatWhere<T>(value: T): T {
+  return value;
+}
 
 export async function getSession() {
   return auth.api.getSession({ headers: await headers() });
@@ -19,32 +22,34 @@ export async function requireSession() {
  * query in the app should use this value, never the user id directly.
  */
 export async function requireActiveOrg() {
-    const session = await requireSession();
-    
-    // Try to get it from the session token first
-    let orgId = session.session.activeOrganizationId;
-  
-    // IF IT'S MISSING (The Hook didn't run or column was missing):
-    if (!orgId) {
-      const membership = await db.query.member.findFirst({
-        where: (member, { eq }) => eq(member.userId, session.user.id),
-      });
-  
-      if (membership) {
-        orgId = membership.organizationId;
-        
-        // Patch the session and user in the background so next time it's there
-        await db.update(schema.session)
-          .set({ activeOrganizationId: orgId })
-          .where(eq(schema.session.id, session.session.id));
-          
-        await db.update(schema.user)
-          .set({ activeOrganizationId: orgId })
-          .where(eq(schema.user.id, session.user.id));
-      } else {
-         throw new Error("No active organization found for this user.");
-      }
+  const session = await requireSession();
+
+  // Try to get it from the session token first
+  let orgId = session.session.activeOrganizationId;
+
+  // IF IT'S MISSING (The Hook didn't run or column was missing):
+  if (!orgId) {
+    const membership = await db.query.member.findFirst({
+      where: (member, { eq }) => eq(member.userId, session.user.id),
+    });
+
+    if (membership) {
+      orgId = membership.organizationId;
+
+      // Patch the session and user in the background so next time it's there
+      await db
+        .update(schema.session)
+        .set({ activeOrganizationId: orgId })
+        .where(compatWhere(sql`${schema.session.id} = ${session.session.id}`) as never);
+
+      await db
+        .update(schema.user)
+        .set({ activeOrganizationId: orgId })
+        .where(compatWhere(sql`${schema.user.id} = ${session.user.id}`) as never);
+    } else {
+      throw new Error("No active organization found for this user.");
     }
-  
-    return { session, orgId };
   }
+
+  return { session, orgId };
+}

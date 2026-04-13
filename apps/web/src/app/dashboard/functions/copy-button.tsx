@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Copy, Check } from "lucide-react";
+import { Check, Copy } from "lucide-react";
+import { useState } from "react";
 
 export function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
@@ -20,7 +20,11 @@ export function CopyButton({ value }: { value: string }) {
 
   return (
     <Button variant="outline" size="sm" onClick={onCopy} className="h-8 shadow-sm">
-      {copied ? <Check className="h-3.5 w-3.5 mr-1.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />}
+      {copied ? (
+        <Check className="h-3.5 w-3.5 mr-1.5 text-emerald-500" />
+      ) : (
+        <Copy className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+      )}
       <span className={copied ? "text-emerald-500 font-medium" : "text-muted-foreground"}>
         {copied ? "Copied!" : "Copy Endpoint"}
       </span>

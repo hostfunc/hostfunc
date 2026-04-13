@@ -12,8 +12,8 @@
       "import": "./dist/index.js"
     },
     "./test": {
-      "types": "./dist/test/conformance.d.ts",
-      "import": "./dist/test/conformance.js"
+      "types": "./test/conformance.d.ts",
+      "import": "./test/conformance.ts"
     }
   },
   "files": ["dist", "README.md"],

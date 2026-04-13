@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { toast } from "sonner";
-import { signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { motion, AnimatePresence } from "framer-motion";
-import { Mail, ArrowRight, Loader2, Hexagon, CheckCircle2 } from "lucide-react";
+import { signIn } from "@/lib/auth-client";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight, CheckCircle2, Hexagon, Loader2, Mail } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -35,7 +35,6 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 relative overflow-hidden text-slate-200">
-      
       {/* Background Visuals */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/10 blur-[120px] pointer-events-none" />
@@ -51,24 +50,25 @@ export default function LoginPage() {
         </Link>
       </div>
 
-      <motion.div 
+      <motion.div
         className="w-full max-w-[400px] relative z-10"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <div className="bg-[#0f0f11]/80 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden p-8">
-          
           <div className="text-center mb-8">
             <h1 className="text-2xl font-semibold text-white tracking-tight">Welcome back</h1>
-            <p className="text-sm text-muted-foreground mt-2">Enter your email to sign in or create an account.</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Enter your email to sign in or create an account.
+            </p>
           </div>
 
           <AnimatePresence mode="wait">
             {!sent ? (
-              <motion.form 
+              <motion.form
                 key="login-form"
-                onSubmit={onSubmit} 
+                onSubmit={onSubmit}
                 className="space-y-4"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -76,7 +76,7 @@ export default function LoginPage() {
                 transition={{ duration: 0.3 }}
               >
                 <div className="space-y-2">
-                   <div className="relative flex items-center">
+                  <div className="relative flex items-center">
                     <Mail className="absolute left-4 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="email"
@@ -92,8 +92,8 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full h-12 rounded-xl text-sm font-semibold group mt-4 relative overflow-hidden transition-all bg-white text-black hover:bg-white/90"
                   disabled={pending || !email}
                 >
@@ -104,18 +104,27 @@ export default function LoginPage() {
                       </>
                     ) : (
                       <>
-                        Continue with Email <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        Continue with Email{" "}
+                        <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
                   </span>
                 </Button>
 
                 <p className="text-center text-[11px] text-muted-foreground pt-4">
-                  By continuing, you agree to our <Link href="#" className="underline hover:text-white transition-colors">Terms of Service</Link> and <Link href="#" className="underline hover:text-white transition-colors">Privacy Policy</Link>.
+                  By continuing, you agree to our{" "}
+                  <Link href="#" className="underline hover:text-white transition-colors">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="#" className="underline hover:text-white transition-colors">
+                    Privacy Policy
+                  </Link>
+                  .
                 </p>
               </motion.form>
             ) : (
-              <motion.div 
+              <motion.div
                 key="success-message"
                 className="flex flex-col items-center justify-center py-6 text-center"
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -127,16 +136,21 @@ export default function LoginPage() {
                 </div>
                 <h2 className="text-xl font-semibold text-white mb-2">Check your email</h2>
                 <p className="text-sm text-muted-foreground">
-                  We sent a magic link to <span className="font-semibold text-white">{email}</span>. Click the link to securely sign in.
+                  We sent a magic link to <span className="font-semibold text-white">{email}</span>.
+                  Click the link to securely sign in.
                 </p>
                 <div className="mt-8 pt-6 border-t border-white/10 w-full">
                   <p className="text-[11px] text-muted-foreground">
-                    In development mode, check your local <code className="bg-white/10 px-1 py-0.5 rounded text-white font-mono">pnpm dev</code> terminal for the login link!
+                    In development mode, check your local{" "}
+                    <code className="bg-white/10 px-1 py-0.5 rounded text-white font-mono">
+                      pnpm dev
+                    </code>{" "}
+                    terminal for the login link!
                   </p>
-                  <Button 
-                    variant="ghost" 
-                    type="button" 
-                    className="text-xs mt-4 hover:bg-white/5" 
+                  <Button
+                    variant="ghost"
+                    type="button"
+                    className="text-xs mt-4 hover:bg-white/5"
                     onClick={() => setSent(false)}
                   >
                     Use a different email

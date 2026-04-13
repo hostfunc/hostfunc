@@ -1,13 +1,13 @@
 "use client";
 
-import { useActionState, useState, useEffect } from "react";
-import { createWorkspaceAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, ArrowRight, ArrowLeft, Hexagon, Globe, Sparkles, FolderPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowLeft, ArrowRight, FolderPlus, Globe, Hexagon, Loader2, Sparkles } from "lucide-react";
+import { useActionState, useEffect, useState } from "react";
+import { createWorkspaceAction } from "./actions";
 
 // Dummy avatars/gradients to select from
 const BRAND_PRESETS = [
@@ -22,7 +22,7 @@ export default function NewWorkspacePage() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [customSlug, setCustomSlug] = useState(false);
-  const [selectedBrand, setSelectedBrand] = useState(BRAND_PRESETS[0]!.id);
+  const [selectedBrand, setSelectedBrand] = useState(BRAND_PRESETS[0]?.id ?? "brand-1");
 
   // biome-ignore lint/suspicious/noExplicitAny: Standard form state action
   const [state, formAction, isPending] = useActionState<any, FormData>(createWorkspaceAction, null);
@@ -51,7 +51,6 @@ export default function NewWorkspacePage() {
 
   return (
     <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 relative overflow-hidden text-slate-200">
-      
       {/* Background Visuals */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
@@ -59,22 +58,22 @@ export default function NewWorkspacePage() {
 
       {/* Main Container */}
       <div className="w-full max-w-md relative z-10">
-        
         {/* Header Ribbon */}
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="bg-primary/20 p-3 rounded-2xl mb-4 shadow-[0_0_30px_rgba(var(--primary),0.2)]">
             <FolderPlus className="h-6 w-6 text-primary" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-white">Create Workspace</h1>
-          <p className="text-muted-foreground mt-2 text-sm">Deploy serverless infrastructure in seconds.</p>
+          <p className="text-muted-foreground mt-2 text-sm">
+            Deploy serverless infrastructure in seconds.
+          </p>
         </div>
 
         {/* Morphing Form Card */}
         <div className="bg-[#0f0f11]/80 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden relative">
-          
           {/* Progress Bar */}
           <div className="h-1 w-full bg-white/5">
-            <motion.div 
+            <motion.div
               className="h-full bg-primary"
               initial={{ width: "50%" }}
               animate={{ width: step === 1 ? "50%" : "100%" }}
@@ -90,10 +89,9 @@ export default function NewWorkspacePage() {
               <input type="hidden" name="logo" value={selectedBrand} />
 
               <AnimatePresence mode="wait">
-                
                 {/* STEP 1: Naming */}
                 {step === 1 && (
-                  <motion.div 
+                  <motion.div
                     key="step1"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -102,7 +100,12 @@ export default function NewWorkspacePage() {
                     className="space-y-6"
                   >
                     <div className="space-y-2">
-                      <Label htmlFor="orgName" className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">Workspace Name</Label>
+                      <Label
+                        htmlFor="orgName"
+                        className="text-xs uppercase tracking-widest text-muted-foreground font-semibold"
+                      >
+                        Workspace Name
+                      </Label>
                       <Input
                         id="orgName"
                         placeholder="Acme Corp"
@@ -117,11 +120,18 @@ export default function NewWorkspacePage() {
                           }
                         }}
                       />
-                      {state?.error?.name && <p className="text-red-400 text-xs mt-1">{state.error.name[0]}</p>}
+                      {state?.error?.name && (
+                        <p className="text-red-400 text-xs mt-1">{state.error.name[0]}</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="orgSlug" className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">Workspace URL</Label>
+                      <Label
+                        htmlFor="orgSlug"
+                        className="text-xs uppercase tracking-widest text-muted-foreground font-semibold"
+                      >
+                        Workspace URL
+                      </Label>
                       <div className="relative flex items-center">
                         <Globe className="absolute left-4 w-4 h-4 text-muted-foreground" />
                         <Input
@@ -135,17 +145,20 @@ export default function NewWorkspacePage() {
                       <p className="text-[11px] text-muted-foreground px-1 h-4">
                         {slug ? `hostfunc.com/${slug}` : "hostfunc.com/your-url"}
                       </p>
-                      {state?.error?.slug && <p className="text-red-400 text-xs mt-1">{state.error.slug[0]}</p>}
+                      {state?.error?.slug && (
+                        <p className="text-red-400 text-xs mt-1">{state.error.slug[0]}</p>
+                      )}
                     </div>
 
-                    <Button 
-                      type="button" 
-                      onClick={nextStep} 
+                    <Button
+                      type="button"
+                      onClick={nextStep}
                       disabled={name.length < 2}
                       className="w-full h-12 rounded-xl text-base font-semibold group mt-4 relative overflow-hidden"
                     >
                       <span className="relative z-10 flex items-center">
-                        Continue <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        Continue{" "}
+                        <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </span>
                     </Button>
                   </motion.div>
@@ -153,7 +166,7 @@ export default function NewWorkspacePage() {
 
                 {/* STEP 2: Branding & Submit */}
                 {step === 2 && (
-                  <motion.div 
+                  <motion.div
                     key="step2"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -164,70 +177,80 @@ export default function NewWorkspacePage() {
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 mb-4">
                         <Sparkles className="w-4 h-4 text-primary" />
-                        <Label className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">Select Avatar</Label>
+                        <Label className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
+                          Select Avatar
+                        </Label>
                       </div>
-                      
+
                       <div className="grid grid-cols-4 gap-3">
                         {BRAND_PRESETS.map((brand) => (
-                          <div
+                          <button
                             key={brand.id}
+                            type="button"
                             onClick={() => setSelectedBrand(brand.id)}
                             className={cn(
-                              "aspect-square rounded-2xl cursor-pointer relative transition-all duration-300",
+                              "aspect-square rounded-2xl cursor-pointer relative transition-all duration-300 p-0 border-0",
                               brand.css,
-                              selectedBrand === brand.id 
-                                ? "ring-2 ring-white ring-offset-4 ring-offset-[#0f0f11] scale-95 shadow-[0_0_20px_rgba(255,255,255,0.2)]" 
-                                : "hover:scale-105 opacity-60 hover:opacity-100"
+                              selectedBrand === brand.id
+                                ? "ring-2 ring-white ring-offset-4 ring-offset-[#0f0f11] scale-95 shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                                : "hover:scale-105 opacity-60 hover:opacity-100",
                             )}
                           >
                             <Hexagon className="absolute inset-0 m-auto w-6 h-6 text-white/50" />
-                          </div>
+                          </button>
                         ))}
                       </div>
                     </div>
 
                     <div className="bg-black/40 border border-white/5 p-4 rounded-2xl flex items-center gap-4">
-                       <div className={cn("w-12 h-12 rounded-xl shrink-0 flex items-center justify-center", BRAND_PRESETS.find(b => b.id === selectedBrand)?.css)}>
-                         <span className="text-white font-bold text-lg">{name.charAt(0).toUpperCase()}</span>
-                       </div>
-                       <div className="overflow-hidden">
-                         <p className="font-semibold text-white truncate">{name}</p>
-                         <p className="text-xs text-muted-foreground truncate">hostfunc.com/{slug}</p>
-                       </div>
+                      <div
+                        className={cn(
+                          "w-12 h-12 rounded-xl shrink-0 flex items-center justify-center",
+                          BRAND_PRESETS.find((b) => b.id === selectedBrand)?.css,
+                        )}
+                      >
+                        <span className="text-white font-bold text-lg">
+                          {name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="overflow-hidden">
+                        <p className="font-semibold text-white truncate">{name}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          hostfunc.com/{slug}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="flex gap-3 pt-2">
-                       <Button 
-                        type="button" 
-                        variant="ghost" 
+                      <Button
+                        type="button"
+                        variant="ghost"
                         onClick={() => setStep(1)}
                         className="h-12 w-12 rounded-xl shrink-0 border border-white/10 hover:bg-white/5"
                         disabled={isPending}
                       >
                         <ArrowLeft className="w-4 h-4" />
                       </Button>
-                      <Button 
-                        type="submit" 
+                      <Button
+                        type="submit"
                         disabled={isPending}
                         className="w-full h-12 rounded-xl text-base font-semibold group relative overflow-hidden"
                       >
                         <span className="relative z-10 flex items-center justify-center">
                           {isPending ? (
                             <>
-                              <Loader2 className="mr-2 w-5 h-5 animate-spin" /> Constructing Interface...
+                              <Loader2 className="mr-2 w-5 h-5 animate-spin" /> Constructing
+                              Interface...
                             </>
                           ) : (
-                            <>
-                              Create Workspace
-                            </>
+                            <>Create Workspace</>
                           )}
                         </span>
                         {!isPending && (
-                           <div className="absolute inset-0 bg-gradient-to-r from-primary-foreground/0 via-primary-foreground/10 to-primary-foreground/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
+                          <div className="absolute inset-0 bg-gradient-to-r from-primary-foreground/0 via-primary-foreground/10 to-primary-foreground/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
                         )}
                       </Button>
                     </div>
-
                   </motion.div>
                 )}
               </AnimatePresence>

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { toast } from "sonner";
-import { organization, useActiveOrganization, useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { organization, useActiveOrganization, useSession } from "@/lib/auth-client";
+import { useState } from "react";
+import { toast } from "sonner";
 
 import {
   Dialog,
@@ -23,20 +23,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  Users,
-  UserPlus,
-  MoreHorizontal,
-  Shield,
-  ShieldCheck,
-  UserX,
-  Mail,
+  Clock,
   Crown,
   Loader2,
-  Clock,
+  Mail,
+  MoreHorizontal,
   RefreshCw,
+  Shield,
+  ShieldCheck,
+  UserPlus,
+  UserX,
+  Users,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 
 type Role = "admin" | "member";
 
@@ -62,7 +62,9 @@ function RoleBadge({ role }: { role: string }) {
   const config = ROLE_CONFIG[role as keyof typeof ROLE_CONFIG] ?? ROLE_CONFIG.member;
   const Icon = config.icon;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${config.className}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${config.className}`}
+    >
       <Icon className="w-3 h-3" />
       {config.label}
     </span>
@@ -71,12 +73,24 @@ function RoleBadge({ role }: { role: string }) {
 
 function MemberAvatar({ name, email }: { name?: string | null; email: string }) {
   const initials = name
-    ? name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase()
+    ? name
+        .split(" ")
+        .map((p) => p[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
     : email.slice(0, 2).toUpperCase();
-  const colors = ["from-indigo-500 to-purple-500", "from-emerald-500 to-teal-500", "from-amber-500 to-orange-500", "from-pink-500 to-rose-500"];
+  const colors = [
+    "from-indigo-500 to-purple-500",
+    "from-emerald-500 to-teal-500",
+    "from-amber-500 to-orange-500",
+    "from-pink-500 to-rose-500",
+  ];
   const color = colors[(email.charCodeAt(0) + email.charCodeAt(1)) % colors.length];
   return (
-    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${color} flex items-center justify-center shrink-0 shadow-lg`}>
+    <div
+      className={`w-10 h-10 rounded-full bg-gradient-to-br ${color} flex items-center justify-center shrink-0 shadow-lg`}
+    >
       <span className="text-sm font-bold text-white">{initials}</span>
     </div>
   );
@@ -135,10 +149,16 @@ function InviteMemberDialog() {
 
         <form onSubmit={handleInvite} className="space-y-5 mt-2">
           <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email Address</label>
+            <label
+              htmlFor="invite-email"
+              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+            >
+              Email Address
+            </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
+                id="invite-email"
                 type="email"
                 placeholder="colleague@company.com"
                 value={email}
@@ -150,7 +170,9 @@ function InviteMemberDialog() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Assign Role</label>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Assign Role
+            </p>
             <div className="grid grid-cols-2 gap-3">
               {(["member", "admin"] as Role[]).map((r) => {
                 const config = ROLE_CONFIG[r];
@@ -167,9 +189,15 @@ function InviteMemberDialog() {
                         : "border-white/10 bg-white/[0.02] hover:bg-white/[0.05]"
                     }`}
                   >
-                    <Icon className={`w-5 h-5 ${isSelected ? "text-indigo-400" : "text-muted-foreground"}`} />
+                    <Icon
+                      className={`w-5 h-5 ${isSelected ? "text-indigo-400" : "text-muted-foreground"}`}
+                    />
                     <div>
-                      <p className={`text-sm font-semibold ${isSelected ? "text-white" : "text-slate-300"}`}>{config.label}</p>
+                      <p
+                        className={`text-sm font-semibold ${isSelected ? "text-white" : "text-slate-300"}`}
+                      >
+                        {config.label}
+                      </p>
                       <p className="text-[10px] text-muted-foreground mt-0.5">
                         {r === "admin" ? "Full workspace access" : "Standard access"}
                       </p>
@@ -181,7 +209,12 @@ function InviteMemberDialog() {
           </div>
 
           <DialogFooter className="mt-6 gap-3">
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="hover:bg-white/5 text-muted-foreground">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setOpen(false)}
+              className="hover:bg-white/5 text-muted-foreground"
+            >
               Cancel
             </Button>
             <Button
@@ -189,7 +222,14 @@ function InviteMemberDialog() {
               disabled={pending || !email}
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-6"
             >
-              {pending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending...</> : "Send Invitation"}
+              {pending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                "Send Invitation"
+              )}
             </Button>
           </DialogFooter>
         </form>
@@ -255,7 +295,11 @@ function MemberActions({
           className="h-8 w-8 p-0 text-muted-foreground hover:text-white hover:bg-white/10"
           disabled={!!pending}
         >
-          {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : <MoreHorizontal className="w-4 h-4" />}
+          {pending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <MoreHorizontal className="w-4 h-4" />
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -299,8 +343,7 @@ export default function MembersOrgSettingsPage() {
   const members = org?.members ?? [];
   const invitations = org?.invitations?.filter((i) => i.status === "pending") ?? [];
 
-  const currentUserIsOwner =
-    members.find((m) => m.userId === session?.user.id)?.role === "owner";
+  const currentUserIsOwner = members.find((m) => m.userId === session?.user.id)?.role === "owner";
 
   async function handleResendInvite(invitationId: string, email: string) {
     setResendingId(invitationId);
@@ -321,7 +364,6 @@ export default function MembersOrgSettingsPage() {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500 pb-10">
-
       {/* Page Header */}
       <div className="border-b border-white/10 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -329,7 +371,8 @@ export default function MembersOrgSettingsPage() {
             Team Members <Users className="w-6 h-6 text-indigo-500" />
           </h3>
           <p className="text-muted-foreground mt-2 max-w-xl leading-relaxed">
-            Manage who has access to this organization. Owners can invite new members, change roles, and revoke access.
+            Manage who has access to this organization. Owners can invite new members, change roles,
+            and revoke access.
           </p>
         </div>
         {currentUserIsOwner && <InviteMemberDialog />}
@@ -340,7 +383,9 @@ export default function MembersOrgSettingsPage() {
         <div className="flex items-center justify-between mb-4">
           <h4 className="text-lg font-semibold text-white">
             Active Members
-            <span className="ml-2 text-sm font-normal text-muted-foreground">({members.length})</span>
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              ({members.length})
+            </span>
           </h4>
         </div>
 
@@ -370,7 +415,9 @@ export default function MembersOrgSettingsPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">{member.user?.email}</p>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {member.user?.email}
+                      </p>
                     </div>
                   </div>
 
@@ -399,9 +446,7 @@ export default function MembersOrgSettingsPage() {
       {invitations.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-4">
-            <h4 className="text-lg font-semibold text-white">
-              Pending Invitations
-            </h4>
+            <h4 className="text-lg font-semibold text-white">Pending Invitations</h4>
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
               {invitations.length} awaiting
             </span>
@@ -460,7 +505,6 @@ export default function MembersOrgSettingsPage() {
           </div>
         </section>
       )}
-
     </div>
   );
 }

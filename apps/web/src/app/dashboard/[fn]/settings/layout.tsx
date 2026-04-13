@@ -1,8 +1,8 @@
 "use client";
 
-import { use } from "react";
 import { SettingsLayout } from "@/components/settings/settings-layout";
-import { Settings, Key, Zap } from "lucide-react";
+import { Key, Settings, Zap } from "lucide-react";
+import { use } from "react";
 
 export default function FunctionSettingsLayout({
   children,

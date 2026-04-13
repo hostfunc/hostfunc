@@ -1,16 +1,16 @@
 "use client";
 
+import {
+  SettingsCard,
+  SettingsCardContent,
+  SettingsCardDescription,
+  SettingsCardFooter,
+  SettingsCardHeader,
+  SettingsCardTitle,
+} from "@/components/settings/settings-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  SettingsCard,
-  SettingsCardHeader,
-  SettingsCardTitle,
-  SettingsCardDescription,
-  SettingsCardContent,
-  SettingsCardFooter,
-} from "@/components/settings/settings-card";
 import { use } from "react";
 
 export default function GeneralFunctionSettingsPage({
@@ -38,7 +38,9 @@ export default function GeneralFunctionSettingsPage({
         </SettingsCardHeader>
         <SettingsCardContent>
           <div className="grid gap-2 max-w-sm">
-            <Label htmlFor="fnName" className="sr-only">Name</Label>
+            <Label htmlFor="fnName" className="sr-only">
+              Name
+            </Label>
             <Input id="fnName" defaultValue={fn} />
           </div>
         </SettingsCardContent>
@@ -56,7 +58,9 @@ export default function GeneralFunctionSettingsPage({
         </SettingsCardHeader>
         <SettingsCardContent>
           <div className="grid gap-2 max-w-lg">
-            <Label htmlFor="fnDesc" className="sr-only">Description</Label>
+            <Label htmlFor="fnDesc" className="sr-only">
+              Description
+            </Label>
             <Input id="fnDesc" defaultValue="Handles webhook events from Stripe." />
           </div>
         </SettingsCardContent>
@@ -67,7 +71,9 @@ export default function GeneralFunctionSettingsPage({
 
       <SettingsCard className="border-red-500/20 bg-red-500/5 dark:bg-red-500/10 dark:border-red-500/30">
         <SettingsCardHeader>
-          <SettingsCardTitle className="text-red-600 dark:text-red-500">Danger Zone</SettingsCardTitle>
+          <SettingsCardTitle className="text-red-600 dark:text-red-500">
+            Danger Zone
+          </SettingsCardTitle>
           <SettingsCardDescription className="text-red-600/80 dark:text-red-400">
             Permanently delete this function and all its executions. This cannot be undone.
           </SettingsCardDescription>

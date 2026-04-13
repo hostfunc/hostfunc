@@ -1,9 +1,9 @@
-import * as React from "react";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
+import type * as React from "react";
 
 export interface SettingsNavItem {
   title: string;
@@ -40,6 +40,7 @@ export function SettingsLayout({
               className="mb-4 inline-flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               <svg
+                aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
                 height="24"
@@ -57,9 +58,7 @@ export function SettingsLayout({
             </Link>
           )}
           <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
-          {description && (
-            <p className="text-sm text-muted-foreground">{description}</p>
-          )}
+          {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </div>
         <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1">
           {navItems.map((item) => {
@@ -70,7 +69,7 @@ export function SettingsLayout({
                 href={item.href}
                 className={cn(
                   "relative flex items-center justify-start rounded-md px-3 py-2 text-sm font-medium transition-colors hover:text-foreground",
-                  isActive ? "text-foreground" : "text-muted-foreground"
+                  isActive ? "text-foreground" : "text-muted-foreground",
                 )}
               >
                 {isActive && (

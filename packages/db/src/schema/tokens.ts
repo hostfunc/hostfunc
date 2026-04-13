@@ -1,7 +1,7 @@
+import { relations } from "drizzle-orm";
 import { index, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { user } from "./auth.js";
 import { organization } from "./organizations.js";
-import { relations } from "drizzle-orm";
 
 /**
  * Personal access tokens for the CLI. Token values are Argon2id-hashed.
@@ -33,14 +33,14 @@ export const apiToken = pgTable(
 );
 
 export const apiTokenRelations = relations(apiToken, ({ one }) => ({
-    // Connect back to the User
-    user: one(user, {
-      fields: [apiToken.userId],
-      references: [user.id],
-    }),
-    // Connect back to the Organization
-    organization: one(organization, {
-      fields: [apiToken.orgId],
-      references: [organization.id],
-    }),
-  }));
+  // Connect back to the User
+  user: one(user, {
+    fields: [apiToken.userId],
+    references: [user.id],
+  }),
+  // Connect back to the Organization
+  organization: one(organization, {
+    fields: [apiToken.orgId],
+    references: [organization.id],
+  }),
+}));

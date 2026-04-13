@@ -1,6 +1,6 @@
+import { relations } from "drizzle-orm";
 import { index, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { user } from "./auth.js";
-import { relations } from "drizzle-orm";
 
 export const organization = pgTable(
   "organization",
@@ -57,16 +57,15 @@ export const invitation = pgTable(
   }),
 );
 
-
 export const invitationRelations = relations(invitation, ({ one }) => ({
-    // Connect back to the Organization
-    organization: one(organization, {
-      fields: [invitation.organizationId],
-      references: [organization.id],
-    }),
-    // Connect back to the User who sent the invite
-    inviter: one(user, {
-      fields: [invitation.inviterId],
-      references: [user.id],
-    }),
-  }));
+  // Connect back to the Organization
+  organization: one(organization, {
+    fields: [invitation.organizationId],
+    references: [organization.id],
+  }),
+  // Connect back to the User who sent the invite
+  inviter: one(user, {
+    fields: [invitation.inviterId],
+    references: [user.id],
+  }),
+}));

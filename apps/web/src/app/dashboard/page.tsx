@@ -1,29 +1,28 @@
-import { formatDistanceToNow } from "date-fns";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireActiveOrg } from "@/lib/session";
-import { listFunctionsForOrg } from "@/server/functions";
 import { getDashboardStats, getRecentExecutions } from "@/server/executions";
-import { Activity, Clock, AlertTriangle, Layers, Settings, ExternalLink } from "lucide-react";
+import { listFunctionsForOrg } from "@/server/functions";
+import { formatDistanceToNow } from "date-fns";
+import { Activity, AlertTriangle, Clock, ExternalLink, Layers, Settings } from "lucide-react";
+import Link from "next/link";
 import { CopyButton } from "./functions/copy-button";
 
 export default async function DashboardPage() {
   const { orgId } = await requireActiveOrg();
-  
+
   // Parallel fetch to optimize server rendering
   const [functions, stats, recentExecutions] = await Promise.all([
     listFunctionsForOrg(orgId),
     getDashboardStats(orgId),
-    getRecentExecutions(orgId, 5)
+    getRecentExecutions(orgId, 5),
   ]);
 
   const hasFunctions = functions.length > 0;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      
       {/* High-Level Metrics */}
       <div>
         <h1 className="mb-6 text-2xl font-semibold tracking-tight">Dashboard Overview</h1>
@@ -38,7 +37,7 @@ export default async function DashboardPage() {
               <p className="text-xs text-muted-foreground mt-1">Active deployments</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Executions (All Time)</CardTitle>
@@ -49,7 +48,7 @@ export default async function DashboardPage() {
               <p className="text-xs text-muted-foreground mt-1">Total requests processed</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Failures</CardTitle>
@@ -58,13 +57,13 @@ export default async function DashboardPage() {
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalFailures.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                {stats.totalExecutions > 0 
-                  ? `${((stats.totalFailures / stats.totalExecutions) * 100).toFixed(2)}% error rate` 
+                {stats.totalExecutions > 0
+                  ? `${((stats.totalFailures / stats.totalExecutions) * 100).toFixed(2)}% error rate`
                   : "0% error rate"}
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Compute Time</CardTitle>
@@ -72,8 +71,8 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {stats.totalCpuMs > 1000 
-                  ? `${(stats.totalCpuMs / 1000).toFixed(1)}s` 
+                {stats.totalCpuMs > 1000
+                  ? `${(stats.totalCpuMs / 1000).toFixed(1)}s`
                   : `${stats.totalCpuMs}ms`}
               </div>
               <p className="text-xs text-muted-foreground mt-1">Total CPU time billed</p>
@@ -88,14 +87,20 @@ export default async function DashboardPage() {
           <div>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold tracking-tight">Your Functions</h2>
-              <Link href="/dashboard/new" className="text-sm text-primary hover:underline font-medium">
+              <Link
+                href="/dashboard/new"
+                className="text-sm text-primary hover:underline font-medium"
+              >
                 Create new
               </Link>
             </div>
-            
+
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {functions.map((fn) => (
-                <div key={fn.id} className="group relative rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/40 flex flex-col justify-between overflow-hidden">
+                <div
+                  key={fn.id}
+                  className="group relative rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/40 flex flex-col justify-between overflow-hidden"
+                >
                   <div className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -103,11 +108,18 @@ export default async function DashboardPage() {
                           <Activity className="h-4 w-4 text-primary" />
                         </div>
                         <div className="overflow-hidden">
-                          <h3 className="font-mono text-sm font-semibold truncate" title={fn.slug}>{fn.slug}</h3>
-                          <p className="text-[10px] text-muted-foreground whitespace-nowrap">Deployed {formatDistanceToNow(fn.updatedAt, { addSuffix: true })}</p>
+                          <h3 className="font-mono text-sm font-semibold truncate" title={fn.slug}>
+                            {fn.slug}
+                          </h3>
+                          <p className="text-[10px] text-muted-foreground whitespace-nowrap">
+                            Deployed {formatDistanceToNow(fn.updatedAt, { addSuffix: true })}
+                          </p>
                         </div>
                       </div>
-                      <Badge variant={fn.visibility === "public" ? "default" : "secondary"} className="capitalize shadow-sm shrink-0 ml-2 text-[10px]">
+                      <Badge
+                        variant={fn.visibility === "public" ? "default" : "secondary"}
+                        className="capitalize shadow-sm shrink-0 ml-2 text-[10px]"
+                      >
                         {fn.visibility}
                       </Badge>
                     </div>
@@ -115,14 +127,19 @@ export default async function DashboardPage() {
                       {fn.description || "No description provided."}
                     </p>
                   </div>
-    
+
                   {/* Hover Actions Bar */}
                   <div className="border-t bg-muted/40 p-2.5 flex items-center justify-between transition-colors group-hover:bg-muted/80">
                     <div className="flex items-center">
                       <CopyButton value={`https://${fn.slug}.hostfunc.com`} />
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-[11px] shadow-sm bg-background border">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        className="h-7 px-2 text-[11px] shadow-sm bg-background border"
+                      >
                         <Link href={`/dashboard/${fn.id}/settings`}>
                           <Settings className="h-3 w-3 mr-1" />
                           Settings
@@ -163,16 +180,24 @@ export default async function DashboardPage() {
                     <tbody className="divide-y">
                       {recentExecutions.map((exec) => (
                         <tr key={exec.id} className="hover:bg-muted/30 transition-colors">
-                          <td className="px-4 py-3 font-mono font-medium">{exec.fnSlug ?? exec.fnId}</td>
+                          <td className="px-4 py-3 font-mono font-medium">
+                            {exec.fnSlug ?? exec.fnId}
+                          </td>
                           <td className="px-4 py-3">
-                            <Badge 
+                            <Badge
                               variant={exec.status === "ok" ? "default" : "destructive"}
-                              className={exec.status === "ok" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20" : ""}
+                              className={
+                                exec.status === "ok"
+                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
+                                  : ""
+                              }
                             >
                               {exec.status}
                             </Badge>
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground uppercase text-xs tracking-wider">{exec.triggerKind}</td>
+                          <td className="px-4 py-3 text-muted-foreground uppercase text-xs tracking-wider">
+                            {exec.triggerKind}
+                          </td>
                           <td className="px-4 py-3 font-mono text-xs">{exec.wallMs}ms</td>
                           <td className="px-4 py-3 text-right text-muted-foreground whitespace-nowrap">
                             {formatDistanceToNow(exec.startedAt, { addSuffix: true })}
@@ -198,7 +223,8 @@ export default async function DashboardPage() {
           </div>
           <h2 className="text-2xl font-semibold">No functions yet</h2>
           <p className="mt-2 text-muted-foreground max-w-sm">
-            Create your first function to start processing events, running crons, and exploring the dashboard.
+            Create your first function to start processing events, running crons, and exploring the
+            dashboard.
           </p>
           <Link
             href="/dashboard/new"

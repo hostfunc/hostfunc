@@ -1,10 +1,10 @@
-import { notFound } from "next/navigation";
 import { FunctionEditor } from "@/components/editor/function-editor";
-import { Settings } from "lucide-react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { requireActiveOrg } from "@/lib/session";
 import { getDraft, getFunctionForOrg } from "@/server/functions";
+import { Settings } from "lucide-react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 
 export default async function FunctionEditorPage({
   params,

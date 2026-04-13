@@ -20,18 +20,18 @@ export async function createWorkspaceAction(_prevState: any, formData: FormData)
     slug: formData.get("slug"),
     logo: formData.get("logo"),
   });
-  
+
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  // DUMMY IMPLEMENTATION: 
+  // DUMMY IMPLEMENTATION:
   // Normally we would:
   // 1. Check if slug exists in DB
   // 2. Insert new Organization into DB
   // 3. Insert new Member bridging Org and current User
   // 4. Update session activeOrganizationId
-  
+
   // Simulate network pipeline delay
   await new Promise((resolve) => setTimeout(resolve, 1500));
 

@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
 import { requireSession } from "@/lib/session";
+import type { ReactNode } from "react";
 import { DashboardNavbar } from "./navbar";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {

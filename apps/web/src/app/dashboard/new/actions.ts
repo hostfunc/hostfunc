@@ -1,10 +1,10 @@
 "use server";
 
+import { requireActiveOrg } from "@/lib/session";
+import { createFunction } from "@/server/functions";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireActiveOrg } from "@/lib/session";
-import { createFunction } from "@/server/functions";
 
 import { TEMPLATES } from "@/lib/templates";
 
@@ -21,13 +21,13 @@ const createSchema = z.object({
 // biome-ignore lint/suspicious/noExplicitAny: Standard internal state type
 export async function createFunctionAction(_prevState: any, formData: FormData) {
   const { session, orgId } = await requireActiveOrg();
-  
+
   const parsed = createSchema.safeParse({
     slug: formData.get("slug"),
     description: formData.get("description") ?? "",
     templateId: formData.get("templateId") ?? "hello-world",
   });
-  
+
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors };
   }

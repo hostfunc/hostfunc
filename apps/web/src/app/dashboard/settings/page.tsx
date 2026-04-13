@@ -1,14 +1,14 @@
+import {
+  SettingsCard,
+  SettingsCardContent,
+  SettingsCardDescription,
+  SettingsCardFooter,
+  SettingsCardHeader,
+  SettingsCardTitle,
+} from "@/components/settings/settings-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  SettingsCard,
-  SettingsCardHeader,
-  SettingsCardTitle,
-  SettingsCardDescription,
-  SettingsCardContent,
-  SettingsCardFooter,
-} from "@/components/settings/settings-card";
 
 export default function GeneralOrgSettingsPage() {
   return (
@@ -19,7 +19,7 @@ export default function GeneralOrgSettingsPage() {
           Update your organization's display name and primary identifier.
         </p>
       </div>
-      
+
       <SettingsCard>
         <SettingsCardHeader>
           <SettingsCardTitle>Organization Name</SettingsCardTitle>

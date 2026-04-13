@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@hostfunc/db": "workspace:*",
+    "@hostfunc/executor-cloudflare": "workspace:*",
+    "@hostfunc/executor-core": "workspace:*",
     "@hostfunc/fn": "workspace:*",
     "@monaco-editor/react": "^4.7.0",
     "argon2": "^0.44.0",

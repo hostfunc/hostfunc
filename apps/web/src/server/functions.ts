@@ -1,7 +1,10 @@
 import "server-only";
 
-import { db, schema, genId } from "@hostfunc/db";
-import { and, desc, eq, ilike, or } from "drizzle-orm";
+import { db, genId, schema, sql } from "@hostfunc/db";
+
+function compat<T>(value: T): T {
+  return value;
+}
 
 export async function listFunctionsForOrg(orgId: string) {
   return db
@@ -13,24 +16,22 @@ export async function listFunctionsForOrg(orgId: string) {
       updatedAt: schema.fn.updatedAt,
     })
     .from(schema.fn)
-    .where(eq(schema.fn.orgId, orgId))
-    .orderBy(desc(schema.fn.updatedAt));
+    .where(compat(sql`${schema.fn.orgId} = ${orgId}`) as never)
+    .orderBy(compat(sql`${schema.fn.updatedAt} desc`) as never);
 }
 export async function searchFunctionsForOrg(orgId: string, query?: string, visibility?: string) {
-  const conditions = [eq(schema.fn.orgId, orgId)];
-  
+  const conditions = [sql`${schema.fn.orgId} = ${orgId}`];
+
   if (query) {
-    conditions.push(
-      or(
-        ilike(schema.fn.slug, `%${query}%`),
-        ilike(schema.fn.description, `%${query}%`)
-      )!
-    );
+    const q = `%${query}%`;
+    conditions.push(sql`(${schema.fn.slug} ilike ${q} or ${schema.fn.description} ilike ${q})`);
   }
 
   if (visibility && (visibility === "public" || visibility === "private")) {
-    conditions.push(eq(schema.fn.visibility, visibility as "public" | "private"));
+    conditions.push(sql`${schema.fn.visibility} = ${visibility}`);
   }
+
+  const whereClause = conditions.reduce((acc, condition) => sql`${acc} and ${condition}`);
 
   return db
     .select({
@@ -41,15 +42,15 @@ export async function searchFunctionsForOrg(orgId: string, query?: string, visib
       updatedAt: schema.fn.updatedAt,
     })
     .from(schema.fn)
-    .where(and(...conditions))
-    .orderBy(desc(schema.fn.updatedAt));
+    .where(compat(whereClause) as never)
+    .orderBy(compat(sql`${schema.fn.updatedAt} desc`) as never);
 }
 
 export async function getFunctionForOrg(orgId: string, fnId: string) {
   const rows = await db
     .select()
     .from(schema.fn)
-    .where(and(eq(schema.fn.orgId, orgId), eq(schema.fn.id, fnId)))
+    .where(compat(sql`${schema.fn.orgId} = ${orgId} and ${schema.fn.id} = ${fnId}`) as never)
     .limit(1);
   return rows[0] ?? null;
 }
@@ -58,7 +59,7 @@ export async function getDraft(fnId: string, userId: string) {
   const rows = await db
     .select()
     .from(schema.fnDraft)
-    .where(and(eq(schema.fnDraft.fnId, fnId), eq(schema.fnDraft.userId, userId)))
+    .where(compat(sql`${schema.fnDraft.fnId} = ${fnId} and ${schema.fnDraft.userId} = ${userId}`) as never)
     .limit(1);
   return rows[0] ?? null;
 }

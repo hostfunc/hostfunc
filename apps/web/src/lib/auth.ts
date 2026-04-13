@@ -1,10 +1,12 @@
-import { db, schema } from "@hostfunc/db";
-import { eq } from "drizzle-orm";
-import { genId } from "@hostfunc/db";
+import { db, genId, schema, sql } from "@hostfunc/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink, organization } from "better-auth/plugins";
 import { env } from "./env";
+
+function compatWhere<T>(value: T): T {
+  return value;
+}
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -44,39 +46,38 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-            const orgId = genId("org");
-            const slug = `user-${user.id.slice(-12).toLowerCase()}`;
-            
-            await db.insert(schema.organization).values({
-              id: orgId,
-              name: `${user.name || user.email.split("@")[0]}'s workspace`,
-              slug,
+          const orgId = genId("org");
+          const slug = `user-${user.id.slice(-12).toLowerCase()}`;
+
+          await db.insert(schema.organization).values({
+            id: orgId,
+            name: `${user.name || user.email.split("@")[0]}'s workspace`,
+            slug,
+          });
+
+          await db.insert(schema.member).values({
+            id: genId("mem"),
+            organizationId: orgId,
+            userId: user.id,
+            role: "owner",
+          });
+
+          // Free subscription by default
+          const free = await db
+            .select()
+            .from(schema.plan)
+            .where(compatWhere(sql`${schema.plan.slug} = ${"free"}`) as never)
+            .limit(1);
+
+          if (free[0]) {
+            await db.insert(schema.subscription).values({
+              id: genId("sub"),
+              orgId,
+              planId: free[0].id,
+              status: "active",
             });
-            
-            await db.insert(schema.member).values({
-              id: genId("mem"),
-              organizationId: orgId,
-              userId: user.id,
-              role: "owner",
-            });
-            
-            // Free subscription by default
-            const free = await db
-              .select()
-              .from(schema.plan)
-              .where(eq(schema.plan.slug, "free"))
-              .limit(1);
-              
-            if (free[0]) {
-              await db.insert(schema.subscription).values({
-                id: genId("sub"),
-                orgId,
-                planId: free[0].id,
-                status: "active",
-              });
-            }
-          
-          },
+          }
+        },
       },
     },
     session: {
@@ -86,7 +87,7 @@ export const auth = betterAuth({
           const memberships = await db
             .select({ orgId: schema.member.organizationId })
             .from(schema.member)
-            .where(eq(schema.member.userId, session.userId))
+            .where(compatWhere(sql`${schema.member.userId} = ${session.userId}`) as never)
             .limit(1);
           return {
             data: {

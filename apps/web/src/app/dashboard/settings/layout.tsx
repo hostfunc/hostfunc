@@ -1,7 +1,7 @@
 "use client";
 
 import { SettingsLayout } from "@/components/settings/settings-layout";
-import { Settings, Users, CreditCard, Blocks } from "lucide-react";
+import { Blocks, CreditCard, Settings, Users } from "lucide-react";
 
 const orgNavItems = [
   {

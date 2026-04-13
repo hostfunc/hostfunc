@@ -29,5 +29,5 @@ export async function main(event: { time: string }) {
   // Clean up database records or sync external APIS
   return { status: "completed", timestamp: Date.now() };
 }
-`
+`,
 };

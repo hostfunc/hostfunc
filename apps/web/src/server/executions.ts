@@ -3,7 +3,14 @@ import "server-only";
 import { db, schema } from "@hostfunc/db";
 import { desc, eq, sql } from "drizzle-orm";
 
-export async function getDashboardStats(orgId: string) {
+export interface DashboardStats {
+  totalFunctions: number;
+  totalExecutions: number;
+  totalFailures: number;
+  totalCpuMs: number;
+}
+
+export async function getDashboardStats(orgId: string): Promise<DashboardStats> {
   // Aggregate executions
   const [execStats] = await db
     .select({
@@ -23,14 +30,14 @@ export async function getDashboardStats(orgId: string) {
     .where(eq(schema.fn.orgId, orgId));
 
   return {
-    totalFunctions: fnStats?.totalFunctions ?? 0,
-    totalExecutions: execStats?.totalExecutions ?? 0,
-    totalFailures: execStats?.totalFailures ?? 0,
-    totalCpuMs: execStats?.totalCpuMs ?? 0,
+    totalFunctions: Number(fnStats?.totalFunctions ?? 0),
+    totalExecutions: Number(execStats?.totalExecutions ?? 0),
+    totalFailures: Number(execStats?.totalFailures ?? 0),
+    totalCpuMs: Number(execStats?.totalCpuMs ?? 0),
   };
 }
 
-export async function getRecentExecutions(orgId: string, limit: number = 10) {
+export async function getRecentExecutions(orgId: string, limit = 10) {
   return db
     .select({
       id: schema.execution.id,
