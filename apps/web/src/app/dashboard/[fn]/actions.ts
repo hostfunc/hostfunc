@@ -1,10 +1,15 @@
 "use server";
 
+import { createHash } from "node:crypto";
 import { env } from "@/lib/env";
 import { requireActiveOrg } from "@/lib/session";
 import { executor } from "@/server/executor";
+import {
+  deleteSecretForFunction,
+  listSecretsForFunction,
+  setSecretForFunction,
+} from "@/server/functions";
 import { db, genId, schema, sql } from "@hostfunc/db";
-import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -15,6 +20,15 @@ function compatWhere<T>(value: T): T {
 const saveDraftSchema = z.object({
   fnId: z.string(),
   code: z.string().max(1_000_000),
+});
+const setSecretSchema = z.object({
+  fnId: z.string(),
+  key: z.string().min(1).max(128),
+  value: z.string().min(1).max(8_192),
+});
+const deleteSecretSchema = z.object({
+  fnId: z.string(),
+  key: z.string().min(1).max(128),
 });
 
 async function assertOrgOwnsFunction(orgId: string, fnId: string) {
@@ -65,7 +79,9 @@ export async function deployFunction(fnId: string): Promise<DeployResultUi> {
     .select()
     .from(schema.fnDraft)
     .where(
-      compatWhere(sql`${schema.fnDraft.fnId} = ${fnId} and ${schema.fnDraft.userId} = ${session.user.id}`) as never,
+      compatWhere(
+        sql`${schema.fnDraft.fnId} = ${fnId} and ${schema.fnDraft.userId} = ${session.user.id}`,
+      ) as never,
     )
     .limit(1);
 
@@ -103,6 +119,10 @@ export async function deployFunction(fnId: string): Promise<DeployResultUi> {
       },
       secretRefs: [],
     });
+    const enriched = result as typeof result & {
+      sourceMap?: string;
+      sourceMapSha256?: string;
+    };
 
     await db
       .update(schema.fnVersion)
@@ -110,6 +130,8 @@ export async function deployFunction(fnId: string): Promise<DeployResultUi> {
         status: "deployed",
         backendHandle: result.handle,
         warnings: result.warnings ?? [],
+        sourceMap: enriched.sourceMap ?? null,
+        sourceMapSha256: enriched.sourceMapSha256 ?? null,
       })
       .where(compatWhere(sql`${schema.fnVersion.id} = ${versionId}`) as never);
 
@@ -117,6 +139,10 @@ export async function deployFunction(fnId: string): Promise<DeployResultUi> {
       .update(schema.fn)
       .set({ currentVersionId: versionId, updatedAt: new Date() })
       .where(compatWhere(sql`${schema.fn.id} = ${fnId}`) as never);
+
+    await purgeLookupCache(session.user.id, fnRow.slug).catch(() => {
+      // Cache is best-effort; deploy success should not hinge on purge availability.
+    });
 
     revalidatePath(`/dashboard/${fnId}`);
 
@@ -130,4 +156,42 @@ export async function deployFunction(fnId: string): Promise<DeployResultUi> {
       .where(compatWhere(sql`${schema.fnVersion.id} = ${versionId}`) as never);
     throw new Error(message);
   }
+}
+
+export async function listSecrets(fnId: string) {
+  const { orgId } = await requireActiveOrg();
+  await assertOrgOwnsFunction(orgId, fnId);
+  return listSecretsForFunction(orgId, fnId);
+}
+
+export async function setSecret(input: z.infer<typeof setSecretSchema>) {
+  const { orgId, session } = await requireActiveOrg();
+  const parsed = setSecretSchema.parse(input);
+  await assertOrgOwnsFunction(orgId, parsed.fnId);
+  await setSecretForFunction({
+    orgId,
+    fnId: parsed.fnId,
+    key: parsed.key,
+    value: parsed.value,
+    userId: session.user.id,
+  });
+  revalidatePath(`/dashboard/${parsed.fnId}/settings`);
+  return { ok: true };
+}
+
+export async function deleteSecret(input: z.infer<typeof deleteSecretSchema>) {
+  const { orgId } = await requireActiveOrg();
+  const parsed = deleteSecretSchema.parse(input);
+  await assertOrgOwnsFunction(orgId, parsed.fnId);
+  await deleteSecretForFunction(orgId, parsed.fnId, parsed.key);
+  revalidatePath(`/dashboard/${parsed.fnId}/settings`);
+  return { ok: true };
+}
+
+async function purgeLookupCache(owner: string, slug: string) {
+  if (!env.CF_FN_INDEX_KV_ID) return;
+  const maybeExecutor = executor as typeof executor & {
+    purgeLookupCache?: (key: string) => Promise<void>;
+  };
+  await maybeExecutor.purgeLookupCache?.(`${owner}:${slug}`);
 }

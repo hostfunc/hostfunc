@@ -1,0 +1,8 @@
+name = "hostfunc-tail"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+INGEST_URL = "http://localhost:3000/api/internal/ingest"
+INGEST_TOKEN = "dev-ingest-token"

@@ -5,6 +5,10 @@ export interface CloudflareApiConfig {
   apiToken: string;
 }
 
+interface DeleteKvResult {
+  success: boolean;
+}
+
 export interface CloudflareApiError {
   code: number;
   message: string;
@@ -132,6 +136,23 @@ export class CloudflareApi {
         [],
       );
     }
+  }
+
+  async deleteKvKey(namespaceId: string, key: string): Promise<DeleteKvResult> {
+    const url = `${CF_API}/accounts/${this.cfg.accountId}/storage/kv/namespaces/${namespaceId}/values/${encodeURIComponent(key)}`;
+    const res = await fetch(url, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${this.cfg.apiToken}` },
+    });
+    if (!res.ok && res.status !== 404) {
+      const text = await res.text();
+      throw new CloudflareApiCallError(
+        `cloudflare kv delete failed (${res.status}): ${text}`,
+        res.status,
+        [],
+      );
+    }
+    return { success: res.ok || res.status === 404 };
   }
 
   private scriptUrl(target: UploadScriptInput["target"], scriptName: string): string {

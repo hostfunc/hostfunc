@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   type BackendCapabilities,
   type DeployInput,
@@ -6,9 +7,9 @@ import {
   type ExecuteResult,
   type ExecutorBackend,
   type FunctionId,
+  HostFuncError,
   type LogLine,
   type VersionId,
-  HostFuncError,
 } from "@hostfunc/executor-core";
 import { CloudflareApi, CloudflareApiCallError } from "./api.js";
 import { BundleError, bundleFunction } from "./bundler.js";
@@ -22,6 +23,7 @@ export interface CloudflareConfig {
   namespace?: string;
   /** Where the dispatch worker lives, used by `execute()` for cron/email triggers. */
   runtimeBaseUrl?: string;
+  fnIndexKvId?: string;
 }
 
 export class CloudflareExecutor implements ExecutorBackend {
@@ -75,12 +77,20 @@ export class CloudflareExecutor implements ExecutorBackend {
         ],
       });
 
-      return {
+      const deployResult: DeployResult & {
+        sourceMap?: string;
+        sourceMapSha256?: string;
+      } = {
         versionId: input.versionId,
         handle: scriptName,
         deployedAt: result.modifiedOn,
         warnings: bundle.warnings,
+        ...(bundle.sourceMap ? { sourceMap: bundle.sourceMap } : {}),
+        ...(bundle.sourceMap
+          ? { sourceMapSha256: createHash("sha256").update(bundle.sourceMap).digest("hex") }
+          : {}),
       };
+      return deployResult;
     } catch (e) {
       if (e instanceof CloudflareApiCallError) {
         const detail = e.errors.map((err) => `[${err.code}] ${err.message}`).join("; ");
@@ -112,13 +122,15 @@ export class CloudflareExecutor implements ExecutorBackend {
     return { ok: true, checkedAt: new Date().toISOString() };
   }
 
+  async purgeLookupCache(key: string): Promise<void> {
+    if (!this.cfg.fnIndexKvId) return;
+    await this.api.deleteKvKey(this.cfg.fnIndexKvId, key);
+  }
+
   private target(): { kind: "wfp"; namespace: string } | { kind: "regular" } {
     if (this.cfg.useWfp === false) return { kind: "regular" };
     if (!this.cfg.namespace) {
-      throw new HostFuncError(
-        "INFRA_DEPLOY_FAILED",
-        "useWfp=true requires a namespace",
-      );
+      throw new HostFuncError("INFRA_DEPLOY_FAILED", "useWfp=true requires a namespace");
     }
     return { kind: "wfp", namespace: this.cfg.namespace };
   }

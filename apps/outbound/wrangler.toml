@@ -1,0 +1,7 @@
+name = "hostfunc-outbound"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ALLOW_HOSTS = "api.resend.com,api.stripe.com,discord.com,discordapp.com"

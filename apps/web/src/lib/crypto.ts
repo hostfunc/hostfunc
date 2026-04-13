@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
-import { env } from "./env.js";
+import { env } from "./env";
 
 /**
  * AES-256-GCM envelope for secrets at rest.

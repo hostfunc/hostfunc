@@ -20,7 +20,6 @@ export async function GET(req: NextRequest) {
       fnId: schema.fn.id,
       orgId: schema.fn.orgId,
       visibility: schema.fn.visibility,
-      currentVersionId: schema.fn.currentVersionId,
       versionId: schema.fnVersion.id,
     })
     .from(schema.fn)
@@ -37,6 +36,7 @@ export async function GET(req: NextRequest) {
     ok: true,
     fnId: row.fnId,
     orgId: row.orgId,
+    versionId: row.versionId,
     scriptName: scriptNameFor(row.fnId, row.versionId),
     visibility: row.visibility,
   });

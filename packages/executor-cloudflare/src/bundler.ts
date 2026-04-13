@@ -1,4 +1,4 @@
-import { build, type BuildResult, type Message } from "esbuild";
+import { type BuildResult, type Message, build } from "esbuild";
 
 export interface BundleOptions {
   /** User-authored TypeScript source. */
@@ -28,30 +28,103 @@ export class BundleError extends Error {
 
 const RUNTIME_SHIM = `
 // Injected by hostfunc at deploy time. Provides @hostfunc/fn to user code.
+const __ofn_state = { request: null };
+
 const __ofn_ctx = () => {
-  const req = globalThis.__ofn_req;
+  const req = __ofn_state.request;
   if (!req) throw new Error("hostfunc: no active request");
   return {
     execId: req.headers.get("x-hostfunc-exec-id") || "",
     fnId: req.headers.get("x-hostfunc-fn-id") || "",
     orgId: req.headers.get("x-hostfunc-org-id") || "",
+    token: req.headers.get("x-hostfunc-exec-token") || "",
+    controlPlane: req.headers.get("x-hostfunc-control-plane") || "",
+    callChain: JSON.parse(req.headers.get("x-hostfunc-call-chain") || "[]"),
+    maxCallDepth: Number(req.headers.get("x-hostfunc-max-call-depth") || "3"),
   };
 };
+
+class HostfuncError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = "HostfuncError";
+    this.code = code;
+  }
+}
 
 const __ofn_fn_module = {
   default: {
     async executeFunction(slug, input) {
-      // Real implementation arrives in Component 5 (dispatch + secrets).
-      throw new Error("fn.executeFunction not yet implemented (Component 5)");
+      const ctx = __ofn_ctx();
+      const nextChain = [...ctx.callChain, { fnId: ctx.fnId, execId: ctx.execId }];
+      if (nextChain.length > ctx.maxCallDepth) {
+        throw new HostfuncError("FN_CALL_DEPTH", "max call depth " + ctx.maxCallDepth + " exceeded");
+      }
+
+      const targetFnId = await __ofn_resolve_slug(ctx, slug);
+      if (targetFnId && nextChain.some((f) => f.fnId === targetFnId)) {
+        throw new HostfuncError("FN_CALL_DEPTH", "loop detected for " + slug);
+      }
+
+      const slash = slug.indexOf("/");
+      if (slash < 1) {
+        throw new HostfuncError("FN_NOT_FOUND", "executeFunction slug must be 'owner/slug'");
+      }
+      const owner = slug.slice(0, slash);
+      const fnSlug = slug.slice(slash + 1);
+      const res = await fetch(ctx.controlPlane + "/run/" + owner + "/" + fnSlug, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-hostfunc-call-chain": JSON.stringify(nextChain),
+          "x-hostfunc-parent-exec": ctx.execId,
+        },
+        body: JSON.stringify(input ?? {}),
+      });
+      if (!res.ok) {
+        throw new HostfuncError("FN_THREW", "executeFunction failed with " + res.status);
+      }
+      return await res.json();
     },
   },
   secret: {
-    async get(_key) { return null; },
+    async get(key) {
+      const ctx = __ofn_ctx();
+      if (!ctx.controlPlane || !ctx.token) {
+        throw new HostfuncError("INFRA_EXECUTE_FAILED", "missing control-plane headers");
+      }
+      const res = await fetch(ctx.controlPlane + "/api/internal/secrets/get", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: "Bearer " + ctx.token,
+        },
+        body: JSON.stringify({ key }),
+      });
+      if (res.status === 404) return null;
+      if (!res.ok) throw new HostfuncError("INFRA_EXECUTE_FAILED", "secret fetch failed");
+      const json = await res.json();
+      return json.found ? json.value : null;
+    },
     async getRequired(key) {
-      throw new Error("secret '" + key + "' not available (Component 5)");
+      const v = await this.get(key);
+      if (v == null) throw new HostfuncError("FN_THREW", "missing required secret: " + key);
+      return v;
     },
   },
 };
+
+async function __ofn_resolve_slug(ctx, slug) {
+  try {
+    const url = ctx.controlPlane + "/api/internal/resolve?slug=" + encodeURIComponent(slug);
+    const res = await fetch(url, { headers: { authorization: "Bearer " + ctx.token } });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.fnId || null;
+  } catch {
+    return null;
+  }
+}
 `;
 
 const ENTRY_WRAPPER = (userCode: string) => `
@@ -68,7 +141,7 @@ ${userCode}
 // Worker entrypoint
 export default {
   async fetch(request, env, ctx) {
-    globalThis.__ofn_req = request;
+    __ofn_state.request = request;
     try {
       const payload = request.method === "POST" || request.method === "PUT"
         ? await request.json().catch(() => ({}))
@@ -101,7 +174,7 @@ export default {
         stack,
       }), { status: 500, headers: { "content-type": "application/json" } });
     } finally {
-      globalThis.__ofn_req = undefined;
+      __ofn_state.request = null;
     }
   },
 };
@@ -127,7 +200,7 @@ export async function bundleFunction(opts: BundleOptions): Promise<BundleResult>
       platform: "neutral",
       conditions: ["worker", "browser"],
       mainFields: ["module", "main"],
-      sourcemap: false,
+      sourcemap: "external",
       treeShaking: true,
       minify: false,
       // Mark anything starting with `cloudflare:` and `node:` as external
@@ -137,29 +210,25 @@ export async function bundleFunction(opts: BundleOptions): Promise<BundleResult>
     });
   } catch (e) {
     if (e instanceof Error && "errors" in e) {
-      throw new BundleError(
-        `bundle failed: ${e.message}`,
-        (e as { errors: Message[] }).errors,
-      );
+      throw new BundleError(`bundle failed: ${e.message}`, (e as { errors: Message[] }).errors);
     }
     throw e;
   }
 
   const codeFile = result.outputFiles?.find((f) => f.path.endsWith(".js"));
+  const sourceMapFile = result.outputFiles?.find((f) => f.path.endsWith(".js.map"));
   if (!codeFile) {
     throw new BundleError("esbuild produced no output", []);
   }
 
   const sizeBytes = Buffer.byteLength(codeFile.text, "utf8");
   if (sizeBytes > maxSize) {
-    throw new BundleError(
-      `bundle is ${sizeBytes} bytes, exceeds ${maxSize}`,
-      [],
-    );
+    throw new BundleError(`bundle is ${sizeBytes} bytes, exceeds ${maxSize}`, []);
   }
 
   return {
     code: codeFile.text,
+    ...(sourceMapFile?.text ? { sourceMap: sourceMapFile.text } : {}),
     sizeBytes,
     warnings: result.warnings.map((w) => w.text),
   };

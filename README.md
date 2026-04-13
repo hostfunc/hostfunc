@@ -71,7 +71,10 @@ hostfunc is a **pnpm monorepo** built with [Turborepo](https://turbo.build). The
 ```
 hostfunc/
 ├── apps/
-│   └── web/                  # Next.js 16 dashboard + public landing page
+│   ├── web/                  # Next.js 16 dashboard + public landing page
+│   ├── runtime/              # Dispatch worker that routes /run/:owner/:slug
+│   ├── outbound/             # Egress-control worker
+│   └── tail/                 # Tail worker that forwards logs/metrics to ingest
 │
 └── packages/
     ├── db/                   # Drizzle ORM schema, migrations, and Postgres client
@@ -242,8 +245,11 @@ Key variables to configure:
 | Variable | Description |
 |---|---|
 | `DATABASE_URL` | Postgres connection string (default: `postgres://hostfunc:hostfunc@localhost:5433/hostfunc-db`) |
+| `REDIS_URL` | Execution registry store (default: `redis://127.0.0.1:6379`) |
 | `BETTER_AUTH_SECRET` | Random secret for session signing |
 | `NEXT_PUBLIC_APP_URL` | Public URL of the web app |
+| `EXEC_TOKEN_SECRET` | Base64 32-byte HMAC key for runtime callback tokens |
+| `RUNTIME_LOOKUP_TOKEN` | Shared internal auth token for runtime ↔ web endpoints |
 | `STRIPE_SECRET_KEY` | Stripe secret key (for billing features) |
 
 ---
@@ -303,12 +309,13 @@ All scripts are run from the **repository root** with `pnpm <script>`.
 
 ## Docker
 
-The `docker-compose.yml` provides a local Postgres 16 instance:
+The `docker-compose.yml` provides local Postgres + Redis:
 
 - **Host port**: `5433` (to avoid conflicts with any system-level Postgres on 5432)
 - **Database**: `hostfunc-db`
 - **User / Password**: `hostfunc` / `hostfunc`
-- **Persistence**: Data stored in a named Docker volume (`hostfunc-postgres`)
+- **Postgres persistence**: `hostfunc-postgres`
+- **Redis persistence**: `hostfunc-redis`
 
 ```bash
 # Start

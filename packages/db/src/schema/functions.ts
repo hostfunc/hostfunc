@@ -64,6 +64,9 @@ export const fnVersion = pgTable(
     backendHandle: text("backend_handle"),
     /** Warnings surfaced by the bundler, if any. */
     warnings: jsonb("warnings").$type<string[]>(),
+    /** Optional source map content for stack symbolication in ingest. */
+    sourceMap: text("source_map"),
+    sourceMapSha256: text("source_map_sha256"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     createdById: text("created_by_id")
       .notNull()
