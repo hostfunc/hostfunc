@@ -15,6 +15,20 @@
       "when": 1775847043151,
       "tag": "0001_classy_tempest",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776100000000,
+      "tag": "0002_component5_runtime",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1776100001000,
+      "tag": "0003_webhook_event",
+      "breakpoints": true
     }
   ]
 }

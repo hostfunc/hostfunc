@@ -1,0 +1,3 @@
+LOOKUP_API_URL=http://localhost:3000
+LOOKUP_API_TOKEN=replace-with-runtime-lookup-token
+WORKERS_SUBDOMAIN=replace-with-cloudflare-workers-subdomain

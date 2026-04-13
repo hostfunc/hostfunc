@@ -15,7 +15,8 @@ export type IdPrefix =
   | "sub"
   | "pln"
   | "use"
-  | "tok";
+  | "tok"
+  | "evt";
 
 export function genId(prefix: IdPrefix): string {
   return `${prefix}_${ulid()}`;

@@ -1,5 +1,12 @@
 import { env } from "@/lib/env";
+import { redis } from "@/lib/redis";
 import { findVersionIdForExecution, symbolicateStack } from "@/server/symbolicate";
+import {
+  markWebhookEventFailed,
+  markWebhookEventProcessed,
+  recordWebhookEvent,
+} from "@/server/webhook-events";
+import { CloudflareApi } from "@hostfunc/executor-cloudflare/api";
 import { db, genId, schema } from "@hostfunc/db";
 import { eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
@@ -25,6 +32,8 @@ interface IngestBody {
   errorMessage?: string | null;
   stack?: string | null;
   logs?: IngestLog[];
+  source?: string;
+  externalId?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -39,65 +48,112 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => null)) as IngestBody | null;
   if (!body?.executionId) return Response.json({ error: "invalid_body" }, { status: 400 });
+  const eventKey = body.externalId ?? body.executionId;
+  const event = await recordWebhookEvent({
+    source: body.source ?? "tail",
+    externalId: eventKey,
+    kind: "execution_ingest",
+    payload: body,
+  });
+  if (event.duplicate) return Response.json({ ok: true, duplicate: true });
 
-  const versionId = await findVersionIdForExecution(body.executionId);
-  const symbolicated = versionId ? await symbolicateStack(versionId, body.stack) : body.stack;
-
-  await db
-    .update(schema.execution)
-    .set({
-      status: body.status ?? "ok",
-      wallMs: body.wallMs ?? 0,
-      cpuMs: body.cpuMs ?? 0,
-      memoryPeakMb: body.memoryPeakMb ?? 0,
-      egressBytes: body.egressBytes ?? 0,
-      subrequestCount: body.subrequestCount ?? 0,
-      costUnits: body.costUnits ?? 0,
-      errorMessage: body.errorMessage ?? null,
-      endedAt: new Date(),
-    })
-    .where(eq(schema.execution.id, body.executionId));
-
-  if (symbolicated && body.errorMessage) {
-    await db.insert(schema.executionLog).values({
-      id: genId("log"),
-      executionId: body.executionId,
-      orgId:
-        (
-          await db
-            .select({ orgId: schema.execution.orgId })
-            .from(schema.execution)
-            .where(eq(schema.execution.id, body.executionId))
-            .limit(1)
-        )[0]?.orgId ?? "",
-      ts: new Date(),
-      level: "error",
-      message: body.errorMessage,
-      fields: { stack: symbolicated },
-    });
-  }
-
-  if (body.logs?.length) {
-    const exec = await db
+  try {
+    const execRows = await db
       .select({ orgId: schema.execution.orgId })
       .from(schema.execution)
       .where(eq(schema.execution.id, body.executionId))
       .limit(1);
-    const orgId = exec[0]?.orgId;
-    if (orgId) {
-      await db.insert(schema.executionLog).values(
-        body.logs.map((line) => ({
-          id: genId("log"),
-          executionId: body.executionId,
-          orgId,
-          ts: line.ts ? new Date(line.ts) : new Date(),
-          level: line.level,
-          message: line.message,
-          fields: line.fields,
-        })),
-      );
+    const orgId = execRows[0]?.orgId;
+    if (!orgId) {
+      await markWebhookEventFailed(event.id, "execution_not_found");
+      return Response.json({ error: "execution_not_found" }, { status: 404 });
     }
-  }
 
-  return Response.json({ ok: true });
+    const versionId = await findVersionIdForExecution(body.executionId);
+    const symbolicated = versionId ? await symbolicateStack(versionId, body.stack) : body.stack;
+    const egressBytes = await readEgressCounter(body.executionId, body.egressBytes ?? 0);
+
+    await db
+      .update(schema.execution)
+      .set({
+        status: body.status ?? "ok",
+        wallMs: Math.max(0, Math.round(body.wallMs ?? 0)),
+        cpuMs: Math.max(0, Math.round(body.cpuMs ?? 0)),
+        memoryPeakMb: Math.max(0, Math.round(body.memoryPeakMb ?? 0)),
+        egressBytes: Math.max(0, Math.round(egressBytes)),
+        subrequestCount: Math.max(0, body.subrequestCount ?? 0),
+        costUnits: Math.max(0, body.costUnits ?? 0),
+        errorMessage: body.errorMessage ?? null,
+        endedAt: new Date(),
+      })
+      .where(eq(schema.execution.id, body.executionId));
+
+    if (symbolicated && body.errorMessage) {
+      await db.insert(schema.executionLog).values({
+        id: genId("log"),
+        executionId: body.executionId,
+        orgId,
+        ts: new Date(),
+        level: "error",
+        message: body.errorMessage,
+        fields: { stack: symbolicated },
+      });
+    }
+
+    if (body.logs?.length) {
+      const values = body.logs.map((line) => ({
+        id: genId("log"),
+        executionId: body.executionId,
+        orgId,
+        ts: line.ts ? new Date(line.ts) : new Date(),
+        level: line.level,
+        message: line.message,
+        fields: line.fields,
+      }));
+      await db.insert(schema.executionLog).values(values);
+      for (const value of values) {
+        await publishLogLine(body.executionId, value.level, value.message, value.fields, value.ts);
+      }
+    }
+    await markWebhookEventProcessed(event.id);
+    return Response.json({ ok: true });
+  } catch (error) {
+    await markWebhookEventFailed(
+      event.id,
+      error instanceof Error ? error.message : "ingest_failed",
+    );
+    throw error;
+  }
+}
+
+async function publishLogLine(
+  executionId: string,
+  level: string,
+  message: string,
+  fields: Record<string, unknown> | null | undefined,
+  ts: Date,
+) {
+  const event = {
+    type: "log",
+    executionId,
+    level,
+    message,
+    fields: fields ?? undefined,
+    ts: ts.toISOString(),
+  };
+  await redis.publish(`logs:${executionId}`, JSON.stringify(event));
+}
+
+async function readEgressCounter(executionId: string, fallback: number): Promise<number> {
+  if (!env.CF_EGRESS_COUNTERS_KV_ID) return Math.max(0, Math.round(fallback));
+  try {
+    const api = new CloudflareApi({
+      accountId: env.CF_ACCOUNT_ID,
+      apiToken: env.CF_API_TOKEN,
+    });
+    const value = await api.getKvValue(env.CF_EGRESS_COUNTERS_KV_ID, `egress:${executionId}`);
+    return Math.max(0, Number(value ?? "0"));
+  } catch {
+    return Math.max(0, Math.round(fallback));
+  }
 }

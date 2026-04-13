@@ -71,6 +71,7 @@ export class CloudflareApi {
       compatibility_flags: ["nodejs_compat"],
       tags: input.tags ?? [],
       bindings: input.bindings ?? [],
+      ...(input.target.kind === "regular" ? { workers_dev: true } : {}),
     };
 
     const form = new FormData();
@@ -109,6 +110,15 @@ export class CloudflareApi {
         res.status,
         json.errors ?? [],
       );
+    }
+
+    if (input.target.kind === "regular") {
+      await this.enableScriptSubdomain(input.scriptName).catch((err) => {
+        console.warn(
+          `[cloudflare] failed to enable workers.dev subdomain for ${input.scriptName}:`,
+          err instanceof Error ? err.message : String(err),
+        );
+      });
     }
 
     return {
@@ -155,10 +165,53 @@ export class CloudflareApi {
     return { success: res.ok || res.status === 404 };
   }
 
+  async getKvValue(namespaceId: string, key: string): Promise<string | null> {
+    const url = `${CF_API}/accounts/${this.cfg.accountId}/storage/kv/namespaces/${namespaceId}/values/${encodeURIComponent(key)}`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${this.cfg.apiToken}` },
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      throw new CloudflareApiCallError(`kv get failed (${res.status})`, res.status, []);
+    }
+    return await res.text();
+  }
+
   private scriptUrl(target: UploadScriptInput["target"], scriptName: string): string {
     if (target.kind === "wfp") {
       return `${CF_API}/accounts/${this.cfg.accountId}/workers/dispatch/namespaces/${target.namespace}/scripts/${scriptName}`;
     }
     return `${CF_API}/accounts/${this.cfg.accountId}/workers/scripts/${scriptName}`;
+  }
+
+  private async enableScriptSubdomain(scriptName: string): Promise<void> {
+    const url = `${CF_API}/accounts/${this.cfg.accountId}/workers/scripts/${scriptName}/subdomain`;
+    let res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.cfg.apiToken}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ enabled: true, previews_enabled: true }),
+    });
+    if (!res.ok) {
+      // Long script names cannot use previews; retry with previews disabled.
+      res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.cfg.apiToken}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ enabled: true, previews_enabled: false }),
+      });
+    }
+    if (!res.ok) {
+      const text = await res.text();
+      throw new CloudflareApiCallError(
+        `enable subdomain failed (${res.status}): ${text}`,
+        res.status,
+        [],
+      );
+    }
   }
 }

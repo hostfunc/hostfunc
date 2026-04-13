@@ -22,6 +22,7 @@ const schema = z.object({
   CF_API_TOKEN: z.string().min(1),
   CF_DISPATCH_NAMESPACE: z.string().default("hostfunc-dev"),
   CF_FN_INDEX_KV_ID: z.string().optional(),
+  CF_EGRESS_COUNTERS_KV_ID: z.string().optional(),
   HOSTFUNC_USE_WFP: z
     .enum(["true", "false"])
     .default("false")

@@ -4,6 +4,7 @@ interface Env {
   ENV: string;
   LOOKUP_API_URL?: string;
   LOOKUP_API_TOKEN?: string;
+  WORKERS_SUBDOMAIN?: string;
   FN_INDEX?: KVNamespace;
   DISPATCHER?: DispatchNamespace;
 }
@@ -101,7 +102,7 @@ export default {
       const script = env.DISPATCHER?.get(lookup.scriptName);
       const upstream = script
         ? await script.fetch(upstreamReq)
-        : await fetch(resolveWorkerUrl(lookup.scriptName, req.url), upstreamReq);
+        : await fetch(resolveWorkerUrl(lookup.scriptName, req.url, env.WORKERS_SUBDOMAIN), upstreamReq);
       const out = new Response(upstream.body, upstream);
       out.headers.set("x-hostfunc-wall-ms", String(Date.now() - start));
       out.headers.set("x-hostfunc-exec-id", execId);
@@ -134,8 +135,14 @@ export default {
   },
 };
 
-function resolveWorkerUrl(scriptName: string, requestUrl: string): string {
+function resolveWorkerUrl(scriptName: string, requestUrl: string, workersSubdomain?: string): string {
   const incoming = new URL(requestUrl);
+  if (incoming.hostname === "localhost" || incoming.hostname === "127.0.0.1") {
+    if (!workersSubdomain) {
+      return `https://${scriptName}.workers.dev${incoming.pathname}${incoming.search}`;
+    }
+    return `https://${scriptName}.${workersSubdomain}.workers.dev${incoming.pathname}${incoming.search}`;
+  }
   incoming.hostname = `${scriptName}.${incoming.hostname}`;
   return incoming.toString();
 }

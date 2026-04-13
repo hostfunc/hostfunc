@@ -9,3 +9,11 @@ ENV = "dev"
 [[kv_namespaces]]
 binding = "FN_INDEX"
 id = "local-fn-index"
+
+[[kv_namespaces]]
+binding = "EGRESS_COUNTERS"
+id = "local-egress-counters"
+
+[[dispatch_namespaces]]
+binding = "DISPATCHER"
+namespace = "hostfunc-dev"

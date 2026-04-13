@@ -6,4 +6,5 @@ export * from "./secrets.js";
 export * from "./executions.js";
 export * from "./billing.js";
 export * from "./tokens.js";
+export * from "./webhook.js";
 export * from "./relations.js";

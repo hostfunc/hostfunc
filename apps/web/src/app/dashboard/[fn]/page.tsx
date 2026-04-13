@@ -2,7 +2,7 @@ import { FunctionEditor } from "@/components/editor/function-editor";
 import { Button } from "@/components/ui/button";
 import { requireActiveOrg } from "@/lib/session";
 import { getDraft, getFunctionForOrg } from "@/server/functions";
-import { Settings } from "lucide-react";
+import { Activity, Settings } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -27,6 +27,12 @@ export default async function FunctionEditorPage({
           <p className="text-xs text-muted-foreground">{fn.description || "No description"}</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/dashboard/${fnId}/executions`}>
+              <Activity className="mr-2 h-4 w-4" />
+              Executions
+            </Link>
+          </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href={`/dashboard/${fnId}/settings`}>
               <Settings className="mr-2 h-4 w-4" />

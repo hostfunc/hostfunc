@@ -5,3 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ALLOW_HOSTS = "api.resend.com,api.stripe.com,discord.com,discordapp.com"
+
+[[kv_namespaces]]
+binding = "EGRESS_COUNTERS"
+id = "local-egress-counters"

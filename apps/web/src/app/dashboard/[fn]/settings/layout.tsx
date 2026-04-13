@@ -1,7 +1,7 @@
 "use client";
 
 import { SettingsLayout } from "@/components/settings/settings-layout";
-import { Key, Settings, Zap } from "lucide-react";
+import { Activity, Key, Settings, Zap } from "lucide-react";
 import { use } from "react";
 
 export default function FunctionSettingsLayout({
@@ -28,6 +28,11 @@ export default function FunctionSettingsLayout({
       title: "Triggers",
       href: `/dashboard/${fn}/settings/triggers`,
       icon: Zap,
+    },
+    {
+      title: "Executions",
+      href: `/dashboard/${fn}/executions`,
+      icon: Activity,
     },
   ];
 

@@ -39,4 +39,5 @@ pnpm-debug.log*
 
 # local runtime/dev artifacts
 apps/runtime/.wrangler/
+apps/runtime/.dev.vars
 dev/
