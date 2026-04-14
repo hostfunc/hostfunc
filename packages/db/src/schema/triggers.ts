@@ -21,10 +21,10 @@ export const triggerKindEnum = pgEnum("trigger_kind", ["http", "cron", "email", 
  *  mcp    — { toolName: string, description: string }
  */
 export interface TriggerConfig {
-  http?: { requireAuth: boolean };
-  cron?: { schedule: string; timezone?: string };
-  email?: { address: string; allowlist?: string[] };
-  mcp?: { toolName: string; description: string };
+  http?: { requireAuth: boolean } | undefined;
+  cron?: { schedule: string; timezone?: string | undefined } | undefined;
+  email?: { address: string; allowlist?: string[] | undefined } | undefined;
+  mcp?: { toolName: string; description: string } | undefined;
 }
 
 export const trigger = pgTable(

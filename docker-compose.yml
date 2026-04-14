@@ -31,6 +31,35 @@ services:
       timeout: 3s
       retries: 5
 
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: hostfunc-web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://hostfunc:hostfunc@postgres:5432/hostfunc-db
+      REDIS_URL: redis://redis:6379
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-dev-better-auth-secret-dev-better-auth-secret}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@hostfunc.dev}
+      SECRETS_MASTER_KEY: ${SECRETS_MASTER_KEY:-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}
+      EXEC_TOKEN_SECRET: ${EXEC_TOKEN_SECRET:-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=}
+      RUNTIME_LOOKUP_TOKEN: ${RUNTIME_LOOKUP_TOKEN:-dev-lookup-token}
+      RUNTIME_INGEST_TOKEN: ${RUNTIME_INGEST_TOKEN:-dev-ingest-token}
+      TRIGGER_CONTROL_TOKEN: ${TRIGGER_CONTROL_TOKEN:-dev-trigger-token}
+      HOSTFUNC_MAIL_DOMAIN: ${HOSTFUNC_MAIL_DOMAIN:-mail.hostfunc.dev}
+      HOSTFUNC_RUNTIME_URL: ${HOSTFUNC_RUNTIME_URL:-http://localhost:8787}
+      HOSTFUNC_EXECUTOR: ${HOSTFUNC_EXECUTOR:-local}
+
 volumes:
   hostfunc-postgres:
   hostfunc-redis:

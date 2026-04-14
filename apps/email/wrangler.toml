@@ -1,0 +1,8 @@
+name = "hostfunc-email"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+CONTROL_PLANE_URL = "http://localhost:3000"
+CONTROL_PLANE_TOKEN = "dev-trigger-token"

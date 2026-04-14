@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
     orgId?: string;
     parentExecutionId?: string | null;
     callDepth?: number;
+    triggerKind?: "http" | "cron" | "email" | "mcp" | "fn_call";
   } | null;
 
   if (!body?.execId || !body.fnId || !body.versionId || !body.orgId) {
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
     fnId: body.fnId,
     versionId: body.versionId,
     orgId: body.orgId,
-    triggerKind: body.parentExecutionId ? "fn_call" : "http",
+    triggerKind: body.parentExecutionId ? "fn_call" : (body.triggerKind ?? "http"),
     status: "infra_error",
     parentExecutionId: body.parentExecutionId ?? null,
     callDepth: body.callDepth ?? 0,

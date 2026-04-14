@@ -1,0 +1,51 @@
+{
+  "name": "@hostfunc/cli",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Hostfunc CLI for deploying and running tiny composable TypeScript functions.",
+  "license": "AGPL-3.0-only",
+  "homepage": "https://github.com/mattcfleming/hostfunc#readme",
+  "bugs": {
+    "url": "https://github.com/mattcfleming/hostfunc/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mattcfleming/hostfunc.git",
+    "directory": "packages/cli"
+  },
+  "keywords": [
+    "hostfunc",
+    "serverless",
+    "functions",
+    "cli"
+  ],
+  "type": "module",
+  "bin": {
+    "hostfunc": "./dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "pnpm build && node --test dist/**/*.test.js",
+    "smoke:pack": "pnpm build && pnpm pack --pack-destination .tmp"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.3"
+  }
+}

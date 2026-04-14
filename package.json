@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Open-source platform for tiny composable TypeScript functions",
-  "license": "Apache-2.0",
+  "license": "AGPL-3.0-only",
   "author": "Matt <you@example.com>",
   "repository": {
     "type": "git",
@@ -18,6 +18,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "dev:web": "turbo run dev --filter=@hostfunc/web",
+    "dev:docs": "turbo run dev --filter=@hostfunc/docs",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "lint": "biome check .",

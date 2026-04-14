@@ -1,5 +1,30 @@
 ## Summary
 
+<!-- Explain what changed and why. -->
+
+## Changes
+
+- 
+- 
+
+## Test plan
+
+- [ ] `pnpm lint`
+- [ ] `pnpm typecheck`
+- [ ] `pnpm test`
+- [ ] Manually tested relevant user flows
+
+## Risk assessment
+
+- [ ] No breaking changes
+- [ ] Breaking changes documented (if any)
+- [ ] Migrations required (if any)
+
+## Linked issues
+
+Closes #
+## Summary
+
 <!-- Explain the change and why it is needed. -->
 
 ## Changes

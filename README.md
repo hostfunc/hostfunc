@@ -16,7 +16,7 @@
 Write a function. Deploy in seconds. Trigger via HTTP, cron, email, or AI agents.  
 Self-host on your own cloud or use the managed version.
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
+[![License: AGPL-3.0-only](https://img.shields.io/badge/License-AGPL--3.0--only-blue.svg)](./LICENSE)
 [![Status: Pre-Alpha](https://img.shields.io/badge/Status-Pre--Alpha-orange.svg)](#)
 [![Node ≥22](https://img.shields.io/badge/Node-%E2%89%A522.0.0-brightgreen.svg)](https://nodejs.org)
 [![pnpm ≥9](https://img.shields.io/badge/pnpm-%E2%89%A59.0.0-F69220.svg)](https://pnpm.io)
@@ -198,6 +198,27 @@ The shim communicates with the control plane via internal headers (`x-hostfunc-e
 | [pnpm](https://pnpm.io) | ≥ 9.0.0 |
 | [Docker](https://docker.com) | Any recent version |
 
+### CLI Quickstart
+
+Install the CLI (public npm package):
+
+```bash
+npm install -g @hostfunc/cli
+```
+
+Authenticate and deploy your first function:
+
+```bash
+hostfunc login --token <api-token> --url http://localhost:3000
+hostfunc init --fnId <fn_id>
+hostfunc deploy
+hostfunc run --payload ./payload.json
+```
+
+Supported CLI runtime:
+- Node.js `>=22`
+- No telemetry is collected by the CLI
+
 ### One-Command Setup
 
 ```bash
@@ -357,7 +378,7 @@ Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for 
 
 ## License
 
-[Apache 2.0](./LICENSE) — free to use, modify, and self-host.
+[AGPL-3.0-only](./LICENSE) — open source with copyleft requirements.
 
 ---
 

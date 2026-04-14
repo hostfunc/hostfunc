@@ -1,0 +1,12 @@
+name = "hostfunc-cron"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+CONTROL_PLANE_URL = "http://localhost:3000"
+CONTROL_PLANE_TOKEN = "dev-trigger-token"
+HOSTFUNC_RUNTIME_URL = "http://localhost:8787"

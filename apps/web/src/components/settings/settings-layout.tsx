@@ -31,7 +31,7 @@ export function SettingsLayout({
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full flex-col space-y-8 lg:flex-row lg:space-y-0 lg:space-x-12">
+    <div className="flex h-full flex-col space-y-6 lg:flex-row lg:space-y-0 lg:space-x-6">
       <aside className="lg:w-1/4 xl:w-1/5 flex-shrink-0">
         <div className="mb-8">
           {backHref && (
@@ -90,7 +90,7 @@ export function SettingsLayout({
           })}
         </nav>
       </aside>
-      <div className="flex-1 lg:max-w-4xl">
+      <div className="flex-1 lg:max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

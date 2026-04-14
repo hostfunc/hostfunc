@@ -18,8 +18,8 @@ const schema = z.object({
     .describe("32 bytes, base64-encoded. Generate with: openssl rand -base64 32"),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
-  CF_ACCOUNT_ID: z.string().min(1),
-  CF_API_TOKEN: z.string().min(1),
+  CF_ACCOUNT_ID: z.string().min(1).optional(),
+  CF_API_TOKEN: z.string().min(1).optional(),
   CF_DISPATCH_NAMESPACE: z.string().default("hostfunc-dev"),
   CF_FN_INDEX_KV_ID: z.string().optional(),
   CF_EGRESS_COUNTERS_KV_ID: z.string().optional(),
@@ -30,6 +30,9 @@ const schema = z.object({
   HOSTFUNC_RUNTIME_URL: z.string().url(),
   RUNTIME_LOOKUP_TOKEN: z.string().min(1),
   RUNTIME_INGEST_TOKEN: z.string().min(1).default("dev-ingest-token"),
+  TRIGGER_CONTROL_TOKEN: z.string().min(1).default("dev-trigger-token"),
+  HOSTFUNC_MAIL_DOMAIN: z.string().default("mail.hostfunc.dev"),
+  HOSTFUNC_EXECUTOR: z.enum(["auto", "cloudflare", "local"]).default("auto"),
   MCP_ALLOWED_ORIGINS: z.string().optional(),
 });
 

@@ -2,7 +2,7 @@
   "name": "@hostfunc/mcp-tools",
   "version": "0.0.0",
   "description": "Shared MCP tool definitions and schemas",
-  "license": "Apache-2.0",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

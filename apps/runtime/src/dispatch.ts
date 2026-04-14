@@ -80,6 +80,13 @@ export default {
       orgId: lookup.orgId,
       parentExecutionId: req.headers.get("x-hostfunc-parent-exec"),
       callDepth: callChain.length,
+      triggerKind: (req.headers.get("x-hostfunc-trigger-kind") as
+        | "http"
+        | "cron"
+        | "email"
+        | "mcp"
+        | "fn_call"
+        | null) ?? "http",
     }).catch(() => undefined);
 
     ctx.waitUntil(
@@ -196,6 +203,7 @@ async function startExecutionRecord(
     orgId: string;
     parentExecutionId: string | null;
     callDepth: number;
+    triggerKind: "http" | "cron" | "email" | "mcp" | "fn_call";
   },
 ) {
   if (!env.LOOKUP_API_URL || !env.LOOKUP_API_TOKEN) return;

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { CloudflareExecutor } from "@hostfunc/executor-cloudflare";
-import type { ExecutorBackend } from "@hostfunc/executor-core";
+import { LocalExecutor, type ExecutorBackend } from "@hostfunc/executor-core";
 import { env } from "@/lib/env";
 
 declare global {
@@ -9,6 +9,15 @@ declare global {
 }
 
 function build(): ExecutorBackend {
+  const shouldUseLocal =
+    env.HOSTFUNC_EXECUTOR === "local" ||
+    (env.HOSTFUNC_EXECUTOR === "auto" && (!env.CF_ACCOUNT_ID || !env.CF_API_TOKEN));
+  if (shouldUseLocal) return new LocalExecutor();
+
+  if (!env.CF_ACCOUNT_ID || !env.CF_API_TOKEN) {
+    throw new Error("Cloudflare executor selected but CF credentials are missing");
+  }
+
   return new CloudflareExecutor({
     accountId: env.CF_ACCOUNT_ID,
     apiToken: env.CF_API_TOKEN,

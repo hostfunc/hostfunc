@@ -28,7 +28,7 @@ export default function GeneralOrgSettingsPage() {
           </SettingsCardDescription>
         </SettingsCardHeader>
         <SettingsCardContent>
-          <div className="grid gap-2 max-w-sm">
+          <div className="grid gap-2 max-w-6xl">
             <Label htmlFor="orgName" className="sr-only">
               Name
             </Label>
@@ -48,7 +48,7 @@ export default function GeneralOrgSettingsPage() {
           </SettingsCardDescription>
         </SettingsCardHeader>
         <SettingsCardContent>
-          <div className="grid gap-2 max-w-sm">
+          <div className="grid gap-2 max-w-6xl">
             <Label htmlFor="orgSlug" className="sr-only">
               Slug
             </Label>

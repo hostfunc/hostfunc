@@ -11,6 +11,9 @@ export default {
     if (!target) return Response.json({ error: "missing_target_url" }, { status: 400 });
 
     const targetUrl = new URL(target);
+    if (isBlockedPrivateTarget(targetUrl.hostname)) {
+      return Response.json({ error: "egress_blocked_private_host" }, { status: 403 });
+    }
     const allowlist = (env.ALLOW_HOSTS ?? "")
       .split(",")
       .map((host) => host.trim())
@@ -58,4 +61,16 @@ async function countStream(
   } catch {
     // Best-effort.
   }
+}
+
+function isBlockedPrivateTarget(hostname: string): boolean {
+  if (hostname === "localhost") return true;
+  if (hostname.startsWith("127.")) return true;
+  if (hostname.startsWith("10.")) return true;
+  if (hostname.startsWith("192.168.")) return true;
+  if (hostname.startsWith("172.")) {
+    const second = Number(hostname.split(".")[1] ?? "");
+    if (Number.isFinite(second) && second >= 16 && second <= 31) return true;
+  }
+  return false;
 }

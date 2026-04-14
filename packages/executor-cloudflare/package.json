@@ -2,7 +2,7 @@
   "name": "@hostfunc/executor-cloudflare",
   "version": "0.0.0",
   "description": "Cloudflare Workers for Platforms backend for hostfunc",
-  "license": "Apache-2.0",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

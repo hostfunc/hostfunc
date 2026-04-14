@@ -9,10 +9,13 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
+type AuthStep = "options" | "email";
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [pending, setPending] = useState(false);
+  const [authStep, setAuthStep] = useState<AuthStep>("options");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,14 +36,26 @@ export default function LoginPage() {
     }
   }
 
+  async function onSocialClick(provider: "github" | "google") {
+    setPending(true);
+    try {
+      await signIn.social({
+        provider,
+        callbackURL: "/dashboard",
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unable to continue with social login";
+      toast.error(msg);
+      setPending(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 relative overflow-hidden text-slate-200">
-      {/* Background Visuals */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/10 blur-[120px] pointer-events-none" />
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none" />
 
-      {/* Top Left Navigation Header */}
       <div className="absolute top-0 left-0 w-full p-6">
         <Link href="/" className="flex items-center gap-2 group w-max">
           <div className="bg-primary/20 p-1.5 rounded-lg text-primary transition-transform group-hover:scale-110 duration-300">
@@ -60,69 +75,105 @@ export default function LoginPage() {
           <div className="text-center mb-8">
             <h1 className="text-2xl font-semibold text-white tracking-tight">Welcome back</h1>
             <p className="text-sm text-muted-foreground mt-2">
-              Enter your email to sign in or create an account.
+              Choose a sign-in method to continue.
             </p>
           </div>
 
           <AnimatePresence mode="wait">
             {!sent ? (
-              <motion.form
-                key="login-form"
-                onSubmit={onSubmit}
-                className="space-y-4"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="space-y-2">
-                  <div className="relative flex items-center">
-                    <Mail className="absolute left-4 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@example.com"
-                      className="h-12 pl-11 bg-black/40 border-white/10 text-white focus-visible:ring-primary focus-visible:border-primary transition-all placeholder:text-muted-foreground/50 rounded-xl"
-                      required
-                      autoFocus
-                      disabled={pending}
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full h-12 rounded-xl text-sm font-semibold group mt-4 relative overflow-hidden transition-all bg-white text-black hover:bg-white/90"
-                  disabled={pending || !email}
+              authStep === "options" ? (
+                <motion.div
+                  key="login-options"
+                  className="space-y-3"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <span className="relative z-10 flex items-center justify-center">
-                    {pending ? (
-                      <>
-                        <Loader2 className="mr-2 w-4 h-4 animate-spin" /> Sending Link...
-                      </>
-                    ) : (
-                      <>
-                        Continue with Email{" "}
-                        <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </>
-                    )}
-                  </span>
-                </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-12 rounded-xl bg-white/5 border-white/10 text-white hover:bg-white/10"
+                    disabled={pending}
+                    onClick={() => onSocialClick("github")}
+                  >
+                    Continue with GitHub
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-12 rounded-xl bg-white/5 border-white/10 text-white hover:bg-white/10"
+                    disabled={pending}
+                    onClick={() => onSocialClick("google")}
+                  >
+                    Continue with Google
+                  </Button>
+                  <Button
+                    type="button"
+                    className="w-full h-12 rounded-xl text-sm font-semibold group bg-white text-black hover:bg-white/90"
+                    disabled={pending}
+                    onClick={() => setAuthStep("email")}
+                  >
+                    Continue with Email
+                  </Button>
+                </motion.div>
+              ) : (
+                <motion.form
+                  key="login-form"
+                  onSubmit={onSubmit}
+                  className="space-y-4"
+                  initial={{ opacity: 0, x: 12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -12 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="space-y-2">
+                    <div className="relative flex items-center">
+                      <Mail className="absolute left-4 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="name@example.com"
+                        className="h-12 pl-11 bg-black/40 border-white/10 text-white focus-visible:ring-primary focus-visible:border-primary transition-all placeholder:text-muted-foreground/50 rounded-xl"
+                        required
+                        autoFocus
+                        disabled={pending}
+                      />
+                    </div>
+                  </div>
 
-                <p className="text-center text-[11px] text-muted-foreground pt-4">
-                  By continuing, you agree to our{" "}
-                  <Link href="#" className="underline hover:text-white transition-colors">
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link href="#" className="underline hover:text-white transition-colors">
-                    Privacy Policy
-                  </Link>
-                  .
-                </p>
-              </motion.form>
+                  <Button
+                    type="submit"
+                    className="w-full h-12 rounded-xl text-sm font-semibold group mt-4 relative overflow-hidden transition-all bg-white text-black hover:bg-white/90"
+                    disabled={pending || !email}
+                  >
+                    <span className="relative z-10 flex items-center justify-center">
+                      {pending ? (
+                        <>
+                          <Loader2 className="mr-2 w-4 h-4 animate-spin" /> Sending Link...
+                        </>
+                      ) : (
+                        <>
+                          Continue with Email{" "}
+                          <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </>
+                      )}
+                    </span>
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    type="button"
+                    className="w-full h-10 text-xs hover:bg-white/5"
+                    disabled={pending}
+                    onClick={() => setAuthStep("options")}
+                  >
+                    Back to sign-in options
+                  </Button>
+                </motion.form>
+              )
             ) : (
               <motion.div
                 key="success-message"
@@ -151,7 +202,10 @@ export default function LoginPage() {
                     variant="ghost"
                     type="button"
                     className="text-xs mt-4 hover:bg-white/5"
-                    onClick={() => setSent(false)}
+                    onClick={() => {
+                      setSent(false);
+                      setAuthStep("options");
+                    }}
                   >
                     Use a different email
                   </Button>
@@ -159,6 +213,18 @@ export default function LoginPage() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          <p className="text-center text-[11px] text-muted-foreground pt-6">
+            By continuing, you agree to our{" "}
+            <Link href="#" className="underline hover:text-white transition-colors">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="#" className="underline hover:text-white transition-colors">
+              Privacy Policy
+            </Link>
+            .
+          </p>
         </div>
       </motion.div>
     </main>

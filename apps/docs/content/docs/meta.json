@@ -1,0 +1,14 @@
+{
+  "title": "Hostfunc Docs",
+  "description": "Operational and product documentation for hostfunc launch.",
+  "sections": [
+    {
+      "title": "Getting Started",
+      "pages": ["getting-started/install", "getting-started/quickstart"]
+    },
+    {
+      "title": "Concepts",
+      "pages": ["concepts/architecture"]
+    }
+  ]
+}

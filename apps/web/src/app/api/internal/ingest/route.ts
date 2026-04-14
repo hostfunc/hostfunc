@@ -145,7 +145,9 @@ async function publishLogLine(
 }
 
 async function readEgressCounter(executionId: string, fallback: number): Promise<number> {
-  if (!env.CF_EGRESS_COUNTERS_KV_ID) return Math.max(0, Math.round(fallback));
+  if (!env.CF_EGRESS_COUNTERS_KV_ID || !env.CF_ACCOUNT_ID || !env.CF_API_TOKEN) {
+    return Math.max(0, Math.round(fallback));
+  }
   try {
     const api = new CloudflareApi({
       accountId: env.CF_ACCOUNT_ID,

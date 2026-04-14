@@ -42,7 +42,7 @@ export default function OrgSettingsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="container mx-auto p-6 md:p-10 max-w-7xl">
+    <div className="container mx-auto p-6 md:p-10 max-w-6xl">
       <SettingsLayout
         title="Organization Settings"
         description="Manage your organization's configurations, members, and billing details."

@@ -22,6 +22,10 @@ function err(id: JsonRpcRequest["id"], code: number, message: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const contentType = req.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    return Response.json({ error: "unsupported_media_type" }, { status: 415 });
+  }
   if (!isAllowedMcpOrigin(req.headers.get("origin"))) {
     return Response.json({ error: "forbidden_origin" }, { status: 403 });
   }
@@ -33,6 +37,9 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => null)) as JsonRpcRequest | null;
   if (!body?.method) return err(null, -32600, "invalid_request");
+  if (body.params && JSON.stringify(body.params).length > 50_000) {
+    return err(body.id ?? null, -32600, "request_too_large");
+  }
 
   if (body.method === "initialize") {
     return ok(body.id ?? null, {

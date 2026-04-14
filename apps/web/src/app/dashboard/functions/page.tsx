@@ -22,7 +22,7 @@ export default async function FunctionsExplorerPage({
   const functions = await searchFunctionsForOrg(orgId, query, visibility);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
+    <div className="space-y-6 animate-in fade-in duration-500 max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Functions Explorer</h1>
