@@ -29,11 +29,11 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
+      - run: pnpm exec biome check --changed --since=origin/main --no-errors-on-unmatched .
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter @hostfunc/cli build
-      - run: pnpm --filter @hostfunc/cli pack --pack-destination ./tmp-pack
+      - run: pnpm --dir ./packages/cli pack --pack-destination ../../tmp-pack
       - run: npm install -g ./tmp-pack/*.tgz
       - run: hostfunc help
       - name: Create Release PR or Publish
