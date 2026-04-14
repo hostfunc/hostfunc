@@ -34,12 +34,26 @@ export function MonacoEditor({ value, onChange, onSave }: Props) {
       allowSyntheticDefaultImports: true,
       isolatedModules: true,
       noUncheckedIndexedAccess: true,
+      allowNonTsExtensions: true,
+      resolveJsonModule: true,
+      noEmit: true,
       lib: ["es2022", "dom"],
     });
+    monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: false,
+      noSyntaxValidation: false,
+      noSuggestionDiagnostics: false,
+    });
+    monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
+
+    const formatAndSave = async () => {
+      await editor.getAction("editor.action.formatDocument")?.run();
+      onSave?.();
+    };
 
     // Cmd/Ctrl + S to save
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-      onSave?.();
+      void formatAndSave();
     });
   };
 
@@ -62,6 +76,16 @@ export function MonacoEditor({ value, onChange, onSave }: Props) {
         renderLineHighlight: "all",
         formatOnPaste: true,
         formatOnType: true,
+        autoIndent: "full",
+        wordWrap: "on",
+        wrappingIndent: "same",
+        bracketPairColorization: { enabled: true },
+        suggestOnTriggerCharacters: true,
+        quickSuggestions: {
+          comments: true,
+          other: true,
+          strings: true,
+        },
         tabSize: 2,
         automaticLayout: true,
       }}

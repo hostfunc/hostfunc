@@ -1,14 +1,25 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import type { LucideIcon } from "lucide-react";
+import { Blocks, Bot, CreditCard, KeyRound, Settings, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type * as React from "react";
 
+const SETTINGS_ICONS = {
+  settings: Settings,
+  users: Users,
+  creditCard: CreditCard,
+  blocks: Blocks,
+  keyRound: KeyRound,
+  bot: Bot,
+} as const satisfies Record<string, LucideIcon>;
+
 export interface SettingsNavItem {
   title: string;
   href: string;
-  icon?: LucideIcon;
+  icon?: keyof typeof SETTINGS_ICONS | LucideIcon;
 }
 
 interface SettingsLayoutProps {
@@ -63,6 +74,11 @@ export function SettingsLayout({
         <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+            const Icon = item.icon
+              ? typeof item.icon === "string"
+                ? SETTINGS_ICONS[item.icon]
+                : item.icon
+              : null;
             return (
               <Link
                 key={item.href}
@@ -82,7 +98,7 @@ export function SettingsLayout({
                   />
                 )}
                 <span className="relative z-10 flex items-center">
-                  {item.icon && <item.icon className="mr-2 h-4 w-4" />}
+                  {Icon ? <Icon className="mr-2 h-4 w-4" /> : null}
                   {item.title}
                 </span>
               </Link>

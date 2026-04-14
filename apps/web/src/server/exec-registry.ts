@@ -1,7 +1,10 @@
 import "server-only";
 
 import { type ExecTokenPayload, signExecToken, verifyExecToken } from "@/lib/exec-token";
+import { db, schema } from "@hostfunc/db";
+import { and, eq, gte, sql } from "drizzle-orm";
 import { redis } from "@/lib/redis";
+import { getOrgPlan } from "./plan";
 
 const EXEC_KEY_PREFIX = "exec:";
 
@@ -28,8 +31,32 @@ export interface ActiveExecution {
 export async function registerExecution(input: RegisterExecutionInput): Promise<{
   token: string;
   expiresAt: number;
+  maxCallDepth: number;
+  wallMs: number;
 }> {
-  const expiresAt = Date.now() + input.wallMs + 5_000;
+  const orgPlan = await getOrgPlan(input.orgId);
+  const maxCallDepth = orgPlan?.limits.maxCallDepth ?? 3;
+  const maxWallMs = orgPlan?.limits.maxWallMs ?? input.wallMs;
+  const maxExecutionsPerDay = orgPlan?.limits.maxExecutionsPerDay ?? 100;
+
+  const dayStartUtc = new Date();
+  dayStartUtc.setUTCHours(0, 0, 0, 0);
+  const executionsToday = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(schema.execution)
+    .where(and(eq(schema.execution.orgId, input.orgId), gte(schema.execution.startedAt, dayStartUtc)))
+    .limit(1);
+  const todayCount = executionsToday[0]?.count ?? 0;
+  if (todayCount >= maxExecutionsPerDay) {
+    throw new Error("daily_execution_limit_exceeded");
+  }
+
+  if (input.callChain.length >= maxCallDepth) {
+    throw new Error("max_call_depth_exceeded");
+  }
+
+  const wallMs = Math.max(1000, Math.min(input.wallMs, maxWallMs));
+  const expiresAt = Date.now() + wallMs + 5_000;
   const ttlSeconds = Math.max(1, Math.ceil((expiresAt - Date.now()) / 1000));
 
   const active: ActiveExecution = {
@@ -48,7 +75,7 @@ export async function registerExecution(input: RegisterExecutionInput): Promise<
     expiresAt,
   });
 
-  return { token, expiresAt };
+  return { token, expiresAt, maxCallDepth, wallMs };
 }
 
 export async function unregisterExecution(execId: string): Promise<void> {

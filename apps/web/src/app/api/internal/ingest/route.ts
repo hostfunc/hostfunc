@@ -34,6 +34,7 @@ interface IngestBody {
   logs?: IngestLog[];
   source?: string;
   externalId?: string;
+  eventType?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -48,9 +49,10 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => null)) as IngestBody | null;
   if (!body?.executionId) return Response.json({ error: "invalid_body" }, { status: 400 });
-  const eventKey = body.externalId ?? body.executionId;
+  const source = body.source ?? "tail";
+  const eventKey = body.externalId ?? `${body.executionId}:${source}:${body.eventType ?? "final"}`;
   const event = await recordWebhookEvent({
-    source: body.source ?? "tail",
+    source,
     externalId: eventKey,
     kind: "execution_ingest",
     payload: body,
@@ -88,16 +90,33 @@ export async function POST(req: NextRequest) {
       })
       .where(eq(schema.execution.id, body.executionId));
 
+    await db.insert(schema.usageEvent).values({
+      id: genId("use"),
+      orgId,
+      kind: "execution",
+      quantity: 1,
+      executionId: body.executionId,
+      ts: new Date(),
+    });
+
     if (symbolicated && body.errorMessage) {
-      await db.insert(schema.executionLog).values({
+      const symbolicatedRow = {
         id: genId("log"),
         executionId: body.executionId,
         orgId,
         ts: new Date(),
-        level: "error",
+        level: "error" as const,
         message: body.errorMessage,
         fields: { stack: symbolicated },
-      });
+      };
+      await db.insert(schema.executionLog).values(symbolicatedRow);
+      await publishLogLine(
+        body.executionId,
+        symbolicatedRow.level,
+        symbolicatedRow.message,
+        symbolicatedRow.fields,
+        symbolicatedRow.ts,
+      );
     }
 
     if (body.logs?.length) {

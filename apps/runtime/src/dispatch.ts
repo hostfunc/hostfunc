@@ -26,6 +26,8 @@ interface FnLookupError {
 interface RegisterResponse {
   token: string;
   expiresAt: number;
+  maxCallDepth?: number;
+  wallMs?: number;
 }
 
 interface CallChainFrame {
@@ -101,6 +103,7 @@ export default {
         execToken: registration.token,
         controlPlane: env.LOOKUP_API_URL ?? "",
         callChain,
+        maxCallDepth: registration.maxCallDepth ?? DEFAULT_MAX_CALL_DEPTH,
       }),
     });
 
@@ -119,6 +122,20 @@ export default {
           status: upstream.ok ? "ok" : "fn_error",
           wallMs: Date.now() - start,
           errorMessage: upstream.ok ? null : "function returned non-ok response",
+          source: "runtime",
+          externalId: `${execId}:runtime:final`,
+          logs: [
+            {
+              level: upstream.ok ? "info" : "error",
+              message: upstream.ok ? "Execution completed successfully." : "Execution returned non-ok response.",
+              fields: {
+                status: upstream.status,
+                statusText: upstream.statusText,
+                wallMs: Date.now() - start,
+              },
+              ts: new Date().toISOString(),
+            },
+          ],
         }).catch(() => undefined),
       );
       for (const [k, v] of Object.entries(corsHeaders())) {
@@ -132,6 +149,19 @@ export default {
           status: "infra_error",
           wallMs: Date.now() - start,
           errorMessage: e instanceof Error ? e.message : String(e),
+          source: "runtime",
+          externalId: `${execId}:runtime:error`,
+          logs: [
+            {
+              level: "error",
+              message: "Runtime dispatch failed before function response.",
+              fields: {
+                wallMs: Date.now() - start,
+                error: e instanceof Error ? e.message : String(e),
+              },
+              ts: new Date().toISOString(),
+            },
+          ],
         }).catch(() => undefined),
       );
       return json(
@@ -162,6 +192,7 @@ function withHostfuncHeaders(
     execToken: string;
     controlPlane: string;
     callChain: CallChainFrame[];
+    maxCallDepth: number;
   },
 ): Headers {
   const headers = new Headers(inbound);
@@ -171,7 +202,7 @@ function withHostfuncHeaders(
   headers.set("x-hostfunc-exec-token", input.execToken);
   headers.set("x-hostfunc-control-plane", input.controlPlane);
   headers.set("x-hostfunc-call-chain", JSON.stringify(input.callChain));
-  headers.set("x-hostfunc-max-call-depth", String(DEFAULT_MAX_CALL_DEPTH));
+  headers.set("x-hostfunc-max-call-depth", String(input.maxCallDepth));
   return headers;
 }
 
@@ -281,6 +312,14 @@ async function ingestExecution(
     status: "ok" | "fn_error" | "limit_exceeded" | "infra_error";
     wallMs: number;
     errorMessage?: string | null;
+    logs?: Array<{
+      level: "debug" | "info" | "warn" | "error";
+      message: string;
+      fields?: Record<string, unknown>;
+      ts?: string;
+    }>;
+    source?: string;
+    externalId?: string;
   },
 ) {
   if (!env.LOOKUP_API_URL || !env.LOOKUP_API_TOKEN) return;

@@ -4,7 +4,7 @@ compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 
 [triggers]
-crons = ["* * * * *"]
+crons = ["* * * * *", "0 0 * * *"]
 
 [vars]
 CONTROL_PLANE_URL = "http://localhost:3000"

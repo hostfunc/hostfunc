@@ -39,7 +39,7 @@ export const auth = betterAuth({
     }),
     organization({
       allowUserToCreateOrganization: true,
-      organizationLimit: 5,
+      organizationLimit: 1,
     }),
   ],
   databaseHooks: {

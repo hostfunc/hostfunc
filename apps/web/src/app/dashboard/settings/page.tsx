@@ -6,11 +6,20 @@ import {
   SettingsCardHeader,
   SettingsCardTitle,
 } from "@/components/settings/settings-card";
+import { requireActiveOrg } from "@/lib/session";
+import { db, schema } from "@hostfunc/db";
 import { Button } from "@/components/ui/button";
+import { eq } from "drizzle-orm";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function GeneralOrgSettingsPage() {
+export default async function GeneralOrgSettingsPage() {
+  const { orgId } = await requireActiveOrg();
+  const org = await db.query.organization.findFirst({
+    where: eq(schema.organization.id, orgId),
+    columns: { name: true, slug: true },
+  });
+
   return (
     <div className="space-y-6">
       <div>
@@ -32,7 +41,7 @@ export default function GeneralOrgSettingsPage() {
             <Label htmlFor="orgName" className="sr-only">
               Name
             </Label>
-            <Input id="orgName" defaultValue="My Awesome Org" />
+            <Input id="orgName" defaultValue={org?.name ?? ""} />
           </div>
         </SettingsCardContent>
         <SettingsCardFooter className="justify-end">
@@ -58,7 +67,7 @@ export default function GeneralOrgSettingsPage() {
               </span>
               <Input
                 id="orgSlug"
-                defaultValue="my-awesome-org"
+                defaultValue={org?.slug ?? ""}
                 className="border-0 shadow-none focus-visible:ring-0 rounded-l-none"
               />
             </div>
