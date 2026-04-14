@@ -33,7 +33,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter @hostfunc/cli build
-      - run: pnpm --filter @hostfunc/cli pack --pack-destination ./tmp-pack
+      - run: pnpm --dir ./packages/cli pack --pack-destination ../../tmp-pack
       - run: npm install -g ./tmp-pack/*.tgz
       - run: hostfunc help
       - name: Create Release PR or Publish

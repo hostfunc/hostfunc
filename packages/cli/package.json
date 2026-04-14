@@ -13,21 +13,12 @@
     "url": "git+https://github.com/hostfunc/hostfunc.git",
     "directory": "packages/cli"
   },
-  "keywords": [
-    "hostfunc",
-    "serverless",
-    "functions",
-    "cli"
-  ],
+  "keywords": ["hostfunc", "serverless", "functions", "cli"],
   "type": "module",
   "bin": {
     "hostfunc": "./dist/bin.js"
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["dist", "README.md", "LICENSE"],
   "publishConfig": {
     "access": "public",
     "provenance": true
