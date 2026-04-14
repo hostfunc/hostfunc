@@ -203,7 +203,7 @@ The shim communicates with the control plane via internal headers (`x-hostfunc-e
 Install the CLI (public npm package):
 
 ```bash
-npm install -g @host-func/cli
+npm install -g @hostfunc/cli
 ```
 
 Authenticate and deploy your first function:

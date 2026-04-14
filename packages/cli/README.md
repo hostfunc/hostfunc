@@ -1,11 +1,11 @@
-# @host-func/cli
+# @hostfunc/cli
 
 Official CLI for Hostfunc.
 
 ## Install
 
 ```bash
-npm install -g @host-func/cli
+npm install -g @hostfunc/cli
 ```
 
 ## Quickstart
@@ -35,4 +35,4 @@ hostfunc run --payload ./payload.json
 
 ## Telemetry
 
-`@host-func/cli` does not send telemetry.
+`@hostfunc/cli` does not send telemetry.

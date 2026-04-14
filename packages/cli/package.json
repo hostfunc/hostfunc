@@ -1,16 +1,16 @@
 {
-  "name": "@host-func/cli",
-  "version": "0.1.0",
+  "name": "@hostfunc/cli",
+  "version": "0.1.1",
   "private": false,
   "description": "Hostfunc CLI for deploying and running tiny composable TypeScript functions.",
   "license": "AGPL-3.0-only",
-  "homepage": "https://github.com/mattcfleming/hostfunc#readme",
+  "homepage": "https://github.com/hostfunc/hostfunc#readme",
   "bugs": {
-    "url": "https://github.com/mattcfleming/hostfunc/issues"
+    "url": "https://github.com/hostfunc/hostfunc/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mattcfleming/hostfunc.git",
+    "url": "git+https://github.com/hostfunc/hostfunc.git",
     "directory": "packages/cli"
   },
   "keywords": [

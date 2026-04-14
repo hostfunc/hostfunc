@@ -7,7 +7,7 @@
   "author": "Matt <you@example.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mattcfleming/hostfunc.git"
+    "url": "git+https://github.com/hostfunc/hostfunc.git"
   },
   "engines": {
     "node": ">=22.0.0",

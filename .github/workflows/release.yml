@@ -32,8 +32,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
-      - run: pnpm --filter @host-func/cli build
-      - run: pnpm --filter @host-func/cli pack --pack-destination ./tmp-pack
+      - run: pnpm --filter @hostfunc/cli build
+      - run: pnpm --filter @hostfunc/cli pack --pack-destination ./tmp-pack
       - run: npm install -g ./tmp-pack/*.tgz
       - run: hostfunc help
       - name: Create Release PR or Publish
