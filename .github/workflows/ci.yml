@@ -24,7 +24,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec biome check --changed --since=origin/main .
+      - run: pnpm exec biome check --changed --since=origin/main --no-errors-on-unmatched .
 
   typecheck:
     name: Typecheck
