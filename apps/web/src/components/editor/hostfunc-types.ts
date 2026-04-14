@@ -2,6 +2,9 @@
 // packages/runtime-sdk's built .d.ts at build time.
 export const HOSTFUNC_TYPES_DTS = `
 declare module "@hostfunc/fn" {
+  export type JsonPrimitive = string | number | boolean | null;
+  export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
+
   export interface ExecuteFunctionOptions {
     timeoutMs?: number;
   }
@@ -13,9 +16,14 @@ declare module "@hostfunc/fn" {
      */
     executeFunction<T = unknown>(
       slug: string,
-      input?: unknown,
+      input?: JsonValue,
       options?: ExecuteFunctionOptions,
     ): Promise<T>;
+
+    /**
+     * Emit structured log lines that appear in execution logs.
+     */
+    log(level: "debug" | "info" | "warn" | "error", message: string, fields?: Record<string, JsonValue>): void;
   }
 
   export interface SecretApi {

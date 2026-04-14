@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { env } from "@/lib/env";
 import { requireActiveOrg } from "@/lib/session";
 import { executor } from "@/server/executor";
+import { getOrgPlan } from "@/server/plan";
 import {
   deleteSecretForFunction,
   listSecretsForFunction,
@@ -21,6 +22,10 @@ const saveDraftSchema = z.object({
   fnId: z.string(),
   code: z.string().max(1_000_000),
 });
+const generateCodeSchema = z.object({
+  fnId: z.string(),
+  prompt: z.string().min(8).max(4_000),
+});
 const setSecretSchema = z.object({
   fnId: z.string(),
   key: z.string().min(1).max(128),
@@ -33,7 +38,7 @@ const deleteSecretSchema = z.object({
 
 async function assertOrgOwnsFunction(orgId: string, fnId: string) {
   const rows = await db
-    .select({ id: schema.fn.id, slug: schema.fn.slug })
+    .select({ id: schema.fn.id, slug: schema.fn.slug, currentVersionId: schema.fn.currentVersionId })
     .from(schema.fn)
     .where(compatWhere(sql`${schema.fn.id} = ${fnId} and ${schema.fn.orgId} = ${orgId}`) as never)
     .limit(1);
@@ -65,6 +70,34 @@ export async function saveDraft(input: z.infer<typeof saveDraftSchema>) {
   return { ok: true };
 }
 
+export async function generateCodeFromPrompt(input: z.infer<typeof generateCodeSchema>) {
+  const { orgId } = await requireActiveOrg();
+  const parsed = generateCodeSchema.parse(input);
+  await assertOrgOwnsFunction(orgId, parsed.fnId);
+
+  const prompt = parsed.prompt.trim();
+  const escapedPrompt = JSON.stringify(prompt);
+  const generated = `import fn from "@hostfunc/fn";
+
+/**
+ * AI generated scaffold (stub provider).
+ * Prompt: ${escapedPrompt}
+ */
+export default async function main(input: unknown) {
+  fn.log("info", "Function invoked", { hasInput: Boolean(input) });
+
+  // TODO: Replace this scaffold with your implementation.
+  return {
+    ok: true,
+    summary: "Generated from prompt",
+    prompt: ${escapedPrompt},
+    input,
+  };
+}
+`;
+  return { code: generated };
+}
+
 export interface DeployResultUi {
   ok: boolean;
   versionId: string;
@@ -74,6 +107,8 @@ export interface DeployResultUi {
 export async function deployFunction(fnId: string): Promise<DeployResultUi> {
   const { session, orgId } = await requireActiveOrg();
   const fnRow = await assertOrgOwnsFunction(orgId, fnId);
+  const orgPlan = await getOrgPlan(orgId);
+  const maxActiveFunctions = orgPlan?.limits.maxFunctions ?? 3;
 
   const drafts = await db
     .select()
@@ -87,6 +122,18 @@ export async function deployFunction(fnId: string): Promise<DeployResultUi> {
 
   const code = drafts[0]?.code;
   if (!code) throw new Error("nothing to deploy");
+
+  if (!fnRow.currentVersionId) {
+    const activeCountRows = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.fn)
+      .where(compatWhere(sql`${schema.fn.orgId} = ${orgId} and ${schema.fn.currentVersionId} is not null`) as never)
+      .limit(1);
+    const activeCount = activeCountRows[0]?.count ?? 0;
+    if (activeCount >= maxActiveFunctions) {
+      throw new Error(`plan_limit_exceeded:max_active_functions:${maxActiveFunctions}`);
+    }
+  }
 
   const versionId = genId("ver");
   const sizeBytes = Buffer.byteLength(code, "utf8");
@@ -110,12 +157,12 @@ export async function deployFunction(fnId: string): Promise<DeployResultUi> {
       orgId,
       bundle: { code, sizeBytes, sha256 },
       limits: {
-        wallMs: 10_000,
-        cpuMs: 1_000,
-        memoryMb: 128,
-        egressKb: 1024,
-        subrequests: 20,
-        maxCallDepth: 3,
+        wallMs: orgPlan?.limits.maxWallMs ?? 10_000,
+        cpuMs: orgPlan?.limits.maxCpuMs ?? 1_000,
+        memoryMb: orgPlan?.limits.maxMemoryMb ?? 128,
+        egressKb: orgPlan?.limits.maxEgressKbPerExecution ?? 1024,
+        subrequests: orgPlan?.limits.maxSubrequestsPerExecution ?? 20,
+        maxCallDepth: orgPlan?.limits.maxCallDepth ?? 3,
       },
       secretRefs: [],
     });

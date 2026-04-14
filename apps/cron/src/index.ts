@@ -14,7 +14,12 @@ interface DueTrigger {
 }
 
 export default {
-  async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
+  async scheduled(event: ScheduledEvent, env: Env): Promise<void> {
+    if (event.cron === "0 0 * * *") {
+      await runNightlyBillingUsageReport(env);
+      return;
+    }
+
     const dueRes = await fetch(`${env.CONTROL_PLANE_URL}/api/internal/cron/due`, {
       headers: { authorization: `Bearer ${env.CONTROL_PLANE_TOKEN}` },
     });
@@ -61,6 +66,16 @@ export default {
     }
   },
 };
+
+async function runNightlyBillingUsageReport(env: Env): Promise<void> {
+  const reportRes = await fetch(`${env.CONTROL_PLANE_URL}/api/internal/billing/report-usage`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${env.CONTROL_PLANE_TOKEN}` },
+  });
+  if (!reportRes.ok) {
+    console.error("[cron] billing usage report failed", reportRes.status);
+  }
+}
 
 async function ack(
   env: Env,

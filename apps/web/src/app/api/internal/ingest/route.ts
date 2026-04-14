@@ -1,5 +1,7 @@
 import { env } from "@/lib/env";
 import { redis } from "@/lib/redis";
+import { captureServerError } from "@/server/observability";
+import { enforceRateLimit } from "@/server/rate-limit";
 import { findVersionIdForExecution, symbolicateStack } from "@/server/symbolicate";
 import {
   markWebhookEventFailed,
@@ -34,9 +36,20 @@ interface IngestBody {
   logs?: IngestLog[];
   source?: string;
   externalId?: string;
+  eventType?: string;
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const limit = await enforceRateLimit({
+    key: `runtime_ingest:${ip}`,
+    limit: 600,
+    windowSeconds: 60,
+  });
+  if (!limit.ok) {
+    return Response.json({ error: "rate_limited" }, { status: 429 });
+  }
+
   const auth = req.headers.get("authorization");
   const allowed = new Set([
     `Bearer ${env.RUNTIME_INGEST_TOKEN}`,
@@ -48,9 +61,10 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => null)) as IngestBody | null;
   if (!body?.executionId) return Response.json({ error: "invalid_body" }, { status: 400 });
-  const eventKey = body.externalId ?? body.executionId;
+  const source = body.source ?? "tail";
+  const eventKey = body.externalId ?? `${body.executionId}:${source}:${body.eventType ?? "final"}`;
   const event = await recordWebhookEvent({
-    source: body.source ?? "tail",
+    source,
     externalId: eventKey,
     kind: "execution_ingest",
     payload: body,
@@ -88,16 +102,33 @@ export async function POST(req: NextRequest) {
       })
       .where(eq(schema.execution.id, body.executionId));
 
+    await db.insert(schema.usageEvent).values({
+      id: genId("use"),
+      orgId,
+      kind: "execution",
+      quantity: 1,
+      executionId: body.executionId,
+      ts: new Date(),
+    });
+
     if (symbolicated && body.errorMessage) {
-      await db.insert(schema.executionLog).values({
+      const symbolicatedRow = {
         id: genId("log"),
         executionId: body.executionId,
         orgId,
         ts: new Date(),
-        level: "error",
+        level: "error" as const,
         message: body.errorMessage,
         fields: { stack: symbolicated },
-      });
+      };
+      await db.insert(schema.executionLog).values(symbolicatedRow);
+      await publishLogLine(
+        body.executionId,
+        symbolicatedRow.level,
+        symbolicatedRow.message,
+        symbolicatedRow.fields,
+        symbolicatedRow.ts,
+      );
     }
 
     if (body.logs?.length) {
@@ -118,10 +149,16 @@ export async function POST(req: NextRequest) {
     await markWebhookEventProcessed(event.id);
     return Response.json({ ok: true });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "ingest_failed";
     await markWebhookEventFailed(
       event.id,
-      error instanceof Error ? error.message : "ingest_failed",
+      message,
     );
+    await captureServerError({
+      source: "runtime_ingest",
+      message,
+      context: { executionId: body.executionId },
+    });
     throw error;
   }
 }

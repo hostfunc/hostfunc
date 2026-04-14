@@ -31,17 +31,15 @@ hostfunc is a developer-first serverless platform purpose-built for small, compo
 
 ```typescript
 import fn, { secret } from "@hostfunc/fn";
-import Stripe from "stripe";
 
-export async function main(req: Request) {
-  const payload = await req.json();
-  const apiKey = secret("STRIPE_SECRET_KEY");
+export async function main(input: { orderId: string }) {
+  const apiKey = await secret.getRequired("STRIPE_SECRET_KEY");
+  const charge = await fn.executeFunction("payments/create-charge", {
+    orderId: input.orderId,
+    apiKey,
+  });
 
-  if (payload.type === "payment.succeeded") {
-    console.log("Processing payment:", payload.data.object.id);
-  }
-
-  return { received: true };
+  return { ok: true, charge };
 }
 ```
 
@@ -178,7 +176,7 @@ The virtual `@hostfunc/fn` module users import inside their functions:
 import fn, { secret } from "@hostfunc/fn";
 
 // Call another function
-const result = await fn.executeFunction("my-other-fn", { input: 42 });
+const result = await fn.executeFunction("my-org/my-other-fn", { input: 42 });
 
 // Access an encrypted secret
 const key = await secret.getRequired("MY_API_KEY");
@@ -383,3 +381,11 @@ Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for 
 ---
 
 > **Status:** pre-alpha. Interfaces and schema may change without notice. Not recommended for production use yet.
+
+## Launch Ops Docs
+
+- `ops/production-env-matrix.md`
+- `ops/runbooks/stripe-live-cutover.md`
+- `ops/observability.md`
+- `ops/security-reliability-baseline.md`
+- `ops/go-live-checklist.md`

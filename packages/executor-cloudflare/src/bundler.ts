@@ -102,7 +102,13 @@ const __ofn_fn_module = {
         body: JSON.stringify({ key }),
       });
       if (res.status === 404) return null;
-      if (!res.ok) throw new HostfuncError("INFRA_EXECUTE_FAILED", "secret fetch failed");
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        throw new HostfuncError(
+          "INFRA_EXECUTE_FAILED",
+          "secret fetch failed (" + res.status + ")" + (detail ? ": " + detail : "")
+        );
+      }
       const json = await res.json();
       return json.found ? json.value : null;
     },
@@ -132,6 +138,7 @@ ${RUNTIME_SHIM}
 
 // Virtual module: @hostfunc/fn
 const __ofn_fn = __ofn_fn_module.default;
+const fn = __ofn_fn;
 const secret = __ofn_fn_module.secret;
 
 // User code begins
@@ -182,7 +189,7 @@ export default {
 
 export async function bundleFunction(opts: BundleOptions): Promise<BundleResult> {
   const maxSize = opts.maxSizeBytes ?? 1_000_000;
-  const wrapped = ENTRY_WRAPPER(opts.code);
+  const wrapped = ENTRY_WRAPPER(normalizeUserCode(opts.code));
 
   let result: BuildResult;
   try {
@@ -232,4 +239,15 @@ export async function bundleFunction(opts: BundleOptions): Promise<BundleResult>
     sizeBytes,
     warnings: result.warnings.map((w) => w.text),
   };
+}
+
+function normalizeUserCode(code: string): string {
+  return code
+    .replace(/^\s*import\s+[^;]*["']@hostfunc\/fn["'];?\s*$/gm, "")
+    .replace(/\bexport\s+default\s+async\s+function\s+main\b/g, "async function main")
+    .replace(/\bexport\s+default\s+function\s+main\b/g, "function main")
+    .replace(/\bexport\s+async\s+function\s+main\b/g, "async function main")
+    .replace(/\bexport\s+function\s+main\b/g, "function main")
+    .replace(/\bexport\s+const\s+main\b/g, "const main")
+    .replace(/^\s*export\s+default\s+main\s*;?\s*$/gm, "");
 }

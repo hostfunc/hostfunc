@@ -6,6 +6,7 @@ interface StreamLine {
   ts: string;
   level: string;
   message: string;
+  fields?: Record<string, unknown>;
 }
 
 export function LiveLogs({ execId }: { execId: string }) {
@@ -40,10 +41,17 @@ export function LiveLogs({ execId }: { execId: string }) {
           <div className="text-muted-foreground">Waiting for live log events...</div>
         ) : (
           lines.map((line, idx) => (
-            <div key={`${line.ts}-${idx}`} className="flex gap-2">
+            <div key={`${line.ts}-${idx}`} className="space-y-0.5">
+              <div className="flex gap-2">
               <span className="text-muted-foreground">{line.ts}</span>
               <span className="uppercase text-muted-foreground">{line.level}</span>
               <span>{line.message}</span>
+              </div>
+              {line.fields ? (
+                <pre className="overflow-x-auto rounded bg-black/20 p-1 text-[10px] text-slate-300">
+                  {JSON.stringify(line.fields, null, 2)}
+                </pre>
+              ) : null}
             </div>
           ))
         )}

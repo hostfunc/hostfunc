@@ -22,13 +22,22 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "invalid_body" }, { status: 400 });
   }
 
-  const result = await registerExecution({
-    execId: body.execId,
-    fnId: body.fnId,
-    orgId: body.orgId,
-    wallMs: body.wallMs,
-    callChain: body.callChain ?? [],
-  });
-
-  return Response.json(result);
+  try {
+    const result = await registerExecution({
+      execId: body.execId,
+      fnId: body.fnId,
+      orgId: body.orgId,
+      wallMs: body.wallMs,
+      callChain: body.callChain ?? [],
+    });
+    return Response.json(result);
+  } catch (error) {
+    if (error instanceof Error && error.message === "max_call_depth_exceeded") {
+      return Response.json({ error: "max_call_depth_exceeded" }, { status: 429 });
+    }
+    if (error instanceof Error && error.message === "daily_execution_limit_exceeded") {
+      return Response.json({ error: "daily_execution_limit_exceeded" }, { status: 429 });
+    }
+    return Response.json({ error: "register_failed" }, { status: 500 });
+  }
 }

@@ -1,9 +1,12 @@
 "use client";
 
 import { saveDraft } from "@/app/dashboard/[fn]/actions";
+import { generateCodeFromPrompt } from "@/app/dashboard/[fn]/actions";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DeployButton } from "./deploy-button";
+import { EditorExecutionPane } from "./execution-pane";
 import { MonacoEditor } from "./monaco-editor";
 
 interface Props {
@@ -14,6 +17,9 @@ interface Props {
 export function FunctionEditor({ fnId, initialCode }: Props) {
   const [code, setCode] = useState(initialCode);
   const [savedCode, setSavedCode] = useState(initialCode);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const saveTimer = useRef<NodeJS.Timeout | null>(null);
 
   const persist = useCallback(
@@ -40,6 +46,23 @@ export function FunctionEditor({ fnId, initialCode }: Props) {
   }, [code, savedCode, persist]);
 
   const dirty = code !== savedCode;
+  const canGenerate = aiPrompt.trim().length >= 8 && !isGenerating;
+
+  const handleGenerate = async () => {
+    try {
+      setIsGenerating(true);
+      const result = await generateCodeFromPrompt({ fnId, prompt: aiPrompt.trim() });
+      setCode(result.code);
+      await persist(result.code);
+      toast.success("Code generated");
+      setShowAiPanel(false);
+    } catch (error) {
+      toast.error("Failed to generate code");
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="flex h-full flex-col bg-[#0d1117] overflow-hidden">
@@ -64,69 +87,56 @@ export function FunctionEditor({ fnId, initialCode }: Props) {
           <span className="text-xs text-muted-foreground mr-2 font-mono opacity-60">
             ⌘S to save
           </span>
+          <Link
+            href="/docs/functions"
+            className="rounded-md border border-slate-600/60 bg-slate-900/50 px-3 py-1.5 text-xs font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-800/70"
+          >
+            Run + Chaining Examples
+          </Link>
+          <button
+            type="button"
+            onClick={() => setShowAiPanel((prev) => !prev)}
+            className="rounded-md border border-fuchsia-500/30 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-medium text-fuchsia-200 hover:bg-fuchsia-500/20"
+          >
+            {showAiPanel ? "Hide AI" : "AI Generate"}
+          </button>
           <DeployButton fnId={fnId} onDeploy={() => persist(code)} />
         </div>
       </div>
+
+      {showAiPanel ? (
+        <div className="border-b border-white/10 bg-[#10131b] px-4 py-3">
+          <div className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-300">
+            AI Function Generator
+          </div>
+          <textarea
+            value={aiPrompt}
+            onChange={(event) => setAiPrompt(event.target.value)}
+            placeholder="Describe what function you want (input/output, API calls, edge cases)..."
+            className="min-h-20 w-full resize-y rounded-md border border-white/15 bg-[#0b0f15] p-3 text-sm text-slate-200 outline-none ring-fuchsia-400/50 focus:ring-2"
+          />
+          <div className="mt-3 flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              Stub provider mode. This will replace editor contents.
+            </p>
+            <button
+              type="button"
+              onClick={() => void handleGenerate()}
+              disabled={!canGenerate}
+              className="rounded-md bg-fuchsia-600 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isGenerating ? "Generating..." : "Generate Code"}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {/* Editor Area */}
       <div className="flex-1 relative min-h-0 border-b border-white/5">
         <MonacoEditor value={code} onChange={setCode} onSave={() => persist(code)} />
       </div>
 
-      {/* Execution Terminal Pane */}
-      <div className="h-64 bg-[#0a0a0a] border-t border-black/50 shrink-0 flex flex-col font-mono relative overflow-hidden">
-        {/* Terminal Header */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-[#111111]">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Execution Logs
-            </span>
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-400">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-              </span>
-              Listening
-            </div>
-          </div>
-          <button
-            type="button"
-            className="text-[10px] text-muted-foreground hover:text-white transition-colors"
-          >
-            Clear
-          </button>
-        </div>
-
-        {/* Terminal Output */}
-        <div className="flex-1 overflow-y-auto p-4 text-[12px] text-slate-300 leading-relaxed space-y-2">
-          <div className="flex gap-4 opacity-50">
-            <span className="text-slate-500 select-none">12:00:01</span>
-            <span>System: SSE Connection established. Waiting for invocations...</span>
-          </div>
-
-          <div className="flex gap-4">
-            <span className="text-slate-500 select-none">12:05:14</span>
-            <span className="text-emerald-400">POST /deploy</span>
-          </div>
-          <div className="flex gap-4 pl-16 opacity-80">
-            <span>Bundling with esbuild... done (12ms)</span>
-          </div>
-          <div className="flex gap-4 pl-16 opacity-80">
-            <span>Uploading to edge network... done (45ms)</span>
-          </div>
-
-          <div className="flex gap-4">
-            <span className="text-slate-500 select-none">12:08:22</span>
-            <span className="text-blue-400">GET /execution/trigger</span>
-          </div>
-          <div className="flex gap-4 pl-16">
-            <span className="text-yellow-300">[console.log]</span> Processing payload: undefined
-          </div>
-          <div className="flex gap-4 pl-16 text-emerald-400">
-            <span>Execution succeeded in 3ms.</span>
-          </div>
-        </div>
-      </div>
+      <EditorExecutionPane fnId={fnId} />
     </div>
   );
 }

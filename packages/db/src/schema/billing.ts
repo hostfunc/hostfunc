@@ -36,7 +36,10 @@ export const plan = pgTable("plan", {
   /** URL-safe plan identifier, e.g. "free", "pro", "team". */
   slug: text("slug").notNull().unique(),
   priceMonthlyCents: integer("price_monthly_cents").notNull().default(0),
+  stripeProductId: text("stripe_product_id"),
   stripePriceId: text("stripe_price_id"),
+  stripeMeterId: text("stripe_meter_id"),
+  stripeMeterEventName: text("stripe_meter_event_name"),
   limits: jsonb("limits").$type<PlanLimits>().notNull(),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

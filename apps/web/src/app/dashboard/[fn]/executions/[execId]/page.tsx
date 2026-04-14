@@ -58,10 +58,17 @@ export default async function ExecutionDetailPage({
         <CardContent className="space-y-2">
           <div className="max-h-64 space-y-1 overflow-auto rounded border border-border bg-muted/20 p-2 font-mono text-xs">
             {logs.map((line, idx) => (
-              <div key={`${line.ts.toISOString()}-${idx}`} className="flex gap-2">
-                <span className="text-muted-foreground">{line.ts.toISOString()}</span>
-                <span className="uppercase text-muted-foreground">{line.level}</span>
-                <span>{line.message}</span>
+              <div key={`${line.ts.toISOString()}-${idx}`} className="space-y-1">
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground">{line.ts.toISOString()}</span>
+                  <span className="uppercase text-muted-foreground">{line.level}</span>
+                  <span>{line.message}</span>
+                </div>
+                {line.fields ? (
+                  <pre className="overflow-x-auto rounded bg-black/20 p-2 text-[10px] text-slate-300">
+                    {JSON.stringify(line.fields, null, 2)}
+                  </pre>
+                ) : null}
               </div>
             ))}
           </div>

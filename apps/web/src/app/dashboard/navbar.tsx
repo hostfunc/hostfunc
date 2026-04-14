@@ -25,16 +25,40 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTransition } from "react";
+import { toast } from "sonner";
+import { switchActiveOrganization } from "./org-actions";
 
 export function DashboardNavbar({
   user,
-}: { user: { id: string; email: string; name?: string | null } }) {
+  organizations,
+  activeOrganizationId,
+}: {
+  user: { id: string; email: string; name?: string | null };
+  organizations: Array<{ id: string; name: string; slug: string; role: string }>;
+  activeOrganizationId: string;
+}) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isSwitching, startSwitchTransition] = useTransition();
+  const activeOrg =
+    organizations.find((organization) => organization.id === activeOrganizationId) ?? organizations[0];
 
   const handleSignOut = async () => {
     await signOut();
     router.push("/login");
+  };
+
+  const handleSwitchWorkspace = (organizationId: string) => {
+    if (!organizationId || organizationId === activeOrganizationId) return;
+    startSwitchTransition(async () => {
+      try {
+        await switchActiveOrganization(organizationId);
+        router.refresh();
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Failed to switch workspace");
+      }
+    });
   };
 
   const navLinks = [
@@ -57,11 +81,11 @@ export function DashboardNavbar({
                 <div className="bg-primary/20 p-1 rounded-md text-primary">
                   <Hexagon className="w-4 h-4 fill-primary/20" />
                 </div>
-                <span className="font-semibold text-sm">Personal</span>
+                <span className="font-semibold text-sm">{activeOrg?.name ?? "Workspace"}</span>
                 <span className="text-muted-foreground text-xs bg-muted px-1.5 py-0.5 rounded-sm">
                   /
                 </span>
-                <span className="font-semibold text-sm">hostfunc</span>
+                <span className="font-semibold text-sm">{activeOrg?.slug ?? "loading"}</span>
                 <ChevronDown className="w-3 h-3 text-muted-foreground ml-1" />
               </Button>
             </DropdownMenuTrigger>
@@ -69,12 +93,27 @@ export function DashboardNavbar({
               <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
                 Active Workspace
               </DropdownMenuLabel>
-              <DropdownMenuItem className="font-medium gap-2">
-                <div className="bg-primary/20 p-1 rounded-md text-primary h-6 w-6 flex items-center justify-center">
-                  <Hexagon className="w-3 h-3 fill-primary/20" />
-                </div>
-                hostfunc
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                {organizations.map((organization) => (
+                  <DropdownMenuItem
+                    key={organization.id}
+                    className={cn(
+                      "font-medium gap-2 cursor-pointer",
+                      organization.id === activeOrganizationId && "bg-primary/10",
+                    )}
+                    onClick={() => handleSwitchWorkspace(organization.id)}
+                    disabled={isSwitching}
+                  >
+                    <div className="bg-primary/20 p-1 rounded-md text-primary h-6 w-6 flex items-center justify-center">
+                      <Hexagon className="w-3 h-3 fill-primary/20" />
+                    </div>
+                    <div className="flex min-w-0 flex-col">
+                      <span className="truncate">{organization.name}</span>
+                      <span className="text-xs text-muted-foreground truncate">{organization.slug}</span>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild className="text-muted-foreground gap-2 cursor-pointer">
                 <Link href="/new-workspace" className="w-full">
@@ -117,7 +156,7 @@ export function DashboardNavbar({
         <div className="flex items-center gap-3">
           <Button size="sm" asChild className="h-8 shadow-sm group">
             <Link href="/dashboard/new">
-              <Zap className="mr-1.5 size-3.5 group-hover:scale-110 transition-transform text-white" />
+              <Zap className="mr-1.5 size-3.5 group-hover:scale-110 transition-transform text-black" />
               New System
             </Link>
           </Button>

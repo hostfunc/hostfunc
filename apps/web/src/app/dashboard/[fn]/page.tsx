@@ -20,7 +20,7 @@ export default async function FunctionEditorPage({
   const draft = await getDraft(fnId, session.user.id);
 
   return (
-    <div className="-mt-4 flex h-[calc(100dvh-7rem)] flex-col">
+    <div className="mt-2 flex h-[calc(100dvh-7rem)] flex-col">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="font-mono text-lg font-semibold">{fn.slug}</h1>

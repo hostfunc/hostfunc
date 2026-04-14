@@ -1,0 +1,3 @@
+CONTROL_PLANE_URL=http://localhost:3000
+CONTROL_PLANE_TOKEN=replace-with-trigger-control-token
+HOSTFUNC_RUNTIME_URL=http://localhost:8787

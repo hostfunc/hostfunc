@@ -1,14 +1,25 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import type { LucideIcon } from "lucide-react";
+import { Blocks, Bot, CreditCard, KeyRound, Settings, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type * as React from "react";
 
+const SETTINGS_ICONS = {
+  settings: Settings,
+  users: Users,
+  creditCard: CreditCard,
+  blocks: Blocks,
+  keyRound: KeyRound,
+  bot: Bot,
+} as const satisfies Record<string, LucideIcon>;
+
 export interface SettingsNavItem {
   title: string;
   href: string;
-  icon?: LucideIcon;
+  icon?: keyof typeof SETTINGS_ICONS | LucideIcon;
 }
 
 interface SettingsLayoutProps {
@@ -31,8 +42,8 @@ export function SettingsLayout({
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full flex-col space-y-6 lg:flex-row lg:space-y-0 lg:space-x-6">
-      <aside className="lg:w-1/4 xl:w-1/5 flex-shrink-0">
+    <div className="flex h-full w-full flex-col space-y-6 lg:flex-row lg:space-x-8 lg:space-y-0">
+      <aside className="flex-shrink-0 lg:w-72">
         <div className="mb-8">
           {backHref && (
             <Link
@@ -63,6 +74,11 @@ export function SettingsLayout({
         <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+            const Icon = item.icon
+              ? typeof item.icon === "string"
+                ? SETTINGS_ICONS[item.icon]
+                : item.icon
+              : null;
             return (
               <Link
                 key={item.href}
@@ -82,7 +98,7 @@ export function SettingsLayout({
                   />
                 )}
                 <span className="relative z-10 flex items-center">
-                  {item.icon && <item.icon className="mr-2 h-4 w-4" />}
+                  {Icon ? <Icon className="mr-2 h-4 w-4" /> : null}
                   {item.title}
                 </span>
               </Link>
@@ -90,7 +106,7 @@ export function SettingsLayout({
           })}
         </nav>
       </aside>
-      <div className="flex-1 lg:max-w-6xl">
+      <div className="min-w-0 flex-1">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
