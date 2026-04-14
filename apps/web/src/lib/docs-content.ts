@@ -80,7 +80,7 @@ export const docsPages: Record<string, DocsPageContent> = {
   "/docs/getting-started": {
     title: "Getting Started",
     summary:
-      "Set up hostfunc end-to-end: create your workspace, install tooling, build your first function with the SDK, enable MCP, and run production-ready workflows.",
+      "Use the web dashboard or CLI with API tokens to create, deploy, and invoke functions.",
     highlights: [
       "Dashboard and CLI workflows are both supported from day one.",
       "Use `@hostfunc/fn` for function composition and secure secret access.",
@@ -221,7 +221,7 @@ hostfunc secrets set CLAUDE_API_KEY <value>`,
   "/docs/functions": {
     title: "Functions",
     summary:
-      "Functions are stored as drafts and immutable deployed versions with org tenancy boundaries and a built-in runtime SDK.",
+      "Functions are stored as drafts and immutable deployed versions with org tenancy boundaries.",
     highlights: [
       "Drafts are user-scoped and saved before deploy.",
       "Deploy creates `fn_version` records and updates current version pointers.",
@@ -393,7 +393,7 @@ export async function main(input: { targetSlug: string; payload?: Record<string,
   "/docs/triggers": {
     title: "Triggers",
     summary:
-      "Trigger configuration supports `http`, `cron`, `email`, and `mcp` kinds with one configuration per kind per function.",
+      "Trigger configuration supports HTTP, cron, email, and MCP kinds with one trigger per kind per function.",
     highlights: [
       "New functions are initialized with a default HTTP trigger configuration.",
       "Cron and email trigger dispatch workers invoke runtime using internal control-plane routes.",
@@ -456,7 +456,7 @@ export async function main(input: { targetSlug: string; payload?: Record<string,
   "/docs/executions": {
     title: "Executions and Logs",
     summary:
-      "Execution history, status, metrics, and log streaming are available through dashboard views and API routes.",
+      "Execution list, details, metrics, and log streaming are available in dashboard and API.",
     highlights: [
       "List/filter executions by status, trigger kind, and date range.",
       "Execution details include metrics and error context.",
@@ -509,7 +509,7 @@ export async function main(input: { targetSlug: string; payload?: Record<string,
   "/docs/security": {
     title: "Security and Access",
     summary:
-      "Auth is separated by boundary: session-based dashboard access, API-token automation, and internal runtime/control-plane authentication.",
+      "Org session auth, API token auth, and internal bearer-token control-plane auth are split by boundary.",
     highlights: [
       "Dashboard actions require an active session and organization context.",
       "CLI/MCP automation uses bearer API tokens validated against hashed token records.",
@@ -564,7 +564,7 @@ export async function main(input: { targetSlug: string; payload?: Record<string,
   "/docs/cli": {
     title: "CLI",
     summary:
-      "The @hostfunc/cli package supports authenticated function workflows for login, init, list, deploy, run, logs, and secrets.",
+      "Public npm package `@hostfunc/cli` supports login, init, list, deploy, run, logs, and secrets set flows.",
     highlights: [
       "CLI authenticates with API token and base URL config.",
       "Deploy/run/logs/secrets map to `/api/cli/*` routes.",
@@ -619,7 +619,7 @@ hostfunc secrets set CLAUDE_API_KEY <value>`,
   "/docs/mcp": {
     title: "MCP",
     summary:
-      "MCP endpoint is available at `/api/mcp` with API-token auth, request validation, rate limiting, and audit logging.",
+      "MCP endpoint is available at `/api/mcp` with API-token auth, rate limiting, and tool-call audit logging.",
     highlights: [
       "Supported tools include `functions.*` and `executions.*` operations.",
       "JSON-RPC methods include initialize, tools/list, tools/call, and ping.",
