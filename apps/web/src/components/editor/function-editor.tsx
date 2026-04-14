@@ -2,6 +2,7 @@
 
 import { saveDraft } from "@/app/dashboard/[fn]/actions";
 import { generateCodeFromPrompt } from "@/app/dashboard/[fn]/actions";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DeployButton } from "./deploy-button";
@@ -86,6 +87,12 @@ export function FunctionEditor({ fnId, initialCode }: Props) {
           <span className="text-xs text-muted-foreground mr-2 font-mono opacity-60">
             ⌘S to save
           </span>
+          <Link
+            href="/docs/functions"
+            className="rounded-md border border-slate-600/60 bg-slate-900/50 px-3 py-1.5 text-xs font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-800/70"
+          >
+            Run + Chaining Examples
+          </Link>
           <button
             type="button"
             onClick={() => setShowAiPanel((prev) => !prev)}

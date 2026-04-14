@@ -138,6 +138,7 @@ ${RUNTIME_SHIM}
 
 // Virtual module: @hostfunc/fn
 const __ofn_fn = __ofn_fn_module.default;
+const fn = __ofn_fn;
 const secret = __ofn_fn_module.secret;
 
 // User code begins

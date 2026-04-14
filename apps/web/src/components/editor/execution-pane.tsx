@@ -1,6 +1,7 @@
 "use client";
 
 import { LiveLogs } from "@/components/logs/live-logs";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 interface ExecutionItem {
@@ -83,7 +84,16 @@ export function EditorExecutionPane({ fnId }: { fnId: string }) {
           {selected ? (
             <LiveLogs execId={selected.id} />
           ) : (
-            <div className="p-3 text-xs text-muted-foreground">Run the function to start streaming logs.</div>
+            <div className="p-3 text-xs text-muted-foreground">
+              Run the function to start streaming logs.{" "}
+              <Link
+                href="/docs/functions"
+                className="text-slate-300 underline underline-offset-2 hover:text-white"
+              >
+                View run + chaining examples
+              </Link>
+              .
+            </div>
           )}
         </div>
       </div>
