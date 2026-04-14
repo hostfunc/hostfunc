@@ -121,7 +121,7 @@ export const docsPages: Record<string, DocsPageContent> = {
   "/docs/cli": {
     title: "CLI",
     summary:
-      "Public npm package `@hostfunc/cli` supports login, init, list, deploy, run, logs, and secrets set flows.",
+      "Public npm package `@host-func/cli` supports login, init, list, deploy, run, logs, and secrets set flows.",
     highlights: [
       "CLI authenticates with API token and base URL config.",
       "Deploy/run/logs/secrets map to `/api/cli/*` routes.",

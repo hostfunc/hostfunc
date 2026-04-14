@@ -69,7 +69,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @hostfunc/cli build
-      - run: pnpm --filter @hostfunc/cli pack --pack-destination ./tmp-pack
+      - run: pnpm --filter @host-func/cli build
+      - run: pnpm --filter @host-func/cli pack --pack-destination ./tmp-pack
       - run: npm install -g ./tmp-pack/*.tgz
       - run: hostfunc help
