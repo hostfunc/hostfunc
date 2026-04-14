@@ -37,7 +37,7 @@ export default function FunctionSettingsLayout({
   ];
 
   return (
-    <div className="container mx-auto p-6 md:p-10 max-w-7xl">
+    <div className="w-full">
       <SettingsLayout
         title="Function Settings"
         description={`Manage configuration, secrets, and events for function: ${fn}`}

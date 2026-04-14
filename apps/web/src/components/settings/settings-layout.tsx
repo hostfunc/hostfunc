@@ -42,8 +42,8 @@ export function SettingsLayout({
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full flex-col space-y-6 lg:flex-row lg:space-y-0 lg:space-x-6">
-      <aside className="lg:w-1/4 xl:w-1/5 flex-shrink-0">
+    <div className="flex h-full w-full flex-col space-y-6 lg:flex-row lg:space-x-8 lg:space-y-0">
+      <aside className="flex-shrink-0 lg:w-72">
         <div className="mb-8">
           {backHref && (
             <Link
@@ -106,7 +106,7 @@ export function SettingsLayout({
           })}
         </nav>
       </aside>
-      <div className="flex-1 lg:max-w-6xl">
+      <div className="min-w-0 flex-1">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

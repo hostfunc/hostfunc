@@ -53,7 +53,7 @@ async function OrgSettingsLayoutInner({ children }: { children: React.ReactNode 
   const orgLabel = org?.name ?? "Organization";
 
   return (
-    <div className="container mx-auto p-6 md:p-10 max-w-6xl">
+    <div className="w-full">
       <SettingsLayout
         title={`${orgLabel} Settings`}
         description={`Manage ${org?.slug ?? "your organization"} configuration, members, and billing details.`}
