@@ -97,7 +97,7 @@ function tokenizeLine(
   const result: Array<{ value: string; className?: string; start: number }> = [];
   let lastIndex = 0;
 
-  for (const match of line.matchAll(regex)) {
+  for (const match of line.matchAll(regex ?? /./g)) {
     const matched = match[0];
     const start = match.index ?? 0;
     if (start > lastIndex) {
