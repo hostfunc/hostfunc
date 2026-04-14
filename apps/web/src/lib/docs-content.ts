@@ -55,7 +55,8 @@ export const docsPages: Record<string, DocsPageContent> = {
   },
   "/docs/getting-started": {
     title: "Getting Started",
-    summary: "Use the web dashboard or CLI with API tokens to create, deploy, and invoke functions.",
+    summary:
+      "Use the web dashboard or CLI with API tokens to create, deploy, and invoke functions.",
     highlights: [
       "Create a function from `/dashboard/new`.",
       "Deploy from function page and invoke runtime via `/run/:owner/:slug`.",
@@ -68,7 +69,8 @@ export const docsPages: Record<string, DocsPageContent> = {
   },
   "/docs/functions": {
     title: "Functions",
-    summary: "Functions are stored as drafts and immutable deployed versions with org tenancy boundaries.",
+    summary:
+      "Functions are stored as drafts and immutable deployed versions with org tenancy boundaries.",
     highlights: [
       "Drafts are user-scoped and saved before deploy.",
       "Deploy creates `fn_version` records and updates current version pointers.",
@@ -81,7 +83,8 @@ export const docsPages: Record<string, DocsPageContent> = {
   },
   "/docs/triggers": {
     title: "Triggers",
-    summary: "Trigger configuration supports HTTP, cron, email, and MCP kinds with one trigger per kind per function.",
+    summary:
+      "Trigger configuration supports HTTP, cron, email, and MCP kinds with one trigger per kind per function.",
     highlights: [
       "HTTP trigger is always available through runtime route.",
       "Cron and email trigger dispatch workers are implemented with control-plane endpoints.",
@@ -94,7 +97,8 @@ export const docsPages: Record<string, DocsPageContent> = {
   },
   "/docs/executions": {
     title: "Executions and Logs",
-    summary: "Execution list, details, metrics, and log streaming are available in dashboard and API.",
+    summary:
+      "Execution list, details, metrics, and log streaming are available in dashboard and API.",
     highlights: [
       "List/filter executions by status, trigger kind, and date range.",
       "Execution details include metrics and error context.",
@@ -107,7 +111,8 @@ export const docsPages: Record<string, DocsPageContent> = {
   },
   "/docs/security": {
     title: "Security and Access",
-    summary: "Org session auth, API token auth, and internal bearer-token control-plane auth are split by boundary.",
+    summary:
+      "Org session auth, API token auth, and internal bearer-token control-plane auth are split by boundary.",
     highlights: [
       "Dashboard actions require active org session.",
       "External automation uses API tokens and org-scoped route checks.",
@@ -121,7 +126,7 @@ export const docsPages: Record<string, DocsPageContent> = {
   "/docs/cli": {
     title: "CLI",
     summary:
-      "Public npm package `@host-func/cli` supports login, init, list, deploy, run, logs, and secrets set flows.",
+      "Public npm package `@hostfunc/cli` supports login, init, list, deploy, run, logs, and secrets set flows.",
     highlights: [
       "CLI authenticates with API token and base URL config.",
       "Deploy/run/logs/secrets map to `/api/cli/*` routes.",
@@ -135,7 +140,8 @@ export const docsPages: Record<string, DocsPageContent> = {
   },
   "/docs/mcp": {
     title: "MCP",
-    summary: "MCP endpoint is available at `/api/mcp` with API-token auth, rate limiting, and tool-call audit logging.",
+    summary:
+      "MCP endpoint is available at `/api/mcp` with API-token auth, rate limiting, and tool-call audit logging.",
     highlights: [
       "Supported tools include functions and executions operations.",
       "Origin allowlist and per-token rate limiting are enforced.",
