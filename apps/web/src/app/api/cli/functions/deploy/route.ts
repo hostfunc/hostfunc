@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { env } from "@/lib/env";
+import { trackServerEvent } from "@/server/analytics";
 import { requireCliActor } from "@/server/cli-auth";
 import { executor } from "@/server/executor";
 import { getOrgPlan } from "@/server/plan";
@@ -100,6 +101,12 @@ export async function POST(req: NextRequest) {
       .set({ currentVersionId: versionId, updatedAt: new Date() })
       .where(eq(schema.fn.id, body.fnId));
 
+    await trackServerEvent({
+      event: "cli_deploy_succeeded",
+      distinctId: actor.userId,
+      props: { orgId: actor.orgId, fnId: body.fnId, versionId },
+    });
+
     return Response.json({
       ok: true,
       versionId,
@@ -107,6 +114,15 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     await db.update(schema.fnVersion).set({ status: "failed" }).where(eq(schema.fnVersion.id, versionId));
+    await trackServerEvent({
+      event: "cli_deploy_failed",
+      distinctId: actor.userId,
+      props: {
+        orgId: actor.orgId,
+        fnId: body.fnId,
+        reason: error instanceof Error ? error.message : "deploy_failed",
+      },
+    });
     return Response.json(
       { error: error instanceof Error ? error.message : "deploy_failed" },
       { status: 500 },

@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireSession } from "@/lib/session";
+import { trackServerEvent } from "@/server/analytics";
 
 const createWorkspaceSchema = z.object({
   name: z.string().min(2, "Workspace name must be at least 2 characters").max(64),
@@ -102,6 +103,12 @@ export async function createWorkspaceAction(_prevState: any, formData: FormData)
     .update(schema.user)
     .set({ activeOrganizationId: orgId })
     .where(compatWhere(sql`${schema.user.id} = ${session.user.id}`) as never);
+
+  await trackServerEvent({
+    event: "workspace_created",
+    distinctId: session.user.id,
+    props: { orgId, slug: parsed.data.slug },
+  });
 
   redirect("/dashboard");
 }

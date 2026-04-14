@@ -1,5 +1,7 @@
 import { env } from "@/lib/env";
 import { stripe } from "@/lib/stripe";
+import { captureServerError } from "@/server/observability";
+import { enforceRateLimit } from "@/server/rate-limit";
 import { markWebhookEventFailed, markWebhookEventProcessed, recordWebhookEvent } from "@/server/webhook-events";
 import { db, genId, schema } from "@hostfunc/db";
 import { eq } from "drizzle-orm";
@@ -9,6 +11,16 @@ import type Stripe from "stripe";
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const limit = await enforceRateLimit({
+    key: `stripe_webhook:${ip}`,
+    limit: 120,
+    windowSeconds: 60,
+  });
+  if (!limit.ok) {
+    return Response.json({ error: "rate_limited" }, { status: 429 });
+  }
+
   const signature = req.headers.get("stripe-signature");
   if (!env.STRIPE_WEBHOOK_SECRET || !signature) {
     return Response.json({ error: "missing_webhook_signature" }, { status: 400 });
@@ -35,10 +47,16 @@ export async function POST(req: NextRequest) {
     await markWebhookEventProcessed(receipt.id);
     return Response.json({ ok: true });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "stripe_processing_failed";
     await markWebhookEventFailed(
       receipt.id,
-      error instanceof Error ? error.message : "stripe_processing_failed",
+      message,
     );
+    await captureServerError({
+      source: "stripe_webhook",
+      message,
+      context: { eventType: event.type, eventId: event.id },
+    });
     return Response.json({ error: "stripe_processing_failed" }, { status: 500 });
   }
 }
@@ -54,6 +72,7 @@ async function handleStripeEvent(event: Stripe.Event) {
       if (!orgId || !stripeSubscriptionId || !stripeCustomerId) return;
 
       const sub = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+      const period = getSubscriptionPeriod(sub as Stripe.Subscription);
       const priceId = sub.items.data[0]?.price?.id ?? null;
       const planRow = priceId
         ? await db.query.plan.findFirst({ where: eq(schema.plan.stripePriceId, priceId) })
@@ -72,8 +91,8 @@ async function handleStripeEvent(event: Stripe.Event) {
             stripeSubscriptionId,
             status: mapStripeStatus(sub.status),
             cancelAtPeriodEnd: sub.cancel_at_period_end,
-            currentPeriodStart: null,
-            currentPeriodEnd: null,
+            currentPeriodStart: period.start,
+            currentPeriodEnd: period.end,
             updatedAt: new Date(),
           })
           .where(eq(schema.subscription.id, existing.id));
@@ -86,8 +105,8 @@ async function handleStripeEvent(event: Stripe.Event) {
           stripeSubscriptionId,
           status: mapStripeStatus(sub.status),
           cancelAtPeriodEnd: sub.cancel_at_period_end,
-          currentPeriodStart: null,
-          currentPeriodEnd: null,
+          currentPeriodStart: period.start,
+          currentPeriodEnd: period.end,
         });
       }
       return;
@@ -95,6 +114,7 @@ async function handleStripeEvent(event: Stripe.Event) {
     case "customer.subscription.updated":
     case "customer.subscription.deleted": {
       const sub = event.data.object as Stripe.Subscription;
+      const period = getSubscriptionPeriod(sub);
       const priceId = sub.items.data[0]?.price?.id ?? null;
       const planRow = priceId
         ? await db.query.plan.findFirst({ where: eq(schema.plan.stripePriceId, priceId) })
@@ -102,8 +122,8 @@ async function handleStripeEvent(event: Stripe.Event) {
       const payload = {
         status: mapStripeStatus(sub.status),
         cancelAtPeriodEnd: sub.cancel_at_period_end,
-        currentPeriodStart: null,
-        currentPeriodEnd: null,
+        currentPeriodStart: period.start,
+        currentPeriodEnd: period.end,
         updatedAt: new Date(),
       } as const;
       if (planRow) {
@@ -122,6 +142,18 @@ async function handleStripeEvent(event: Stripe.Event) {
     default:
       return;
   }
+}
+
+function fromStripeTimestamp(value: number | null | undefined): Date | null {
+  if (!value || Number.isNaN(value)) return null;
+  return new Date(value * 1000);
+}
+
+function getSubscriptionPeriod(sub: Stripe.Subscription): { start: Date | null; end: Date | null } {
+  const firstItem = sub.items.data[0];
+  const start = fromStripeTimestamp((firstItem as { current_period_start?: number })?.current_period_start);
+  const end = fromStripeTimestamp((firstItem as { current_period_end?: number })?.current_period_end);
+  return { start, end };
 }
 
 function mapStripeStatus(status: Stripe.Subscription.Status): (typeof schema.subscription.$inferInsert)["status"] {

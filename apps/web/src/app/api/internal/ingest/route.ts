@@ -1,5 +1,7 @@
 import { env } from "@/lib/env";
 import { redis } from "@/lib/redis";
+import { captureServerError } from "@/server/observability";
+import { enforceRateLimit } from "@/server/rate-limit";
 import { findVersionIdForExecution, symbolicateStack } from "@/server/symbolicate";
 import {
   markWebhookEventFailed,
@@ -38,6 +40,16 @@ interface IngestBody {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const limit = await enforceRateLimit({
+    key: `runtime_ingest:${ip}`,
+    limit: 600,
+    windowSeconds: 60,
+  });
+  if (!limit.ok) {
+    return Response.json({ error: "rate_limited" }, { status: 429 });
+  }
+
   const auth = req.headers.get("authorization");
   const allowed = new Set([
     `Bearer ${env.RUNTIME_INGEST_TOKEN}`,
@@ -137,10 +149,16 @@ export async function POST(req: NextRequest) {
     await markWebhookEventProcessed(event.id);
     return Response.json({ ok: true });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "ingest_failed";
     await markWebhookEventFailed(
       event.id,
-      error instanceof Error ? error.message : "ingest_failed",
+      message,
     );
+    await captureServerError({
+      source: "runtime_ingest",
+      message,
+      context: { executionId: body.executionId },
+    });
     throw error;
   }
 }

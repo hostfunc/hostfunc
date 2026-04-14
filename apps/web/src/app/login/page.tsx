@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { trackClientEvent } from "@/lib/analytics-client";
 import { signIn } from "@/lib/auth-client";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Hexagon, Loader2, Mail } from "lucide-react";
@@ -23,13 +24,16 @@ export default function LoginPage() {
 
     setPending(true);
     try {
+      await trackClientEvent("auth_magic_link_attempt", { method: "email" });
       await signIn.magicLink({
         email,
         callbackURL: "/dashboard",
       });
+      await trackClientEvent("auth_magic_link_sent", { method: "email" });
       setSent(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
+      await trackClientEvent("auth_magic_link_failed", { reason: msg });
       toast.error(msg);
     } finally {
       setPending(false);
@@ -39,12 +43,14 @@ export default function LoginPage() {
   async function onSocialClick(provider: "github" | "google") {
     setPending(true);
     try {
+      await trackClientEvent("auth_social_attempt", { provider });
       await signIn.social({
         provider,
         callbackURL: "/dashboard",
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unable to continue with social login";
+      await trackClientEvent("auth_social_failed", { provider, reason: msg });
       toast.error(msg);
       setPending(false);
     }

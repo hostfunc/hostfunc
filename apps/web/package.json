@@ -10,7 +10,8 @@
     "lint": "biome check .",
     "typecheck": "tsc --noEmit",
     "stripe:sync": "tsx src/scripts/sync-stripe-plans.ts",
-    "stripe:report-usage": "tsx src/scripts/report-stripe-usage.ts"
+    "stripe:report-usage": "tsx src/scripts/report-stripe-usage.ts",
+    "smoke:critical": "tsx src/scripts/smoke-critical-paths.ts"
   },
   "dependencies": {
     "@hostfunc/db": "workspace:*",

@@ -383,3 +383,11 @@ Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for 
 ---
 
 > **Status:** pre-alpha. Interfaces and schema may change without notice. Not recommended for production use yet.
+
+## Launch Ops Docs
+
+- `ops/production-env-matrix.md`
+- `ops/runbooks/stripe-live-cutover.md`
+- `ops/observability.md`
+- `ops/security-reliability-baseline.md`
+- `ops/go-live-checklist.md`

@@ -3,6 +3,7 @@
 import { env } from "@/lib/env";
 import { stripe } from "@/lib/stripe";
 import { requireActiveOrg, requireSession } from "@/lib/session";
+import { trackServerEvent } from "@/server/analytics";
 import { getEffectivePlan } from "@/server/plans";
 import { db, schema } from "@hostfunc/db";
 import { and, asc, eq, gt, isNotNull } from "drizzle-orm";
@@ -77,6 +78,15 @@ export async function createCheckoutSession() {
   if (!checkout.url) {
     throw new Error("stripe returned no checkout URL");
   }
+  await trackServerEvent({
+    event: "billing_checkout_started",
+    distinctId: user.id,
+    props: {
+      orgId,
+      targetPlanId: targetPlan.id,
+      targetPlanSlug: targetPlan.slug,
+    },
+  });
   redirect(checkout.url);
 }
 
@@ -92,6 +102,11 @@ export async function openBillingPortal() {
   const portal = await stripe.billingPortal.sessions.create({
     customer: sub.stripeCustomerId,
     return_url: `${env.BETTER_AUTH_URL}/dashboard/settings/billing`,
+  });
+  await trackServerEvent({
+    event: "billing_portal_opened",
+    distinctId: sub.id,
+    props: { orgId },
   });
   redirect(portal.url);
 }
