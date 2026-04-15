@@ -16,29 +16,31 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
   assertDocsContentIntegrity();
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-slate-200 selection:bg-cyan-500/30 font-sans">
+    <div className="min-h-screen bg-[var(--color-ink)] font-sans text-[var(--color-bone)] selection:bg-[var(--color-amber)]/30">
+      <div className="gradient-radial-amber pointer-events-none absolute inset-x-0 top-0 h-[420px] opacity-60" />
+      <div className="border-grid pointer-events-none absolute inset-0 opacity-30" />
       {/* Top Docs Navbar */}
-      <header className="sticky top-0 z-40 w-full border-b border-white/5 bg-[#09090b]/80 backdrop-blur-md">
+      <header className="sticky top-0 z-40 w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
         <div className="flex h-16 items-center px-6 lg:px-8 max-w-screen-2xl mx-auto justify-between">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 group w-max">
-              <Hexagon className="w-5 h-5 text-cyan-400 group-hover:text-cyan-300 transition-colors" />
-              <span className="font-bold text-xl tracking-tight text-white">
+              <Hexagon className="h-5 w-5 text-[var(--color-amber)] transition-colors group-hover:text-[var(--color-amber-hover)]" />
+              <span className="font-display text-xl tracking-tight text-[var(--color-bone)]">
                 hostfunc
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 ml-2 hidden sm:block">
+              <span className="ml-2 hidden rounded-full border border-[var(--color-border)] bg-white/[0.03] px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[var(--color-bone-muted)] sm:block">
                 Docs
               </span>
             </Link>
 
             <div className="hidden md:flex items-center relative ml-4">
-              <Search className="w-4 h-4 absolute left-3 text-slate-500" />
+              <Search className="absolute left-3 h-4 w-4 text-[var(--color-bone-faint)]" />
               <input
                 disabled
                 placeholder="Search documentation..."
-                className="h-9 w-64 rounded-full border border-white/10 bg-black/50 pl-9 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
+                className="h-9 w-64 rounded-full border border-[var(--color-border)] bg-[var(--color-ink-elevated)] pl-9 pr-4 text-sm text-[var(--color-bone)] placeholder:text-[var(--color-bone-faint)] focus:outline-none focus:ring-1 focus:ring-[var(--color-amber)] transition-all"
               />
-              <kbd className="absolute right-3 hidden sm:inline-flex h-5 items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] font-medium text-slate-400">
+              <kbd className="absolute right-3 hidden h-5 items-center gap-1 rounded border border-[var(--color-border)] bg-white/[0.04] px-1.5 font-mono text-[10px] font-medium text-[var(--color-bone-faint)] sm:inline-flex">
                 <span className="text-xs">⌘</span>K
               </kbd>
             </div>
@@ -52,7 +54,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                 asChild
                 size="sm"
                 variant="ghost"
-                className="text-slate-400 hover:text-white hover:bg-white/5 hidden sm:flex rounded-full"
+                className="hidden rounded-full text-[var(--color-bone-muted)] hover:bg-white/[0.05] hover:text-[var(--color-bone)] sm:flex"
               >
                 <Link href="/dashboard">
                   <LayoutDashboard className="w-4 h-4 mr-2" /> Dashboard
@@ -62,14 +64,14 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
               <div className="hidden sm:flex items-center gap-4">
                 <Link
                   href="/login"
-                  className="text-sm font-semibold text-slate-400 hover:text-white transition-colors"
+                  className="text-sm font-semibold text-[var(--color-bone-muted)] transition-colors hover:text-[var(--color-bone)]"
                 >
                   Log in
                 </Link>
                 <Button
                   asChild
                   size="sm"
-                  className="bg-white text-black hover:bg-slate-200 rounded-full px-5 font-bold"
+                  className="rounded-full bg-[var(--color-amber)] px-5 font-bold text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
                 >
                   <Link href="/login">Get started</Link>
                 </Button>
@@ -78,7 +80,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
 
             <button
               type="button"
-              className="lg:hidden text-slate-300 hover:text-white"
+              className="text-[var(--color-bone-muted)] hover:text-[var(--color-bone)] lg:hidden"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -93,14 +95,14 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
         <aside
           className={cn(
             "fixed top-16 z-30 -ml-2 hidden h-[calc(100vh-4rem)] w-64 shrink-0 overflow-y-auto lg:sticky lg:block", 
-            "border-r border-white/5 bg-[#09090b] pt-10 pb-8 pr-6", 
+            "border-r border-[var(--color-border)] bg-[var(--color-ink)] pt-10 pb-8 pr-6",
           )}
         >
           <div className="flex flex-col gap-8">
             {docsSections.map((section) => (
               <div key={section.title}>
-                <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-500">{section.title}</h4>
-                <div className="flex flex-col space-y-1 border-l border-white/10 ml-1">
+                <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-[var(--color-bone-faint)]">{section.title}</h4>
+                <div className="ml-1 flex flex-col space-y-1 border-l border-[var(--color-border)]">
                   {section.links.map((link) => {
                     const isActive = pathname === link.href;
                     return (
@@ -110,12 +112,12 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                         className={cn(
                           "pl-4 py-1.5 text-sm transition-all relative font-medium",
                           isActive
-                            ? "text-cyan-400 bg-cyan-500/5 rounded-r-lg"
-                            : "text-slate-400 hover:text-white hover:bg-white/5 rounded-r-lg",
+                            ? "rounded-r-lg bg-[var(--color-amber)]/10 text-[var(--color-amber)]"
+                            : "rounded-r-lg text-[var(--color-bone-muted)] hover:bg-white/[0.04] hover:text-[var(--color-bone)]",
                         )}
                       >
                         {isActive && (
-                          <div className="absolute left-[-1px] top-0 bottom-0 w-[2px] bg-cyan-400 rounded-r-full shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
+                          <div className="absolute left-[-1px] top-0 bottom-0 w-[2px] rounded-r-full bg-[var(--color-amber)] shadow-[0_0_8px_rgba(255,197,107,0.5)]" />
                         )}
                         {link.name}
                       </Link>
@@ -129,12 +131,12 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
 
         {/* Mobile Navigation Dropdown */}
         {mobileMenuOpen && (
-          <div className="fixed inset-0 top-16 z-50 bg-[#09090b]/95 backdrop-blur-xl p-6 lg:hidden overflow-y-auto border-b border-white/5">
+          <div className="fixed inset-0 top-16 z-50 overflow-y-auto border-b border-[var(--color-border)] bg-[var(--color-ink)]/95 p-6 backdrop-blur-xl lg:hidden">
             <div className="flex flex-col gap-8 pb-10">
               {docsSections.map((section) => (
                 <div key={section.title}>
-                  <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-500">{section.title}</h4>
-                  <div className="flex flex-col space-y-1 border-l border-white/10 ml-1">
+                  <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-[var(--color-bone-faint)]">{section.title}</h4>
+                  <div className="ml-1 flex flex-col space-y-1 border-l border-[var(--color-border)]">
                     {section.links.map((link) => {
                       const isActive = pathname === link.href;
                       return (
@@ -145,12 +147,12 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                           className={cn(
                             "pl-4 py-2 text-sm transition-all relative font-medium",
                             isActive
-                              ? "text-cyan-400 bg-cyan-500/5 rounded-r-lg"
-                              : "text-slate-400 hover:text-white",
+                              ? "rounded-r-lg bg-[var(--color-amber)]/10 text-[var(--color-amber)]"
+                              : "text-[var(--color-bone-muted)] hover:text-[var(--color-bone)]",
                           )}
                         >
                           {isActive && (
-                            <div className="absolute left-[-1px] top-0 bottom-0 w-[2px] bg-cyan-400 rounded-r-full shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
+                            <div className="absolute left-[-1px] top-0 bottom-0 w-[2px] rounded-r-full bg-[var(--color-amber)] shadow-[0_0_8px_rgba(255,197,107,0.5)]" />
                           )}
                           {link.name}
                         </Link>
@@ -164,7 +166,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
         )}
 
         {/* Dynamic Page Content */}
-        <main className="relative py-12 px-6 lg:px-12 max-w-4xl w-full min-h-[calc(100vh-4rem)]">{children}</main>
+        <main className="relative min-h-[calc(100vh-4rem)] w-full max-w-4xl px-6 py-12 lg:px-12">{children}</main>
       </div>
     </div>
   );

@@ -22,41 +22,44 @@ export default async function DashboardPage() {
   const hasFunctions = functions.length > 0;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="animate-in space-y-8 fade-in duration-500">
       {/* High-Level Metrics */}
       <div>
-        <h1 className="mb-6 text-2xl font-semibold tracking-tight">Dashboard Overview</h1>
+        <h1 className="mb-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">Dashboard Overview</h1>
+        <p className="mb-6 max-w-2xl text-sm text-[var(--color-bone-muted)]">
+          Monitor your function fleet, recent activity, and performance from one control surface.
+        </p>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
+          <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Functions</CardTitle>
-              <Layers className="h-4 w-4 text-muted-foreground" />
+              <Layers className="h-4 w-4 text-[var(--color-bone-faint)]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalFunctions}</div>
-              <p className="text-xs text-muted-foreground mt-1">Active deployments</p>
+              <p className="mt-1 text-xs text-[var(--color-bone-faint)]">Active deployments</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Executions (All Time)</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
+              <Activity className="h-4 w-4 text-[var(--color-bone-faint)]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalExecutions.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground mt-1">Total requests processed</p>
+              <p className="mt-1 text-xs text-[var(--color-bone-faint)]">Total requests processed</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Failures</CardTitle>
               <AlertTriangle className="h-4 w-4 text-red-500/70" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalFailures.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="mt-1 text-xs text-[var(--color-bone-faint)]">
                 {stats.totalExecutions > 0
                   ? `${((stats.totalFailures / stats.totalExecutions) * 100).toFixed(2)}% error rate`
                   : "0% error rate"}
@@ -64,10 +67,10 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Compute Time</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <Clock className="h-4 w-4 text-[var(--color-bone-faint)]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -75,7 +78,7 @@ export default async function DashboardPage() {
                   ? `${(stats.totalCpuMs / 1000).toFixed(1)}s`
                   : `${stats.totalCpuMs}ms`}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Total CPU time billed</p>
+              <p className="mt-1 text-xs text-[var(--color-bone-faint)]">Total CPU time billed</p>
             </CardContent>
           </Card>
         </div>
@@ -89,7 +92,7 @@ export default async function DashboardPage() {
               <h2 className="text-xl font-semibold tracking-tight">Your Functions</h2>
               <Link
                 href="/dashboard/new"
-                className="text-sm text-primary hover:underline font-medium"
+                className="text-sm font-medium text-[var(--color-amber)] hover:underline"
               >
                 Create new
               </Link>
@@ -99,19 +102,19 @@ export default async function DashboardPage() {
               {functions.map((fn) => (
                 <div
                   key={fn.id}
-                  className="group relative rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/40 flex flex-col justify-between overflow-hidden"
+                  className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)] text-[var(--color-bone)] shadow-sm transition-all duration-300 hover:border-[var(--color-amber)]/40 hover:shadow-lg"
                 >
                   <div className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
-                          <Activity className="h-4 w-4 text-primary" />
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--color-amber)]/30 bg-[var(--color-amber)]/10">
+                          <Activity className="h-4 w-4 text-[var(--color-amber)]" />
                         </div>
                         <div className="overflow-hidden">
                           <h3 className="font-mono text-sm font-semibold truncate" title={fn.slug}>
                             {fn.slug}
                           </h3>
-                          <p className="text-[10px] text-muted-foreground whitespace-nowrap">
+                          <p className="whitespace-nowrap text-[10px] text-[var(--color-bone-faint)]">
                             Deployed {formatDistanceToNow(fn.updatedAt, { addSuffix: true })}
                           </p>
                         </div>
@@ -123,13 +126,13 @@ export default async function DashboardPage() {
                         {fn.visibility}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2 h-10 mt-1">
+                    <p className="mt-1 h-10 line-clamp-2 text-sm text-[var(--color-bone-muted)]">
                       {fn.description || "No description provided."}
                     </p>
                   </div>
 
                   {/* Hover Actions Bar */}
-                  <div className="border-t bg-muted/40 p-2.5 flex items-center justify-between transition-colors group-hover:bg-muted/80">
+                  <div className="flex items-center justify-between border-t border-[var(--color-border)] bg-white/[0.02] p-2.5 transition-colors group-hover:bg-white/[0.04]">
                     <div className="flex items-center">
                       <CopyButton value={`https://${fn.slug}.hostfunc.com`} />
                     </div>
@@ -138,7 +141,7 @@ export default async function DashboardPage() {
                         variant="ghost"
                         size="sm"
                         asChild
-                        className="h-7 px-2 text-[11px] shadow-sm bg-background border"
+                        className="h-7 border-[var(--color-border)] bg-transparent px-2 text-[11px] shadow-sm"
                       >
                         <Link href={`/dashboard/${fn.id}/settings`}>
                           <Settings className="h-3 w-3 mr-1" />
@@ -159,16 +162,16 @@ export default async function DashboardPage() {
           </div>
 
           {/* Recent Executions Table */}
-          <Card>
+          <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Latest executions across all your functions</CardDescription>
+              <CardDescription className="text-[var(--color-bone-muted)]">Latest executions across all your functions</CardDescription>
             </CardHeader>
             <CardContent>
               {recentExecutions.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left">
-                    <thead className="text-xs text-muted-foreground bg-muted/50 uppercase border-b">
+                    <thead className="border-b border-[var(--color-border)] bg-white/[0.03] text-xs uppercase text-[var(--color-bone-faint)]">
                       <tr>
                         <th className="px-4 py-3 rounded-tl-md">Function</th>
                         <th className="px-4 py-3">Status</th>
@@ -177,9 +180,9 @@ export default async function DashboardPage() {
                         <th className="px-4 py-3 rounded-tr-md text-right">Time</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y">
+                    <tbody className="divide-y divide-[var(--color-border)]">
                       {recentExecutions.map((exec) => (
-                        <tr key={exec.id} className="hover:bg-muted/30 transition-colors">
+                        <tr key={exec.id} className="transition-colors hover:bg-white/[0.03]">
                           <td className="px-4 py-3 font-mono font-medium">
                             {exec.fnSlug ?? exec.fnId}
                           </td>
@@ -195,11 +198,11 @@ export default async function DashboardPage() {
                               {exec.status}
                             </Badge>
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground uppercase text-xs tracking-wider">
+                          <td className="px-4 py-3 text-xs uppercase tracking-wider text-[var(--color-bone-faint)]">
                             {exec.triggerKind}
                           </td>
                           <td className="px-4 py-3 font-mono text-xs">{exec.wallMs}ms</td>
-                          <td className="px-4 py-3 text-right text-muted-foreground whitespace-nowrap">
+                          <td className="whitespace-nowrap px-4 py-3 text-right text-[var(--color-bone-faint)]">
                             {formatDistanceToNow(exec.startedAt, { addSuffix: true })}
                           </td>
                         </tr>
@@ -208,7 +211,7 @@ export default async function DashboardPage() {
                   </table>
                 </div>
               ) : (
-                <div className="py-8 text-center text-muted-foreground flex flex-col items-center justify-center">
+                <div className="flex flex-col items-center justify-center py-8 text-center text-[var(--color-bone-muted)]">
                   <Activity className="h-8 w-8 mb-3 opacity-20" />
                   <p>No successful or failed executions recorded yet.</p>
                 </div>
@@ -217,18 +220,18 @@ export default async function DashboardPage() {
           </Card>
         </div>
       ) : (
-        <div className="grid place-items-center rounded-xl border border-dashed py-24 text-center mt-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
-            <Layers className="h-6 w-6 text-primary" />
+        <div className="mt-6 grid place-items-center rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-ink-elevated)]/60 py-24 text-center">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-amber)]/10">
+            <Layers className="h-6 w-6 text-[var(--color-amber)]" />
           </div>
-          <h2 className="text-2xl font-semibold">No functions yet</h2>
-          <p className="mt-2 text-muted-foreground max-w-sm">
+          <h2 className="text-2xl font-semibold text-[var(--color-bone)]">No functions yet</h2>
+          <p className="mt-2 max-w-sm text-[var(--color-bone-muted)]">
             Create your first function to start processing events, running crons, and exploring the
             dashboard.
           </p>
           <Link
             href="/dashboard/new"
-            className="mt-6 inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="mt-6 inline-flex items-center rounded-full bg-[var(--color-amber)] px-5 py-2 text-sm font-medium text-[var(--color-ink)] shadow transition-colors hover:bg-[var(--color-amber-hover)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-amber)]"
           >
             Deploy New Function
           </Link>

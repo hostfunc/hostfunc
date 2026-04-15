@@ -1,8 +1,8 @@
 import { FunctionEditor } from "@/components/editor/function-editor";
 import { Button } from "@/components/ui/button";
 import { requireActiveOrg } from "@/lib/session";
-import { getDraft, getFunctionForOrg } from "@/server/functions";
-import { Activity, Settings } from "lucide-react";
+import { getDraft, getFunctionForOrg, getFunctionPackagesForOrg } from "@/server/functions";
+import { Activity, GitBranch, Settings } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -18,22 +18,30 @@ export default async function FunctionEditorPage({
   if (!fn) notFound();
 
   const draft = await getDraft(fnId, session.user.id);
+  const packages = await getFunctionPackagesForOrg(orgId, fnId);
+  const packageNames = packages.map((pkg) => pkg.name);
 
   return (
     <div className="mt-2 flex h-[calc(100dvh-7rem)] flex-col">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-4">
         <div>
-          <h1 className="font-mono text-lg font-semibold">{fn.slug}</h1>
-          <p className="text-xs text-muted-foreground">{fn.description || "No description"}</p>
+          <h1 className="font-mono text-lg font-semibold text-[var(--color-bone)]">{fn.slug}</h1>
+          <p className="text-xs text-[var(--color-bone-muted)]">{fn.description || "No description"}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" size="sm" asChild className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]">
             <Link href={`/dashboard/${fnId}/executions`}>
               <Activity className="mr-2 h-4 w-4" />
               Executions
             </Link>
           </Button>
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" size="sm" asChild className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]">
+            <Link href={`/dashboard/${fnId}/lineage`}>
+              <GitBranch className="mr-2 h-4 w-4" />
+              Lineage
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]">
             <Link href={`/dashboard/${fnId}/settings`}>
               <Settings className="mr-2 h-4 w-4" />
               Settings
@@ -41,8 +49,8 @@ export default async function FunctionEditorPage({
           </Button>
         </div>
       </div>
-      <div className="flex-1 overflow-hidden rounded-lg border border-border">
-        <FunctionEditor fnId={fnId} initialCode={draft?.code ?? ""} />
+      <div className="flex-1 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/50">
+        <FunctionEditor fnId={fnId} initialCode={draft?.code ?? ""} packageNames={packageNames} />
       </div>
     </div>
   );

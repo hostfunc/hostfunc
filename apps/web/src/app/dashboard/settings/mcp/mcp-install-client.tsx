@@ -28,11 +28,11 @@ export function McpInstallClient({
   );
 
   return (
-    <div className="space-y-4 rounded-lg border border-border p-4">
-      <p className="text-sm text-muted-foreground">
+    <div className="space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-4">
+      <p className="text-sm text-[var(--color-bone-muted)]">
         Use an API token from the Tokens page and paste it into your MCP client config.
       </p>
-      <pre className="overflow-auto rounded-md bg-muted/20 p-3 text-xs">{config}</pre>
+      <pre className="overflow-auto rounded-md border border-[var(--color-border)] bg-black/25 p-3 text-xs text-[var(--color-bone)]">{config}</pre>
       <Button
         variant="outline"
         size="sm"

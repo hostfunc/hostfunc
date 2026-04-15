@@ -47,15 +47,15 @@ export default function NewFunctionPage() {
   const [state, formAction, isPending] = useActionState<any, FormData>(createFunctionAction, null);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 lg:h-[calc(100vh-8rem)]">
+    <div className="flex flex-col gap-8 lg:h-[calc(100vh-8rem)] lg:flex-row">
       {/* Left Column: Form Configuration */}
-      <div className="flex-1 lg:max-w-xl flex flex-col pt-4">
+      <div className="flex flex-1 flex-col pt-4 lg:max-w-xl">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Create new function</h1>
-          <p className="text-muted-foreground mb-8">Deploy scalable serverless logic in seconds.</p>
+          <h1 className="mb-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">Create new function</h1>
+          <p className="mb-8 text-[var(--color-bone-muted)]">Deploy scalable serverless logic in seconds.</p>
         </div>
 
-        <form action={formAction} className="space-y-8 flex-1 flex flex-col justify-between">
+        <form action={formAction} className="flex flex-1 flex-col justify-between space-y-8">
           <input type="hidden" name="templateId" value={selectedTemplate} />
 
           <div className="space-y-6">
@@ -77,7 +77,7 @@ export default function NewFunctionPage() {
                     id="slug"
                     name="slug"
                     placeholder="my-awesome-api"
-                    className="pl-[115px] h-12 bg-background/50 border-muted focus-visible:ring-primary backdrop-blur-sm transition-all focus:bg-background"
+                    className="h-12 border-[var(--color-border)] bg-[var(--color-ink-elevated)]/50 pl-[115px] text-[var(--color-bone)] backdrop-blur-sm transition-all focus:bg-[var(--color-ink-elevated)] focus-visible:ring-[var(--color-amber)]"
                     required
                   />
                   {state?.error?.slug && (
@@ -99,7 +99,7 @@ export default function NewFunctionPage() {
                   id="description"
                   name="description"
                   placeholder="What does it do?"
-                  className="h-12 bg-background/50 border-muted focus-visible:ring-primary backdrop-blur-sm transition-all focus:bg-background"
+                  className="h-12 border-[var(--color-border)] bg-[var(--color-ink-elevated)]/50 text-[var(--color-bone)] backdrop-blur-sm transition-all focus:bg-[var(--color-ink-elevated)] focus-visible:ring-[var(--color-amber)]"
                 />
               </div>
             </div>
@@ -121,14 +121,14 @@ export default function NewFunctionPage() {
                       className={cn(
                         "relative cursor-pointer rounded-xl border p-4 transition-all duration-300 text-left w-full",
                         isActive
-                          ? "bg-card border-primary/50 shadow-[0_0_15px_rgba(var(--primary),0.05)] ring-1 ring-primary/20"
-                          : "bg-muted/10 border-border hover:border-foreground/20 hover:bg-muted/50",
+                          ? "border-[var(--color-amber)]/50 bg-[var(--color-ink-elevated)] shadow-[0_0_15px_rgba(255,197,107,0.1)] ring-1 ring-[var(--color-amber)]/20"
+                          : "border-[var(--color-border)] bg-white/[0.02] hover:bg-white/[0.04] hover:border-[var(--color-bone-faint)]",
                       )}
                     >
                       {isActive && (
                         <motion.div
                           layoutId="activeTemplate"
-                          className="absolute inset-0 rounded-xl bg-primary/[0.03] pointer-events-none"
+                          className="pointer-events-none absolute inset-0 rounded-xl bg-[var(--color-amber)]/[0.05]"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
@@ -144,11 +144,11 @@ export default function NewFunctionPage() {
                           >
                             <Icon className="w-4 h-4" />
                           </div>
-                          {isActive && <CheckCircle2 className="w-4 h-4 text-primary" />}
+                          {isActive && <CheckCircle2 className="h-4 w-4 text-[var(--color-amber)]" />}
                         </div>
                         <div>
-                          <h3 className="font-medium text-sm text-foreground">{tmpl.title}</h3>
-                          <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                          <h3 className="text-sm font-medium text-[var(--color-bone)]">{tmpl.title}</h3>
+                          <p className="mt-1 line-clamp-2 text-xs text-[var(--color-bone-muted)]">
                             {tmpl.description}
                           </p>
                         </div>
@@ -164,7 +164,7 @@ export default function NewFunctionPage() {
             <Button
               type="submit"
               size="lg"
-              className="w-full h-12 shadow-lg group relative overflow-hidden"
+              className="group relative h-12 w-full overflow-hidden rounded-full bg-[var(--color-amber)] text-[var(--color-ink)] shadow-lg hover:bg-[var(--color-amber-hover)]"
               disabled={isPending}
             >
               <span className="relative z-10 flex items-center justify-center font-medium">
@@ -184,8 +184,8 @@ export default function NewFunctionPage() {
       </div>
 
       {/* Right Column: Code Preview */}
-      <div className="flex-1 hidden lg:flex rounded-2xl border bg-[#0d1117] text-gray-300 shadow-2xl relative overflow-hidden group">
-        <div className="absolute top-0 inset-x-0 h-10 border-b border-gray-800 bg-[#161b22] px-4 flex items-center gap-2">
+      <div className="group relative hidden flex-1 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[#0d1117] text-gray-300 shadow-2xl lg:flex">
+        <div className="absolute inset-x-0 top-0 flex h-10 items-center gap-2 border-b border-[var(--color-border)] bg-[#161b22] px-4">
           <div className="flex gap-1.5">
             <div className="w-3 h-3 rounded-full bg-red-500/80" />
             <div className="w-3 h-3 rounded-full bg-yellow-500/80" />

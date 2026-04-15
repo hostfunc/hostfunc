@@ -14,6 +14,13 @@ import {
 import { user } from "./auth.js";
 import { organization } from "./organizations.js";
 
+export interface FunctionPackage {
+  name: string;
+  version: string | null;
+  source: "default" | "auto" | "manual";
+  updatedAt: string;
+}
+
 export const visibilityEnum = pgEnum("function_visibility", ["public", "private"]);
 export const deployStatusEnum = pgEnum("deploy_status", [
   "draft",
@@ -34,6 +41,7 @@ export const fn = pgTable(
       .references(() => user.id, { onDelete: "restrict" }),
     slug: text("slug").notNull(),
     description: text("description").notNull().default(""),
+    packages: jsonb("packages").$type<FunctionPackage[]>().notNull().default([]),
     visibility: visibilityEnum("visibility").notNull().default("private"),
     currentVersionId: text("current_version_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
