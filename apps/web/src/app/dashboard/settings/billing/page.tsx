@@ -1,7 +1,7 @@
 import { requireActiveOrg } from "@/lib/session";
 import { getEffectivePlan } from "@/server/plans";
 import { db, schema } from "@hostfunc/db";
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, asc, eq, gt, gte, isNotNull, sql } from "drizzle-orm";
 import { createCheckoutSession, openBillingPortal } from "./actions";
 
 function clampPercent(value: number) {
@@ -11,6 +11,24 @@ function clampPercent(value: number) {
 export default async function BillingSettingsPage() {
   const { orgId } = await requireActiveOrg();
   const plan = await getEffectivePlan(orgId);
+  const purchasablePlans = await db
+    .select({
+      id: schema.plan.id,
+      name: schema.plan.name,
+      slug: schema.plan.slug,
+      priceMonthlyCents: schema.plan.priceMonthlyCents,
+      stripeProductId: schema.plan.stripeProductId,
+      stripePriceId: schema.plan.stripePriceId,
+    })
+    .from(schema.plan)
+    .where(
+      and(
+        eq(schema.plan.isActive, true),
+        gt(schema.plan.priceMonthlyCents, 0),
+        isNotNull(schema.plan.stripePriceId),
+      ),
+    )
+    .orderBy(asc(schema.plan.priceMonthlyCents));
   const cycleStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
   const usage = await db
@@ -30,9 +48,9 @@ export default async function BillingSettingsPage() {
 
   return (
     <div className="space-y-10 pb-10">
-      <div className="border-b border-border pb-6">
-        <h3 className="text-3xl font-semibold tracking-tight">Billing & Usage</h3>
-        <p className="mt-2 max-w-xl text-muted-foreground">
+      <div className="border-b border-[var(--color-border)] pb-6">
+        <h3 className="font-display text-4xl tracking-tight text-[var(--color-bone)]">Billing & Usage</h3>
+        <p className="mt-2 max-w-xl text-[var(--color-bone-muted)]">
           Usage is tracked for the active workspace. Upgrade to unlock higher limits and manage your
           subscription in Stripe.
         </p>
@@ -40,7 +58,39 @@ export default async function BillingSettingsPage() {
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
-          <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 p-6">
+            <h4 className="mb-3 text-lg font-semibold">Available Plans</h4>
+            {purchasablePlans.length > 0 ? (
+              <div className="space-y-3">
+                {purchasablePlans.map((candidate) => (
+                  <div
+                    key={candidate.id}
+                    className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-white/[0.02] px-4 py-3"
+                  >
+                    <div>
+                      <p className="font-medium">{candidate.name}</p>
+                      <p className="text-xs text-[var(--color-bone-faint)]">{candidate.slug}</p>
+                    </div>
+                    <p className="font-mono text-sm">
+                      ${(candidate.priceMonthlyCents / 100).toFixed(2)} / month
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
+                <p className="font-medium text-amber-200">No purchasable Stripe plans found.</p>
+                <p className="mt-1 text-amber-100/90">
+                  Seed plans and sync Stripe prices, then reload this page:
+                </p>
+                <pre className="mt-3 overflow-x-auto rounded-md bg-black/40 p-3 text-xs text-amber-100">
+                  pnpm db:seed{"\n"}pnpm --filter @hostfunc/web stripe:sync
+                </pre>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 p-6">
             <h4 className="mb-6 text-lg font-semibold">Current Cycle Usage</h4>
 
             <div className="mb-8">
@@ -50,7 +100,7 @@ export default async function BillingSettingsPage() {
                   {executionCount.toLocaleString()} / {plan.limits.maxExecutionsPerDay.toLocaleString()}
                 </span>
               </div>
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/30">
                 <div className="h-full rounded-full bg-primary" style={{ width: `${executionPercent}%` }} />
               </div>
             </div>
@@ -62,7 +112,7 @@ export default async function BillingSettingsPage() {
                   {wallMs.toLocaleString()} / {plan.limits.maxWallMs.toLocaleString()}
                 </span>
               </div>
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/30">
                 <div className="h-full rounded-full bg-emerald-500" style={{ width: `${wallPercent}%` }} />
               </div>
             </div>
@@ -70,15 +120,15 @@ export default async function BillingSettingsPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-2xl border border-border bg-card p-6">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 p-6">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-bone-faint)]">
               Current Plan
             </span>
             <h4 className="mt-2 text-2xl font-bold">{plan.planName}</h4>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Status: <span className="font-medium text-foreground">{plan.subscriptionStatus}</span>
+            <p className="mt-2 text-sm text-[var(--color-bone-muted)]">
+              Status: <span className="font-medium text-[var(--color-bone)]">{plan.subscriptionStatus}</span>
             </p>
-            <p className="mt-4 text-sm text-muted-foreground">
+            <p className="mt-4 text-sm text-[var(--color-bone-muted)]">
               {plan.priceMonthlyCents === 0
                 ? "Free tier"
                 : `$${(plan.priceMonthlyCents / 100).toFixed(2)} / month`}
@@ -88,7 +138,7 @@ export default async function BillingSettingsPage() {
           <form action={createCheckoutSession}>
             <button
               type="submit"
-              className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground hover:opacity-90"
+              className="w-full rounded-xl bg-[var(--color-amber)] px-4 py-3 text-sm font-medium text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
             >
               Upgrade / Change Plan
             </button>
@@ -98,7 +148,7 @@ export default async function BillingSettingsPage() {
             <form action={openBillingPortal}>
               <button
                 type="submit"
-                className="w-full rounded-xl border border-border px-4 py-3 text-sm font-medium hover:bg-muted"
+                className="w-full rounded-xl border border-[var(--color-border)] px-4 py-3 text-sm font-medium hover:bg-white/[0.04]"
               >
                 Manage Subscription
               </button>
