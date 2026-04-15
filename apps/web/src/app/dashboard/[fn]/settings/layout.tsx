@@ -1,7 +1,7 @@
 "use client";
 
 import { SettingsLayout } from "@/components/settings/settings-layout";
-import { Activity, Key, Settings, Zap } from "lucide-react";
+import { Activity, GitBranch, Key, Package, Settings, Zap } from "lucide-react";
 import { use } from "react";
 
 export default function FunctionSettingsLayout({
@@ -30,9 +30,19 @@ export default function FunctionSettingsLayout({
       icon: Zap,
     },
     {
+      title: "Packages",
+      href: `/dashboard/${fn}/settings/packages`,
+      icon: Package,
+    },
+    {
       title: "Executions",
       href: `/dashboard/${fn}/executions`,
       icon: Activity,
+    },
+    {
+      title: "Lineage",
+      href: `/dashboard/${fn}/lineage`,
+      icon: GitBranch,
     },
   ];
 

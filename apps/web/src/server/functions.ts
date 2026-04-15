@@ -2,9 +2,42 @@ import "server-only";
 
 import { db, genId, schema, sql } from "@hostfunc/db";
 import { decryptSecret, encryptSecret } from "@/lib/crypto";
+import { DEFAULT_FUNCTION_SDK, type FunctionPackageRecord } from "@/lib/function-packages";
+import { getLatestNpmVersion } from "@/lib/npm-registry";
 
 function compat<T>(value: T): T {
   return value;
+}
+
+function toPackageRecord(
+  name: string,
+  source: FunctionPackageRecord["source"],
+  version: string | null,
+): FunctionPackageRecord {
+  return {
+    name,
+    source,
+    version,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function normalizePackages(packages: FunctionPackageRecord[] | null | undefined): FunctionPackageRecord[] {
+  const byName = new Map<string, FunctionPackageRecord>();
+  for (const pkg of packages ?? []) {
+    if (!pkg?.name) continue;
+    byName.set(pkg.name, pkg);
+  }
+  return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function ensureDefaultSdk(
+  packages: FunctionPackageRecord[] | null | undefined,
+): Promise<FunctionPackageRecord[]> {
+  const normalized = normalizePackages(packages);
+  if (normalized.some((pkg) => pkg.name === DEFAULT_FUNCTION_SDK)) return normalized;
+  const latest = await getLatestNpmVersion(DEFAULT_FUNCTION_SDK);
+  return normalizePackages([...normalized, toPackageRecord(DEFAULT_FUNCTION_SDK, "default", latest)]);
 }
 
 export async function listFunctionsForOrg(orgId: string) {
@@ -142,6 +175,7 @@ export interface CreateFunctionInput {
 
 export async function createFunction(input: CreateFunctionInput) {
   const fnId = genId("fn");
+  const sdkVersion = await getLatestNpmVersion(DEFAULT_FUNCTION_SDK);
   await db.transaction(async (tx) => {
     await tx.insert(schema.fn).values({
       id: fnId,
@@ -149,6 +183,7 @@ export async function createFunction(input: CreateFunctionInput) {
       createdById: input.createdById,
       slug: input.slug,
       description: input.description ?? "",
+      packages: [toPackageRecord(DEFAULT_FUNCTION_SDK, "default", sdkVersion)],
     });
     await tx.insert(schema.fnDraft).values({
       fnId,
@@ -165,4 +200,33 @@ export async function createFunction(input: CreateFunctionInput) {
     });
   });
   return fnId;
+}
+
+export async function getFunctionPackagesForOrg(
+  orgId: string,
+  fnId: string,
+): Promise<FunctionPackageRecord[]> {
+  const rows = await db
+    .select({ packages: schema.fn.packages })
+    .from(schema.fn)
+    .where(compat(sql`${schema.fn.orgId} = ${orgId} and ${schema.fn.id} = ${fnId}`) as never)
+    .limit(1);
+  const ensured = await ensureDefaultSdk(rows[0]?.packages ?? []);
+  if ((rows[0]?.packages?.length ?? 0) !== ensured.length) {
+    await setFunctionPackagesForOrg(orgId, fnId, ensured);
+  }
+  return ensured;
+}
+
+export async function setFunctionPackagesForOrg(
+  orgId: string,
+  fnId: string,
+  packages: FunctionPackageRecord[],
+) {
+  const ensured = await ensureDefaultSdk(packages);
+  await db
+    .update(schema.fn)
+    .set({ packages: ensured, updatedAt: new Date() })
+    .where(compat(sql`${schema.fn.orgId} = ${orgId} and ${schema.fn.id} = ${fnId}`) as never);
+  return ensured;
 }

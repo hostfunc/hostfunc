@@ -177,6 +177,169 @@ export interface UsageSummary {
   totalCpuMs: number;
 }
 
+export interface ExecutionLineageNode {
+  id: string;
+  fnId: string;
+  fnSlug: string;
+  status: "ok" | "fn_error" | "limit_exceeded" | "infra_error";
+  triggerKind: string;
+  wallMs: number;
+  cpuMs: number;
+  startedAt: Date;
+  endedAt: Date | null;
+  parentExecutionId: string | null;
+  callDepth: number;
+}
+
+export interface ExecutionLineageEdge {
+  source: string;
+  target: string;
+  weight: number;
+  hasError: boolean;
+}
+
+export interface ExecutionLineageResult {
+  availableExecutions: Array<{
+    id: string;
+    fnId: string;
+    fnSlug: string;
+    status: "ok" | "fn_error" | "limit_exceeded" | "infra_error";
+    startedAt: Date;
+  }>;
+  selectedExecutionId: string | null;
+  nodes: ExecutionLineageNode[];
+  edges: ExecutionLineageEdge[];
+}
+
+export async function getExecutionLineageForFunction(
+  orgId: string,
+  fnId: string,
+  selectedExecutionId?: string,
+): Promise<ExecutionLineageResult> {
+  // Bound query size so lineage view remains responsive.
+  const allRows = await db
+    .select({
+      id: schema.execution.id,
+      fnId: schema.execution.fnId,
+      fnSlug: schema.fn.slug,
+      status: schema.execution.status,
+      triggerKind: schema.execution.triggerKind,
+      wallMs: schema.execution.wallMs,
+      cpuMs: schema.execution.cpuMs,
+      startedAt: schema.execution.startedAt,
+      endedAt: schema.execution.endedAt,
+      parentExecutionId: schema.execution.parentExecutionId,
+      callDepth: schema.execution.callDepth,
+    })
+    .from(schema.execution)
+    .innerJoin(schema.fn, eq(schema.fn.id, schema.execution.fnId))
+    .where(eq(schema.execution.orgId, orgId))
+    .orderBy(desc(schema.execution.startedAt))
+    .limit(1000);
+
+  const availableExecutions = allRows
+    .filter((row) => row.fnId === fnId)
+    .map((row) => ({
+      id: row.id,
+      fnId: row.fnId,
+      fnSlug: row.fnSlug,
+      status: row.status,
+      startedAt: row.startedAt,
+    }));
+
+  if (availableExecutions.length === 0) {
+    return {
+      availableExecutions: [],
+      selectedExecutionId: null,
+      nodes: [],
+      edges: [],
+    };
+  }
+
+  const resolvedExecutionId =
+    (selectedExecutionId &&
+      availableExecutions.find((execution) => execution.id === selectedExecutionId)?.id) ||
+    availableExecutions[0]?.id ||
+    null;
+
+  if (!resolvedExecutionId) {
+    return {
+      availableExecutions,
+      selectedExecutionId: null,
+      nodes: [],
+      edges: [],
+    };
+  }
+
+  const byId = new Map(allRows.map((row) => [row.id, row]));
+  const childrenByParent = new Map<string, typeof allRows>();
+  for (const row of allRows) {
+    if (!row.parentExecutionId) continue;
+    const existing = childrenByParent.get(row.parentExecutionId) ?? [];
+    existing.push(row);
+    childrenByParent.set(row.parentExecutionId, existing);
+  }
+
+  const included = new Set<string>();
+  const queue = [resolvedExecutionId];
+
+  // Traverse ancestors and descendants from selected root.
+  while (queue.length > 0) {
+    const currentId = queue.shift();
+    if (!currentId || included.has(currentId)) continue;
+    included.add(currentId);
+
+    const current = byId.get(currentId);
+    if (!current) continue;
+    if (current.parentExecutionId && !included.has(current.parentExecutionId)) {
+      queue.push(current.parentExecutionId);
+    }
+    for (const child of childrenByParent.get(currentId) ?? []) {
+      if (!included.has(child.id)) queue.push(child.id);
+    }
+  }
+
+  const nodes = [...included]
+    .map((executionId) => byId.get(executionId))
+    .filter((row): row is NonNullable<typeof row> => Boolean(row))
+    .sort((a, b) => a.startedAt.getTime() - b.startedAt.getTime())
+    .map((row) => ({
+      id: row.id,
+      fnId: row.fnId,
+      fnSlug: row.fnSlug,
+      status: row.status,
+      triggerKind: row.triggerKind,
+      wallMs: row.wallMs,
+      cpuMs: row.cpuMs,
+      startedAt: row.startedAt,
+      endedAt: row.endedAt,
+      parentExecutionId: row.parentExecutionId,
+      callDepth: row.callDepth,
+    }));
+
+  const edgeWeights = new Map<string, number>();
+  const edges: ExecutionLineageEdge[] = [];
+  for (const node of nodes) {
+    if (!node.parentExecutionId || !included.has(node.parentExecutionId)) continue;
+    const key = `${node.parentExecutionId}:${node.id}`;
+    const nextWeight = (edgeWeights.get(key) ?? 0) + 1;
+    edgeWeights.set(key, nextWeight);
+    edges.push({
+      source: node.parentExecutionId,
+      target: node.id,
+      weight: nextWeight,
+      hasError: node.status !== "ok",
+    });
+  }
+
+  return {
+    availableExecutions,
+    selectedExecutionId: resolvedExecutionId,
+    nodes,
+    edges,
+  };
+}
+
 export async function getUsageSummary(orgId: string): Promise<UsageSummary> {
   const rows = await db
     .select({

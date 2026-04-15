@@ -12,9 +12,10 @@ import { MonacoEditor } from "./monaco-editor";
 interface Props {
   fnId: string;
   initialCode: string;
+  packageNames: string[];
 }
 
-export function FunctionEditor({ fnId, initialCode }: Props) {
+export function FunctionEditor({ fnId, initialCode, packageNames }: Props) {
   const [code, setCode] = useState(initialCode);
   const [savedCode, setSavedCode] = useState(initialCode);
   const [aiPrompt, setAiPrompt] = useState("");
@@ -133,7 +134,12 @@ export function FunctionEditor({ fnId, initialCode }: Props) {
 
       {/* Editor Area */}
       <div className="flex-1 relative min-h-0 border-b border-white/5">
-        <MonacoEditor value={code} onChange={setCode} onSave={() => persist(code)} />
+        <MonacoEditor
+          value={code}
+          packageNames={packageNames}
+          onChange={setCode}
+          onSave={() => persist(code)}
+        />
       </div>
 
       <EditorExecutionPane fnId={fnId} />

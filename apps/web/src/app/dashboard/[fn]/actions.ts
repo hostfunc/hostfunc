@@ -2,12 +2,17 @@
 
 import { createHash } from "node:crypto";
 import { env } from "@/lib/env";
+import { DEFAULT_FUNCTION_SDK, type FunctionPackageRecord } from "@/lib/function-packages";
+import { extractExternalPackageNames } from "@/lib/package-imports";
 import { requireActiveOrg } from "@/lib/session";
 import { executor } from "@/server/executor";
+import { getLatestNpmVersion } from "@/lib/npm-registry";
 import { getOrgPlan } from "@/server/plan";
 import {
   deleteSecretForFunction,
+  getFunctionPackagesForOrg,
   listSecretsForFunction,
+  setFunctionPackagesForOrg,
   setSecretForFunction,
 } from "@/server/functions";
 import { db, genId, schema, sql } from "@hostfunc/db";
@@ -35,6 +40,112 @@ const deleteSecretSchema = z.object({
   fnId: z.string(),
   key: z.string().min(1).max(128),
 });
+const addPackageSchema = z.object({
+  fnId: z.string(),
+  name: z.string().min(1).max(214),
+});
+const removePackageSchema = z.object({
+  fnId: z.string(),
+  name: z.string().min(1).max(214),
+});
+const refreshPackageSchema = z.object({
+  fnId: z.string(),
+  name: z.string().min(1).max(214),
+});
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function hasImportForPackage(code: string, packageName: string): boolean {
+  const escaped = escapeRegExp(packageName);
+  const fromRe = new RegExp(String.raw`from\s+["']${escaped}(?:\/[^"']*)?["']`);
+  const sideEffectRe = new RegExp(String.raw`import\s+["']${escaped}(?:\/[^"']*)?["']`);
+  const requireRe = new RegExp(String.raw`require\(\s*["']${escaped}(?:\/[^"']*)?["']\s*\)`);
+  return fromRe.test(code) || sideEffectRe.test(code) || requireRe.test(code);
+}
+
+function toImportIdentifier(packageName: string): string {
+  const base = packageName.startsWith("@")
+    ? (packageName.split("/")[1] ?? "pkg")
+    : (packageName.split("/")[0] ?? "pkg");
+  const cleaned = base.replace(/[^a-zA-Z0-9]+/g, " ");
+  const parts = cleaned
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (parts.length === 0) return "pkg";
+  const [first = "pkg", ...rest] = parts;
+  const camel = `${first.toLowerCase()}${rest
+    .map((part) => part[0]?.toUpperCase() + part.slice(1).toLowerCase())
+    .join("")}`;
+  if (/^[0-9]/.test(camel)) return `pkg${camel}`;
+  return camel;
+}
+
+function buildImportLine(packageName: string): string {
+  if (packageName === DEFAULT_FUNCTION_SDK) return `import fn from "${DEFAULT_FUNCTION_SDK}";`;
+  return `import * as ${toImportIdentifier(packageName)} from "${packageName}";`;
+}
+
+function addImportToCode(code: string, packageName: string): string {
+  if (hasImportForPackage(code, packageName)) return code;
+  const importLine = buildImportLine(packageName);
+  const trimmedStart = code.trimStart();
+  if (!trimmedStart) return `${importLine}\n`;
+  return `${importLine}\n${code}`;
+}
+
+function removeImportFromCode(code: string, packageName: string): string {
+  const escaped = escapeRegExp(packageName);
+  const patterns = [
+    new RegExp(
+      String.raw`^\s*import\s+[\s\S]*?\s+from\s+["']${escaped}(?:\/[^"']*)?["'];?\s*$\n?`,
+      "gm",
+    ),
+    new RegExp(String.raw`^\s*import\s+["']${escaped}(?:\/[^"']*)?["'];?\s*$\n?`, "gm"),
+    new RegExp(
+      String.raw`^\s*(?:const|let|var)\s+[\w$]+\s*=\s*require\(\s*["']${escaped}(?:\/[^"']*)?["']\s*\);?\s*$\n?`,
+      "gm",
+    ),
+  ];
+  let next = code;
+  for (const pattern of patterns) {
+    next = next.replace(pattern, "");
+  }
+  return next.replace(/\n{3,}/g, "\n\n");
+}
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function mergePackages(
+  existing: FunctionPackageRecord[],
+  additions: Array<{ name: string; source: FunctionPackageRecord["source"]; version: string | null }>,
+): FunctionPackageRecord[] {
+  const byName = new Map(existing.map((pkg) => [pkg.name, pkg]));
+  for (const addition of additions) {
+    const current = byName.get(addition.name);
+    if (current) {
+      byName.set(addition.name, {
+        ...current,
+        source: current.source === "default" ? "default" : addition.source,
+        version: addition.version ?? current.version,
+        updatedAt: nowIso(),
+      });
+      continue;
+    }
+
+    byName.set(addition.name, {
+      name: addition.name,
+      source: addition.source,
+      version: addition.version,
+      updatedAt: nowIso(),
+    });
+  }
+  return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
 
 async function assertOrgOwnsFunction(orgId: string, fnId: string) {
   const rows = await db
@@ -53,6 +164,23 @@ export async function saveDraft(input: z.infer<typeof saveDraftSchema>) {
   const parsed = saveDraftSchema.parse(input);
 
   await assertOrgOwnsFunction(orgId, parsed.fnId);
+
+  const detected = extractExternalPackageNames(parsed.code);
+  if (detected.length > 0) {
+    const existing = await getFunctionPackagesForOrg(orgId, parsed.fnId);
+    const existingNames = new Set(existing.map((pkg) => pkg.name));
+    const missing = detected.filter((pkgName) => !existingNames.has(pkgName));
+    if (missing.length > 0) {
+      const latestVersions = await Promise.all(missing.map((pkgName) => getLatestNpmVersion(pkgName)));
+      const additions = missing.map((name, idx) => ({
+        name,
+        source: "auto" as const,
+        version: latestVersions[idx] ?? null,
+      }));
+      const merged = mergePackages(existing, additions);
+      await setFunctionPackagesForOrg(orgId, parsed.fnId, merged);
+    }
+  }
 
   await db
     .insert(schema.fnDraft)
@@ -107,6 +235,7 @@ export interface DeployResultUi {
 export async function deployFunction(fnId: string): Promise<DeployResultUi> {
   const { session, orgId } = await requireActiveOrg();
   const fnRow = await assertOrgOwnsFunction(orgId, fnId);
+  await getFunctionPackagesForOrg(orgId, fnId);
   const orgPlan = await getOrgPlan(orgId);
   const maxActiveFunctions = orgPlan?.limits.maxFunctions ?? 3;
 
@@ -209,6 +338,116 @@ export async function listSecrets(fnId: string) {
   const { orgId } = await requireActiveOrg();
   await assertOrgOwnsFunction(orgId, fnId);
   return listSecretsForFunction(orgId, fnId);
+}
+
+export async function listFunctionPackages(fnId: string) {
+  const { orgId } = await requireActiveOrg();
+  await assertOrgOwnsFunction(orgId, fnId);
+  return getFunctionPackagesForOrg(orgId, fnId);
+}
+
+export async function addFunctionPackage(input: z.infer<typeof addPackageSchema>) {
+  const { orgId, session } = await requireActiveOrg();
+  const parsed = addPackageSchema.parse(input);
+  await assertOrgOwnsFunction(orgId, parsed.fnId);
+
+  const name = parsed.name.trim();
+  const existing = await getFunctionPackagesForOrg(orgId, parsed.fnId);
+  if (existing.some((pkg) => pkg.name === name)) return { ok: true };
+
+  const latest = await getLatestNpmVersion(name);
+  const merged = mergePackages(existing, [{ name, source: "manual", version: latest }]);
+  await setFunctionPackagesForOrg(orgId, parsed.fnId, merged);
+
+  const draftRows = await db
+    .select({ code: schema.fnDraft.code })
+    .from(schema.fnDraft)
+    .where(
+      compatWhere(
+        sql`${schema.fnDraft.fnId} = ${parsed.fnId} and ${schema.fnDraft.userId} = ${session.user.id}`,
+      ) as never,
+    )
+    .limit(1);
+  const currentCode = draftRows[0]?.code ?? "";
+  const nextCode = addImportToCode(currentCode, name);
+  if (nextCode !== currentCode) {
+    await db
+      .insert(schema.fnDraft)
+      .values({
+        fnId: parsed.fnId,
+        userId: session.user.id,
+        code: nextCode,
+      })
+      .onConflictDoUpdate({
+        target: [schema.fnDraft.fnId, schema.fnDraft.userId],
+        set: { code: nextCode, updatedAt: new Date() },
+      });
+  }
+
+  revalidatePath(`/dashboard/${parsed.fnId}`);
+  revalidatePath(`/dashboard/${parsed.fnId}/settings/packages`);
+  return { ok: true, codeUpdated: nextCode !== currentCode };
+}
+
+export async function removeFunctionPackage(input: z.infer<typeof removePackageSchema>) {
+  const { orgId, session } = await requireActiveOrg();
+  const parsed = removePackageSchema.parse(input);
+  await assertOrgOwnsFunction(orgId, parsed.fnId);
+
+  if (parsed.name === DEFAULT_FUNCTION_SDK) {
+    throw new Error("default_package_protected");
+  }
+
+  const existing = await getFunctionPackagesForOrg(orgId, parsed.fnId);
+  const next = existing.filter((pkg) => pkg.name !== parsed.name);
+  await setFunctionPackagesForOrg(orgId, parsed.fnId, next);
+
+  const draftRows = await db
+    .select({ code: schema.fnDraft.code })
+    .from(schema.fnDraft)
+    .where(
+      compatWhere(
+        sql`${schema.fnDraft.fnId} = ${parsed.fnId} and ${schema.fnDraft.userId} = ${session.user.id}`,
+      ) as never,
+    )
+    .limit(1);
+  const currentCode = draftRows[0]?.code ?? "";
+  const updatedCode = removeImportFromCode(currentCode, parsed.name);
+  if (updatedCode !== currentCode) {
+    await db
+      .insert(schema.fnDraft)
+      .values({
+        fnId: parsed.fnId,
+        userId: session.user.id,
+        code: updatedCode,
+      })
+      .onConflictDoUpdate({
+        target: [schema.fnDraft.fnId, schema.fnDraft.userId],
+        set: { code: updatedCode, updatedAt: new Date() },
+      });
+  }
+
+  revalidatePath(`/dashboard/${parsed.fnId}`);
+  revalidatePath(`/dashboard/${parsed.fnId}/settings/packages`);
+  return { ok: true };
+}
+
+export async function refreshFunctionPackageVersion(input: z.infer<typeof refreshPackageSchema>) {
+  const { orgId } = await requireActiveOrg();
+  const parsed = refreshPackageSchema.parse(input);
+  await assertOrgOwnsFunction(orgId, parsed.fnId);
+
+  const existing = await getFunctionPackagesForOrg(orgId, parsed.fnId);
+  const target = existing.find((pkg) => pkg.name === parsed.name);
+  if (!target) throw new Error("package_not_found");
+
+  const latest = await getLatestNpmVersion(parsed.name);
+  const next = existing.map((pkg) =>
+    pkg.name === parsed.name ? { ...pkg, version: latest, updatedAt: nowIso() } : pkg,
+  );
+  await setFunctionPackagesForOrg(orgId, parsed.fnId, next);
+  revalidatePath(`/dashboard/${parsed.fnId}/settings/packages`);
+  return { ok: true };
 }
 
 export async function setSecret(input: z.infer<typeof setSecretSchema>) {

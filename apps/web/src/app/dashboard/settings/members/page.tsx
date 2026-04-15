@@ -127,20 +127,20 @@ function InviteMemberDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-white text-black hover:bg-white/90 h-10 px-5 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] transition-all">
+        <Button className="h-10 rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] transition-all hover:bg-[var(--color-amber-hover)]">
           <UserPlus className="w-4 h-4 mr-2" />
           Invite Member
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-[#0f0f11] border-white/10 text-white max-w-md shadow-2xl">
+      <DialogContent className="max-w-md border-[var(--color-border)] bg-[var(--color-ink-elevated)] text-[var(--color-bone)] shadow-2xl">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
               <UserPlus className="w-5 h-5 text-indigo-400" />
             </div>
             <div>
-              <DialogTitle className="text-white text-lg">Invite Team Member</DialogTitle>
-              <DialogDescription className="text-muted-foreground mt-0.5 text-sm">
+              <DialogTitle className="text-lg text-[var(--color-bone)]">Invite Team Member</DialogTitle>
+              <DialogDescription className="mt-0.5 text-sm text-[var(--color-bone-muted)]">
                 Send a magic link invitation to a new member of your organization.
               </DialogDescription>
             </div>
@@ -164,7 +164,7 @@ function InviteMemberDialog() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="pl-10 h-11 bg-black/40 border-white/10 text-white placeholder:text-muted-foreground/50 focus-visible:ring-indigo-500 focus-visible:border-indigo-500"
+                className="h-11 border-[var(--color-border)] bg-black/30 pl-10 text-[var(--color-bone)] placeholder:text-[var(--color-bone-faint)] focus-visible:border-[var(--color-amber)] focus-visible:ring-[var(--color-amber)]"
               />
             </div>
           </div>
@@ -213,14 +213,14 @@ function InviteMemberDialog() {
               type="button"
               variant="ghost"
               onClick={() => setOpen(false)}
-              className="hover:bg-white/5 text-muted-foreground"
+              className="text-[var(--color-bone-muted)] hover:bg-white/[0.04]"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={pending || !email}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6"
+              className="bg-[var(--color-amber)] px-6 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
             >
               {pending ? (
                 <>
@@ -292,7 +292,7 @@ function MemberActions({
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 p-0 text-muted-foreground hover:text-white hover:bg-white/10"
+          className="h-8 w-8 p-0 text-[var(--color-bone-faint)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
           disabled={!!pending}
         >
           {pending ? (
@@ -304,9 +304,9 @@ function MemberActions({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="bg-[#141416] border-white/10 text-slate-200 min-w-[180px] shadow-2xl"
+        className="min-w-[180px] border-[var(--color-border)] bg-[var(--color-ink-elevated)] text-[var(--color-bone)] shadow-2xl"
       >
-        <DropdownMenuLabel className="text-muted-foreground text-xs uppercase tracking-wider font-semibold px-3 py-2">
+        <DropdownMenuLabel className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-bone-faint)]">
           Change Role
         </DropdownMenuLabel>
         <DropdownMenuItem
@@ -323,7 +323,7 @@ function MemberActions({
         >
           <Shield className="w-4 h-4 text-slate-400" /> Set as Member
         </DropdownMenuItem>
-        <DropdownMenuSeparator className="bg-white/5" />
+        <DropdownMenuSeparator className="bg-[var(--color-border)]" />
         <DropdownMenuItem
           onClick={handleRemove}
           className="gap-2 cursor-pointer text-red-400 hover:text-red-400 hover:bg-red-500/10 focus:bg-red-500/10 focus:text-red-400"
@@ -363,14 +363,14 @@ export default function MembersOrgSettingsPage() {
   }
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500 pb-10">
+    <div className="animate-in space-y-10 fade-in duration-500 pb-10">
       {/* Page Header */}
-      <div className="border-b border-white/10 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col justify-between gap-6 border-b border-[var(--color-border)] pb-6 md:flex-row md:items-center">
         <div>
-          <h3 className="text-3xl font-semibold tracking-tight text-white flex items-center gap-2">
-            Team Members <Users className="w-6 h-6 text-indigo-500" />
+          <h3 className="flex items-center gap-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
+            Team Members <Users className="h-6 w-6 text-[var(--color-amber)]" />
           </h3>
-          <p className="text-muted-foreground mt-2 max-w-xl leading-relaxed">
+          <p className="mt-2 max-w-xl leading-relaxed text-[var(--color-bone-muted)]">
             Manage who has access to this organization. Owners can invite new members, change roles,
             and revoke access.
           </p>
@@ -381,15 +381,15 @@ export default function MembersOrgSettingsPage() {
       {/* Active Members */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h4 className="text-lg font-semibold text-white">
+          <h4 className="text-lg font-semibold text-[var(--color-bone)]">
             Active Members
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
+            <span className="ml-2 text-sm font-normal text-[var(--color-bone-faint)]">
               ({members.length})
             </span>
           </h4>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] overflow-hidden shadow-xl">
+        <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 shadow-xl">
           <AnimatePresence>
             {members.map((member, i) => {
               const isSelf = member.userId === session?.user.id;
@@ -400,13 +400,13 @@ export default function MembersOrgSettingsPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.06 }}
-                  className="flex items-center justify-between px-6 py-4 hover:bg-white/[0.02] transition-colors border-b border-white/5 last:border-0"
+                  className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-4 transition-colors hover:bg-white/[0.03] last:border-0"
                 >
                   <div className="flex items-center gap-4 min-w-0">
                     <MemberAvatar name={member.user?.name} email={member.user?.email ?? ""} />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold text-white truncate">
+                        <p className="truncate text-sm font-semibold text-[var(--color-bone)]">
                           {member.user?.name ?? member.user?.email}
                         </p>
                         {isSelf && (
@@ -415,7 +415,7 @@ export default function MembersOrgSettingsPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                      <p className="mt-0.5 truncate text-xs text-[var(--color-bone-faint)]">
                         {member.user?.email}
                       </p>
                     </div>
@@ -446,30 +446,30 @@ export default function MembersOrgSettingsPage() {
       {invitations.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-4">
-            <h4 className="text-lg font-semibold text-white">Pending Invitations</h4>
+            <h4 className="text-lg font-semibold text-[var(--color-bone)]">Pending Invitations</h4>
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
               {invitations.length} awaiting
             </span>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] overflow-hidden">
+          <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70">
             {invitations.map((invite, i) => (
               <motion.div
                 key={invite.id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06 }}
-                className="flex items-center justify-between px-6 py-4 border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors"
+                className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-4 transition-colors hover:bg-white/[0.03] last:border-0"
               >
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 border-dashed flex items-center justify-center">
                     <Mail className="w-4 h-4 text-muted-foreground" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-300 truncate">{invite.email}</p>
+                    <p className="truncate text-sm font-semibold text-[var(--color-bone)]">{invite.email}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <Clock className="w-3 h-3 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground">Invite pending</p>
+                      <p className="text-xs text-[var(--color-bone-faint)]">Invite pending</p>
                     </div>
                   </div>
                 </div>
@@ -482,7 +482,7 @@ export default function MembersOrgSettingsPage() {
                     size="sm"
                     onClick={() => handleResendInvite(invite.id, invite.email)}
                     disabled={resendingId === invite.id}
-                    className="h-8 text-xs text-muted-foreground hover:text-white hover:bg-white/10"
+                    className="h-8 text-xs text-[var(--color-bone-muted)] hover:bg-white/[0.05] hover:text-[var(--color-bone)]"
                   >
                     {resendingId === invite.id ? (
                       <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
