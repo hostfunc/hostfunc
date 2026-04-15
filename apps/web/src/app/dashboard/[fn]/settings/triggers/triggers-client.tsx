@@ -43,9 +43,9 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
 
   return (
     <div className="space-y-5">
-      <section className="rounded-lg border border-border p-4 space-y-2">
+      <section className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-4">
         <h4 className="font-medium">HTTP trigger</h4>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-[var(--color-bone-muted)]">
           Public runtime URL is always available. Set requireAuth for future edge auth enforcement.
         </p>
         <div className="flex gap-2">
@@ -61,7 +61,7 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
         </div>
       </section>
 
-      <section className="rounded-lg border border-border p-4 space-y-2">
+      <section className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-4">
         <h4 className="font-medium">Cron trigger</h4>
         <div className="flex gap-2">
           <Input value={cronSchedule} onChange={(e) => setCronSchedule(e.target.value)} placeholder="schedule" />
@@ -102,7 +102,7 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
         </div>
       </section>
 
-      <section className="rounded-lg border border-border p-4 space-y-2">
+      <section className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-4">
         <h4 className="font-medium">Email trigger</h4>
         <Input value={emailAddress} onChange={(e) => setEmailAddress(e.target.value)} placeholder="inbound address" />
         <Input
@@ -148,7 +148,7 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
         </div>
       </section>
 
-      <section className="rounded-lg border border-border p-4 space-y-2">
+      <section className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-4">
         <h4 className="font-medium">MCP trigger metadata</h4>
         <Input value={mcpToolName} onChange={(e) => setMcpToolName(e.target.value)} placeholder="tool name" />
         <Input value={mcpDescription} onChange={(e) => setMcpDescription(e.target.value)} placeholder="description" />

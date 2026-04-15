@@ -7,7 +7,7 @@ export function SettingsCard({ className, ...props }: SettingsCardProps) {
   return (
     <div
       className={cn(
-        "rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-200 overflow-hidden",
+        "overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)] text-[var(--color-bone)] shadow-sm transition-all duration-200",
         className,
       )}
       {...props}
@@ -24,13 +24,13 @@ export function SettingsCardHeader({ className, ...props }: SettingsCardHeaderPr
 interface SettingsCardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {}
 
 export function SettingsCardTitle({ className, ...props }: SettingsCardTitleProps) {
-  return <h3 className={cn("font-semibold leading-none tracking-tight", className)} {...props} />;
+  return <h3 className={cn("font-semibold leading-none tracking-tight text-[var(--color-bone)]", className)} {...props} />;
 }
 
 interface SettingsCardDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {}
 
 export function SettingsCardDescription({ className, ...props }: SettingsCardDescriptionProps) {
-  return <p className={cn("text-sm text-muted-foreground", className)} {...props} />;
+  return <p className={cn("text-sm text-[var(--color-bone-muted)]", className)} {...props} />;
 }
 
 interface SettingsCardContentProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -42,5 +42,5 @@ export function SettingsCardContent({ className, ...props }: SettingsCardContent
 interface SettingsCardFooterProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function SettingsCardFooter({ className, ...props }: SettingsCardFooterProps) {
-  return <div className={cn("flex items-center p-6 bg-muted/50 border-t", className)} {...props} />;
+  return <div className={cn("flex items-center border-t border-[var(--color-border)] bg-white/[0.02] p-6", className)} {...props} />;
 }

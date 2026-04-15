@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "stripe:sync": "tsx src/scripts/sync-stripe-plans.ts",
     "stripe:report-usage": "tsx src/scripts/report-stripe-usage.ts",
-    "smoke:critical": "tsx src/scripts/smoke-critical-paths.ts"
+    "smoke:critical": "tsx src/scripts/smoke-critical-paths.ts",
+    "smoke:auth-social": "tsx src/scripts/smoke-auth-social.ts"
   },
   "dependencies": {
     "@hostfunc/db": "workspace:*",
@@ -21,6 +22,9 @@
     "@hostfunc/mcp-tools": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.13.1",
     "@monaco-editor/react": "^4.7.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.0",
+    "@react-three/postprocessing": "^3.0.4",
     "argon2": "^0.44.0",
     "better-auth": "^1.6.2",
     "class-variance-authority": "^0.7.1",
@@ -31,6 +35,7 @@
     "ioredis": "^5.10.1",
     "lucide-react": "^1.8.0",
     "monaco-editor": "^0.55.1",
+    "motion": "^12.38.0",
     "next": "^16.2.3",
     "next-themes": "^0.4.6",
     "radix-ui": "^1.4.3",
@@ -40,6 +45,7 @@
     "source-map": "^0.7.6",
     "stripe": "^22.0.1",
     "tailwind-merge": "^3.5.0",
+    "three": "^0.183.2",
     "ulid": "^3.0.2",
     "zod": "^3.24.1"
   },
@@ -48,6 +54,7 @@
     "@types/node": "^22.19.17",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.183.1",
     "tailwindcss": "^4.0.0",
     "tsx": "^4.19.2",
     "tw-animate-css": "^1.4.0",
