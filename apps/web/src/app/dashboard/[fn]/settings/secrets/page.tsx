@@ -14,8 +14,8 @@ export default async function SecretsFunctionSettingsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-[var(--color-bone)]">Environment Variables</h3>
-        <p className="text-sm text-[var(--color-bone-muted)]">
+        <h3 className="text-lg font-medium">Environment Variables</h3>
+        <p className="text-sm text-muted-foreground">
           Secrets are encrypted at rest and injected only for this function at execution time.
         </p>
       </div>

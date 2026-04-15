@@ -38,15 +38,15 @@ export function DocsCodeBlock({
   };
 
   return (
-    <div className="docs-code relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-black/40">
-      <div className="flex items-center justify-between border-b border-[var(--color-border)] px-3 py-2">
-        <span className="text-[11px] uppercase tracking-wider text-[var(--color-bone-faint)]">
+    <div className="docs-code relative overflow-hidden rounded-xl border border-white/10 bg-black/40">
+      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+        <span className="text-[11px] uppercase tracking-wider text-slate-400">
           {resolvedLanguage}
         </span>
         <button
           type="button"
           onClick={() => void onCopy()}
-          className="inline-flex items-center gap-1 rounded-md border border-[var(--color-border)] bg-white/[0.03] px-2 py-1 text-[11px] text-[var(--color-bone-muted)] transition-colors hover:bg-white/[0.08] hover:text-[var(--color-bone)]"
+          className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/[0.03] px-2 py-1 text-[11px] text-slate-300 transition-colors hover:bg-white/[0.08] hover:text-white"
           aria-label="Copy code example"
         >
           {copied ? (
@@ -57,7 +57,7 @@ export function DocsCodeBlock({
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <pre className="overflow-x-auto p-4 text-xs leading-relaxed text-[var(--color-bone)]">
+      <pre className="overflow-x-auto p-4 text-xs leading-relaxed">
         <code>
           {lines.map((line, lineIdx) => {
             const lineOffset = lines
@@ -69,7 +69,6 @@ export function DocsCodeBlock({
                   <span
                     key={`token-${lineOffset + token.start}-${token.value}`}
                     className={token.className}
-                    style={getTokenStyle(token.className)}
                   >
                     {token.value}
                   </span>
@@ -89,10 +88,9 @@ function tokenizeLine(
 ): Array<{ value: string; className?: string; start: number }> {
   const patterns: Record<string, RegExp> = {
     typescript:
-      /(\/\/.*$|"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|`(?:\\.|[^`])*`|\b(?:import|export|default|async|await|function|return|const|let|var|if|else|try|catch|throw|new|class|interface|type|extends|implements|from|as|true|false|null|undefined)\b|\b(?:number|string|boolean|unknown|void|Record|Promise|Date)\b|\b\d+(?:\.\d+)?\b|\b[A-Za-z_$][A-Za-z0-9_$]*\s*(?=\())/g,
-    bash: /(#.*$|"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?|--?[A-Za-z0-9-]+|\b(?:npm|pnpm|npx|hostfunc|curl|node|export|cat|echo|cd|ls|pwd|git|docker)\b|\|\||&&|[|><])/g,
-    json:
-      /("(?:\\.|[^"])*"\s*:|"(?:\\.|[^"])*"|\b(?:true|false|null)\b|\b-?\d+(?:\.\d+)?\b|[{}\[\],:])/g,
+      /(\/\/.*$|"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|`(?:\\.|[^`])*`|\b(?:import|export|async|await|function|return|const|let|var|if|else|try|catch|throw|new|class|interface|type|extends|implements|from)\b|\b\d+(?:\.\d+)?\b)/g,
+    bash: /(#.*$|"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?|--?[A-Za-z0-9-]+|\b(?:npm|pnpm|npx|hostfunc|curl|node|export)\b)/g,
+    json: /("(?:\\.|[^"])*"\s*:|"(?:\\.|[^"])*"|\b(?:true|false|null)\b|\b-?\d+(?:\.\d+)?\b|[{}\[\],:])/g,
   };
 
   const regex = patterns[language];
@@ -125,11 +123,7 @@ function getTokenClass(language: "typescript" | "bash" | "json", token: string):
     if (token.startsWith("//")) return "token comment";
     if (token.startsWith('"') || token.startsWith("'") || token.startsWith("`"))
       return "token string";
-    if (/^[A-Za-z_$][A-Za-z0-9_$]*\s*(?=\()/.test(token)) return "token function";
-    if (/^(number|string|boolean|unknown|void|Record|Promise|Date)$/.test(token)) return "token type";
     if (/^\d/.test(token)) return "token number";
-    if (/^(true|false|null|undefined)$/.test(token)) return "token keyword";
-    if (/^[@${}.:[\],()]+$/.test(token)) return "token punctuation";
     return "token keyword";
   }
 
@@ -137,7 +131,6 @@ function getTokenClass(language: "typescript" | "bash" | "json", token: string):
     if (token.startsWith("#")) return "token comment";
     if (token.startsWith('"') || token.startsWith("'")) return "token string";
     if (token.startsWith("$")) return "token variable";
-    if (/^\|\||&&|[|><]$/.test(token)) return "token operator";
     if (token.startsWith("-")) return "token attr-name";
     return "token function";
   }
@@ -147,21 +140,4 @@ function getTokenClass(language: "typescript" | "bash" | "json", token: string):
   if (/^(true|false|null)$/.test(token)) return "token keyword";
   if (/^-?\d/.test(token)) return "token number";
   return "token punctuation";
-}
-
-function getTokenStyle(className?: string): { color?: string } | undefined {
-  if (!className) return undefined;
-  if (className.includes("comment")) return { color: "var(--color-syntax-comment)" };
-  if (className.includes("keyword")) return { color: "var(--color-syntax-keyword)" };
-  if (className.includes("string")) return { color: "var(--color-syntax-string)" };
-  if (className.includes("number")) return { color: "var(--color-syntax-number)" };
-  if (className.includes("function")) return { color: "var(--color-syntax-function)" };
-  if (className.includes("type")) return { color: "var(--color-syntax-type)" };
-  if (className.includes("property")) return { color: "var(--color-syntax-property)" };
-  if (className.includes("variable")) return { color: "var(--color-amber-hover)" };
-  if (className.includes("attr-name")) return { color: "var(--color-cyan)" };
-  if (className.includes("operator") || className.includes("punctuation")) {
-    return { color: "var(--color-bone-faint)" };
-  }
-  return undefined;
 }

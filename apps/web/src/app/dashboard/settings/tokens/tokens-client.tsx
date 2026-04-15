@@ -22,13 +22,13 @@ export function TokensClient({ initialTokens }: { initialTokens: TokenRow[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-4">
-        <h3 className="text-base font-medium text-[var(--color-bone)]">Create API token</h3>
-        <p className="mt-1 text-sm text-[var(--color-bone-muted)]">
+      <div className="rounded-lg border border-border p-4">
+        <h3 className="text-base font-medium">Create API token</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
           Token values are shown once. Store them securely.
         </p>
         <div className="mt-3 flex gap-2">
-          <Input value={name} onChange={(e) => setName(e.target.value)} className="max-w-xs border-[var(--color-border)] bg-black/30 text-[var(--color-bone)]" />
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="max-w-xs" />
           <Button
             disabled={pending}
             onClick={() =>
@@ -51,17 +51,17 @@ export function TokensClient({ initialTokens }: { initialTokens: TokenRow[] }) {
         ) : null}
       </div>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65">
-        <div className="border-b border-[var(--color-border)] p-3 text-sm font-medium text-[var(--color-bone)]">Existing tokens</div>
+      <div className="rounded-lg border border-border">
+        <div className="border-b p-3 text-sm font-medium">Existing tokens</div>
         <div className="divide-y">
           {tokens.length === 0 ? (
-            <div className="p-4 text-sm text-[var(--color-bone-muted)]">No tokens yet.</div>
+            <div className="p-4 text-sm text-muted-foreground">No tokens yet.</div>
           ) : (
             tokens.map((token) => (
-              <div key={token.id} className="flex items-center justify-between p-3 text-sm text-[var(--color-bone)]">
+              <div key={token.id} className="flex items-center justify-between p-3 text-sm">
                 <div>
                   <p className="font-medium">{token.name}</p>
-                  <p className="font-mono text-xs text-[var(--color-bone-faint)]">{token.prefix}...</p>
+                  <p className="font-mono text-xs text-muted-foreground">{token.prefix}...</p>
                 </div>
                 <Button
                   variant="outline"

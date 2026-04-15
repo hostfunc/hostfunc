@@ -23,8 +23,8 @@ export default async function GeneralOrgSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-[var(--color-bone)]">General</h3>
-        <p className="text-sm text-[var(--color-bone-muted)]">
+        <h3 className="text-lg font-medium">General</h3>
+        <p className="text-sm text-muted-foreground">
           Update your organization's display name and primary identifier.
         </p>
       </div>
@@ -37,7 +37,7 @@ export default async function GeneralOrgSettingsPage() {
           </SettingsCardDescription>
         </SettingsCardHeader>
         <SettingsCardContent>
-          <div className="grid max-w-6xl gap-2">
+          <div className="grid gap-2 max-w-6xl">
             <Label htmlFor="orgName" className="sr-only">
               Name
             </Label>
@@ -57,18 +57,18 @@ export default async function GeneralOrgSettingsPage() {
           </SettingsCardDescription>
         </SettingsCardHeader>
         <SettingsCardContent>
-          <div className="grid max-w-6xl gap-2">
+          <div className="grid gap-2 max-w-6xl">
             <Label htmlFor="orgSlug" className="sr-only">
               Slug
             </Label>
-            <div className="flex items-center rounded-md border border-[var(--color-border)] shadow-sm focus-within:ring-1 focus-within:ring-[var(--color-amber)]">
-              <span className="rounded-l-md border-r border-[var(--color-border)] bg-white/[0.04] px-3 py-2 text-sm text-[var(--color-bone-faint)]">
+            <div className="flex items-center rounded-md border border-input shadow-sm focus-within:ring-1 focus-within:ring-ring">
+              <span className="pl-3 text-sm text-muted-foreground border-r pr-3 py-2 bg-muted rounded-l-md">
                 hostfunc.com/
               </span>
               <Input
                 id="orgSlug"
                 defaultValue={org?.slug ?? ""}
-                className="rounded-l-none border-0 bg-transparent text-[var(--color-bone)] shadow-none focus-visible:ring-0"
+                className="border-0 shadow-none focus-visible:ring-0 rounded-l-none"
               />
             </div>
           </div>

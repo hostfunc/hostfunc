@@ -44,8 +44,8 @@ export function ExecutionsFilters() {
   const hasAny = Boolean(searchParams.get("status") || searchParams.get("trigger"));
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-3">
-      <span className="text-xs font-medium text-[var(--color-bone-faint)]">Status</span>
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/20 p-3">
+      <span className="text-xs font-medium text-muted-foreground">Status</span>
       {STATUS_OPTIONS.map((option) => (
         <FilterChip
           key={option.value}
@@ -55,7 +55,7 @@ export function ExecutionsFilters() {
         />
       ))}
       <div className="mx-1 h-4 w-px bg-border" />
-      <span className="text-xs font-medium text-[var(--color-bone-faint)]">Trigger</span>
+      <span className="text-xs font-medium text-muted-foreground">Trigger</span>
       {TRIGGER_OPTIONS.map((option) => (
         <FilterChip
           key={option.value}
@@ -65,7 +65,7 @@ export function ExecutionsFilters() {
         />
       ))}
       {hasAny ? (
-        <Button variant="ghost" size="sm" className="ml-auto h-7 text-xs text-[var(--color-bone-muted)] hover:bg-white/[0.05] hover:text-[var(--color-bone)]" onClick={clear}>
+        <Button variant="ghost" size="sm" className="ml-auto h-7 text-xs" onClick={clear}>
           Clear
         </Button>
       ) : null}
@@ -88,8 +88,8 @@ function FilterChip({
       onClick={onClick}
       className={`rounded-md border px-2 py-1 text-xs transition ${
         active
-          ? "border-[var(--color-amber)]/50 bg-[var(--color-amber)]/12 text-[var(--color-bone)]"
-          : "border-[var(--color-border)] bg-[var(--color-ink)] text-[var(--color-bone-muted)] hover:text-[var(--color-bone)]"
+          ? "border-primary bg-primary/10 text-foreground"
+          : "border-border bg-background text-muted-foreground hover:text-foreground"
       }`}
     >
       {label}

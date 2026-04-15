@@ -2,555 +2,259 @@
 
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
-import {
-  assertMarketingContent,
-  marketingContent,
-} from "@/lib/marketing-content";
-import {
-  Activity,
-  ArrowRight,
-  Calendar,
-  Code,
-  Gauge,
-  GitBranch,
-  Hexagon,
-  Library,
-  Lock,
-  PlugZap,
-  Server,
+import { assertMarketingContent, marketingContent } from "@/lib/marketing-content";
+import { cn } from "@/lib/utils";
+import { 
+  ArrowRight, 
+  Hexagon, 
+  Terminal, 
+  Activity, 
+  Lock, 
+  Zap, 
+  Command, 
+  Network 
 } from "lucide-react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
-
-import { AgentConversation } from "@/components/marketing/agent-conversation";
-import { AnimatedEditor } from "@/components/marketing/animated-editor";
-import { ArchitectureFlow } from "@/components/marketing/architecture-flow";
-import { ConnectorStrip } from "@/components/marketing/connector-strip";
-import { LineageBuilder } from "@/components/marketing/lineage-builder";
-import { TemplateMarquee } from "@/components/marketing/template-marquee";
-import { TerminalDemo } from "@/components/marketing/terminal-demo";
-import { TriggerShowcase } from "@/components/marketing/trigger-showcase";
-
-// Three.js needs SSR off
-const HeroScene = dynamic(
-  () => import("@/components/marketing/hero-scene").then((m) => m.HeroScene),
-  { ssr: false, loading: () => null },
-);
-
-const ICON_MAP: Record<string, typeof Code> = {
-  code: Code,
-  lock: Lock,
-  activity: Activity,
-  "plug-zap": PlugZap,
-  "calendar-clock": Calendar,
-  "git-branch": GitBranch,
-  library: Library,
-  gauge: Gauge,
-  server: Server,
-};
 
 export default function HomePage() {
   const { data: session, isPending } = useSession();
   assertMarketingContent();
   const primaryHref = session ? "/dashboard" : marketingContent.primaryCta.href;
 
+  // Map features to icons for the grid section
+  const featureIcons = [Terminal, Activity, Lock, Zap, Command, Network];
+
   return (
-    <main className="relative min-h-screen bg-[var(--color-ink)] text-[var(--color-bone)]">
-      {/* ─────────────────────────────────── NAV ─────────────────────────────────── */}
-      <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
+    <main className="min-h-screen bg-[#09090b] text-slate-200 selection:bg-cyan-500/30 font-sans">
+      {/* 1. Navigation */}
+      <header className="sticky top-0 z-50 bg-[#09090b]/80 backdrop-blur-md border-b border-white/5">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-2">
-            <Hexagon className="size-5 text-[var(--color-amber)]" strokeWidth={1.5} />
-            <span className="font-display text-xl text-[var(--color-bone)]">
-              hostfunc
-            </span>
+          <Link href="/" className="flex items-center gap-2 group">
+            <Hexagon className="w-6 h-6 text-cyan-400 group-hover:text-cyan-300 transition-colors" />
+            <span className="font-bold text-xl tracking-tight text-white">hostfunc</span>
           </Link>
-          <nav className="hidden items-center gap-7 md:flex">
-            {marketingContent.navLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className="text-sm text-[var(--color-bone-muted)] transition-colors hover:text-[var(--color-bone)]"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="flex items-center gap-3">
+          <nav className="flex items-center gap-6">
+            <Link href="/docs" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">
+              Docs
+            </Link>
             {isPending ? (
-              <div className="h-9 w-24 animate-pulse rounded-full bg-white/5" />
+              <div className="h-9 w-24 bg-white/10 animate-pulse rounded-full" />
             ) : session ? (
-              <Button
-                asChild
-                size="sm"
-                className="rounded-full bg-[var(--color-bone)] px-5 font-medium text-[var(--color-ink)] hover:bg-white"
-              >
+              <Button asChild size="sm" className="bg-white text-black hover:bg-slate-200 rounded-full px-6 font-semibold">
                 <Link href="/dashboard">Dashboard</Link>
               </Button>
             ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="hidden text-sm text-[var(--color-bone-muted)] transition-colors hover:text-[var(--color-bone)] sm:inline"
-                >
-                  Sign in
-                </Link>
-                <Button
-                  asChild
-                  size="sm"
-                  className="rounded-full bg-[var(--color-amber)] px-5 font-medium text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
-                >
-                  <Link href="/login">Get started</Link>
-                </Button>
-              </>
+              <Button asChild size="sm" className="bg-white text-black hover:bg-slate-200 rounded-full px-6 font-semibold">
+                <Link href="/login">Get started</Link>
+              </Button>
             )}
-          </div>
+          </nav>
         </div>
       </header>
 
-      {/* ─────────────────────────────────── HERO ─────────────────────────────────── */}
-      <section className="relative overflow-hidden">
-        {/* 3D scene as background */}
-        <div className="absolute inset-0 -z-10 opacity-90">
-          <HeroScene />
+      {/* 2. Hero Section */}
+      <section className="relative mx-auto max-w-7xl px-6 pt-32 pb-20 text-center flex flex-col items-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-cyan-400 mb-8">
+          <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+          {marketingContent.badge}
         </div>
-        {/* Radial fade for legibility */}
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_var(--color-ink)_75%)]" />
-        <div className="gradient-radial-amber absolute inset-x-0 top-0 -z-10 h-[600px]" />
+        
+        <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter leading-[1.05] max-w-5xl">
+          Build tiny <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">TypeScript</span> functions and ship fast.
+        </h1>
+        
+        <p className="mt-8 text-lg md:text-xl text-slate-400 max-w-3xl leading-relaxed">
+          {marketingContent.subheadline}
+        </p>
+        
+        <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
+          <Button asChild size="lg" className="h-14 px-8 rounded-full bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-base transition-all">
+            <Link href={primaryHref}>
+              {marketingContent.primaryCta.label} <ArrowRight className="ml-2 w-5 h-5" />
+            </Link>
+          </Button>
+          <Button asChild size="lg" variant="outline" className="h-14 px-8 rounded-full border-white/20 hover:bg-white/10 hover:text-white text-white bg-transparent font-semibold text-base transition-all">
+            <Link href={marketingContent.secondaryCta.href}>{marketingContent.secondaryCta.label}</Link>
+          </Button>
+        </div>
+      </section>
 
-        <div className="mx-auto max-w-6xl px-6 py-32 lg:py-40">
-          <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-ink-overlay)] px-3 py-1 text-xs text-[var(--color-bone-muted)] backdrop-blur-md">
-              <span className="relative flex size-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--color-amber)] opacity-60" />
-                <span className="relative inline-flex size-1.5 rounded-full bg-[var(--color-amber)]" />
-              </span>
-              {marketingContent.badge}
-            </div>
-
-            <h1 className="mt-10 text-balance font-display text-5xl leading-[1.02] tracking-tight text-[var(--color-bone)] md:text-7xl lg:text-[88px]">
-              {marketingContent.headlineLead}{" "}
-              <em className="not-italic text-[var(--color-amber)]">
-                <span className="italic">{marketingContent.headlineEmphasis}</span>
-              </em>{" "}
-              <span className="text-[var(--color-bone-muted)]">
-                {marketingContent.headlineTail}
-              </span>
-            </h1>
-
-            <p className="mt-8 max-w-2xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
-              {marketingContent.subheadline}
-            </p>
-
-            <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
-              <Button
-                asChild
-                size="lg"
-                className="h-12 rounded-full bg-[var(--color-amber)] px-7 text-base font-medium text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
-              >
-                <Link href={primaryHref}>
-                  {marketingContent.primaryCta.label}
-                  <ArrowRight className="ml-1 size-4" />
-                </Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="ghost"
-                className="h-12 rounded-full px-7 text-base font-medium text-[var(--color-bone-muted)] hover:bg-white/[0.04] hover:text-[var(--color-bone)]"
-              >
-                <Link href={marketingContent.secondaryCta.href}>
-                  {marketingContent.secondaryCta.label}
-                </Link>
-              </Button>
-            </div>
-
-            {/* Trust line */}
-            <div className="mt-16 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs uppercase tracking-widest text-[var(--color-bone-faint)]">
-              {marketingContent.trustItems.map((item, i) => (
-                <span key={item} className="flex items-center gap-3">
-                  {i > 0 && <span className="text-[var(--color-border-strong)]">·</span>}
-                  {item}
-                </span>
-              ))}
-            </div>
+      {/* 3. Dashboard Mockup */}
+      <section className="mx-auto max-w-6xl px-6 pb-20">
+        <div className="rounded-2xl border border-white/10 bg-[#111] overflow-hidden shadow-2xl shadow-cyan-500/10">
+          <div className="bg-[#1a1a1a] border-b border-white/5 px-4 py-3 flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-red-500/80" />
+            <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+            <div className="w-3 h-3 rounded-full bg-green-500/80" />
+            <div className="mx-auto text-xs font-mono text-slate-500">hostfunc-dashboard</div>
+          </div>
+          <div className="p-8 aspect-[16/9] flex items-center justify-center bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-opacity-10">
+             {/* Abstract representation of code/dashboard since we don't have an image */}
+             <div className="w-full h-full border border-white/5 bg-black/50 rounded-lg p-6 font-mono text-sm text-cyan-400 flex flex-col gap-4">
+               <div className="flex justify-between items-center border-b border-white/5 pb-4">
+                 <span className="text-white">Running Execution: req_9A3B2</span>
+                 <span className="text-green-400">200 OK - 42ms</span>
+               </div>
+               <p className="text-slate-400">{">"} Initializing runtime environment...</p>
+               <p className="text-slate-400">{">"} Fetching secrets for my-org...</p>
+               <p className="text-cyan-400">{">"} Function executed successfully.</p>
+               <div className="mt-auto h-2 bg-white/5 rounded-full overflow-hidden">
+                 <div className="h-full bg-cyan-500 w-full animate-pulse" />
+               </div>
+             </div>
           </div>
         </div>
       </section>
 
-      {/* ────────────────────────────── HERO EDITOR ───────────────────────────── */}
-      <section className="relative px-6 pb-24">
-        <div className="mx-auto max-w-4xl">
-          <AnimatedEditor
-            filename={marketingContent.heroEditor.filename}
-            code={marketingContent.heroEditor.code}
-            speed={14}
-            autoStart
-          />
-        </div>
-      </section>
-
-      {/* ─────────────────────────── AGENT-NATIVE PITCH ──────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] bg-gradient-to-b from-[var(--color-ink)] via-[#0d0c0a] to-[var(--color-ink)] py-32">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-amber)]">
-              {marketingContent.agentPitch.eyebrow}
-            </div>
-            <h2 className="mt-4 text-balance font-display text-4xl leading-[1.05] text-[var(--color-bone)] md:text-6xl">
-              <span className="italic">
-                {marketingContent.agentPitch.headline}
-              </span>
-            </h2>
-            <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
-              {marketingContent.agentPitch.body}
-            </p>
-          </div>
-
-          {/* Side-by-side: agent conversation + lineage filling in */}
-          <div className="mt-16 grid gap-6 lg:grid-cols-2">
-            <AgentConversation messages={marketingContent.agentPitch.conversation} />
-            <LineageBuilder
-              nodes={marketingContent.agentPitch.lineage.nodes}
-              edges={marketingContent.agentPitch.lineage.edges}
-              staggerMs={1200}
-            />
-          </div>
-
-          {/* Three pillars below */}
-          <div className="mt-16 grid gap-6 md:grid-cols-3">
-            {marketingContent.agentPitch.pillars.map((pillar) => (
-              <div
-                key={pillar.title}
-                className="rounded-xl border border-[var(--color-border)] bg-white/[0.02] p-6"
-              >
-                <h3 className="font-display text-xl text-[var(--color-bone)]">
-                  {pillar.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-[var(--color-bone-muted)]">
-                  {pillar.body}
-                </p>
+      {/* 4. Trust Signals Banner */}
+      <section className="border-y border-white/5 bg-white/[0.02] py-8">
+        <div className="mx-auto max-w-7xl px-6 text-center">
+          <p className="text-sm font-semibold tracking-widest text-slate-500 uppercase mb-6">Built for scale & security</p>
+          <div className="flex flex-wrap justify-center gap-x-12 gap-y-6 text-sm md:text-base font-medium text-slate-300">
+            {marketingContent.trustItems.map((item) => (
+              <div key={item} className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-cyan-500" />
+                {item}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ─────────────────────────────── TRIGGERS ─────────────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] py-32">
-        <div className="mx-auto max-w-7xl px-6">
-          <SectionHeader
-            eyebrow="Triggers"
-            title={
-              <>
-                Four ways in.{" "}
-                <span className="italic text-[var(--color-bone-muted)]">
-                  All unified.
-                </span>
-              </>
-            }
-            body="HTTP for webhooks, cron for schedules, email for inbound mail, MCP for agents. Every trigger flows through the same dispatch path — same secrets, same observability, same egress control."
-          />
-          <div className="mt-16">
-            <TriggerShowcase triggers={marketingContent.triggers} />
-          </div>
-        </div>
-      </section>
-
-      {/* ─────────────────────────── COMPOSITION ──────────────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
-        <div className="mx-auto max-w-7xl px-6">
-          <SectionHeader
-            eyebrow={marketingContent.composition.eyebrow}
-            title={
-              <>
-                <span className="italic">{marketingContent.composition.headline}</span>
-              </>
-            }
-            body={marketingContent.composition.body}
-          />
-          <div className="mt-16 grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-center">
-            <AnimatedEditor
-              filename="share-link.ts"
-              code={marketingContent.composition.snippet}
-              speed={16}
-            />
-            <LineageBuilder
-              nodes={marketingContent.composition.lineage.nodes}
-              edges={marketingContent.composition.lineage.edges}
-              staggerMs={750}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ─────────────────────────────── CLI ──────────────────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] py-32">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:items-center">
-            <div>
-              <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-amber)]">
-                {marketingContent.cli.eyebrow}
-              </div>
-              <h2 className="mt-4 text-balance font-display text-4xl leading-[1.05] text-[var(--color-bone)] md:text-5xl">
-                <span className="italic">{marketingContent.cli.headline}</span>
-              </h2>
-              <p className="mt-6 max-w-md text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
-                {marketingContent.cli.body}
-              </p>
-              <div className="mt-8 flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-ink-elevated)] px-4 py-3 font-mono text-sm">
-                <span className="text-[var(--color-bone-faint)]">$</span>
-                <span className="text-[var(--color-bone)]">npm i -g hostfunc</span>
-              </div>
-            </div>
-            <TerminalDemo sequence={marketingContent.cli.sequence} />
-          </div>
-        </div>
-      </section>
-
-      {/* ────────────────────────── ARCHITECTURE ──────────────────────────────── */}
-      <section className="relative overflow-hidden border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
-        <div className="border-grid pointer-events-none absolute inset-0 opacity-50" />
-        <div className="mx-auto max-w-7xl px-6">
-          <SectionHeader
-            eyebrow={marketingContent.architecture.eyebrow}
-            title={
-              <>
-                <span className="italic">
-                  {marketingContent.architecture.headline}
-                </span>
-              </>
-            }
-            body={marketingContent.architecture.body}
-          />
-          <div className="mt-20">
-            <ArchitectureFlow stages={marketingContent.architecture.stages} />
-          </div>
-        </div>
-      </section>
-
-      {/* ───────────────────────────── CONNECTORS ─────────────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] py-32">
-        <div className="mx-auto max-w-7xl px-6">
-          <SectionHeader
-            eyebrow="Connectors"
-            title={
-              <>
-                One-click OAuth.{" "}
-                <span className="italic text-[var(--color-bone-muted)]">
-                  Tokens stored, secrets shared.
-                </span>
-              </>
-            }
-            body="Click 'Connect GitHub'. Token is stored as an org secret. Any function — or any agent acting on your behalf — can call the API. More providers shipping weekly."
-          />
-          <div className="mt-16">
-            <ConnectorStrip connectors={marketingContent.connectors} />
-          </div>
-        </div>
-      </section>
-
-      {/* ───────────────────────────── TEMPLATES ──────────────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
-        <div className="mx-auto max-w-7xl px-6 text-center">
-          <SectionHeader
-            eyebrow="Templates"
-            title={
-              <>
-                Don't start from blank.{" "}
-                <span className="italic">Fork it.</span>
-              </>
-            }
-            body="A curated gallery of starting points with secrets and triggers pre-wired. One click, you're in your editor with working code."
-            center
-          />
-        </div>
-        <div className="mt-16">
-          <TemplateMarquee templates={marketingContent.templates} />
-        </div>
-      </section>
-
-      {/* ────────────────────────── FEATURE GRID ──────────────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] py-32">
-        <div className="mx-auto max-w-7xl px-6">
-          <SectionHeader
-            eyebrow="Capabilities"
-            title={
-              <>
-                Everything you need.{" "}
-                <span className="italic text-[var(--color-bone-muted)]">
-                  Nothing you don't.
-                </span>
-              </>
-            }
-            body="The bundle of capabilities you actually use to ship — without the kitchen-sink platform tax."
-          />
-          <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-border)] sm:grid-cols-2 lg:grid-cols-3">
-            {marketingContent.features.map((feature) => {
-              const Icon = ICON_MAP[feature.icon] ?? Code;
-              return (
-                <div
-                  key={feature.title}
-                  className="group relative bg-[var(--color-ink)] p-7 transition-colors hover:bg-[var(--color-ink-elevated)]"
-                >
-                  <Icon
-                    className="size-5 text-[var(--color-amber)]"
-                    strokeWidth={1.5}
-                  />
-                  <h3 className="mt-5 font-display text-xl text-[var(--color-bone)]">
-                    {feature.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[var(--color-bone-muted)]">
-                    {feature.body}
-                  </p>
+      {/* 5. Alternating Feature Blocks (Like Metabox's Blue/Green sections) */}
+      <section className="bg-[#2563eb] text-white py-24">
+        <div className="mx-auto max-w-7xl px-6 grid lg:grid-cols-2 gap-16 items-center">
+          <div>
+            <h2 className="text-xs font-bold tracking-widest uppercase text-blue-200 mb-3">Many ways in</h2>
+            <h3 className="text-4xl md:text-5xl font-black mb-6 leading-tight">Trigger workflows seamlessly</h3>
+            <p className="text-lg text-blue-100 mb-8 max-w-md">
+              Connect your functions to the rest of your stack using native triggers designed for modern applications.
+            </p>
+            <div className="space-y-6">
+              {marketingContent.triggerItems.map((item) => (
+                <div key={item.title} className="bg-black/10 rounded-xl p-5 border border-white/10 backdrop-blur-sm">
+                  <h4 className="font-bold text-xl mb-1">{item.title}</h4>
+                  <p className="text-blue-100">{item.description}</p>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ───────────────────────────── COMMUNITY ──────────────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="grid gap-16 md:grid-cols-2 md:items-center">
-            <div>
-              <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-amber)]">
-                {marketingContent.community.eyebrow}
-              </div>
-              <h2 className="mt-4 text-balance font-display text-4xl leading-[1.05] text-[var(--color-bone)] md:text-5xl">
-                <span className="italic">
-                  {marketingContent.community.headline}
-                </span>
-              </h2>
-              <p className="mt-6 text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
-                {marketingContent.community.body}
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button
-                  asChild
-                  variant="outline"
-                  size="lg"
-                  className="rounded-full border-[var(--color-border-strong)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]"
-                >
-                  <Link href="https://github.com/hostfunc/hostfunc">
-                    Star on GitHub
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="lg"
-                  className="rounded-full text-[var(--color-bone-muted)] hover:bg-white/[0.04] hover:text-[var(--color-bone)]"
-                >
-                  <Link href="https://discord.gg/hostfunc">Join Discord</Link>
-                </Button>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink)] p-8">
-              <dl className="grid gap-6 sm:grid-cols-2">
-                {marketingContent.community.facts.map((fact) => (
-                  <div key={fact.label}>
-                    <dt className="text-xs uppercase tracking-widest text-[var(--color-bone-faint)]">
-                      {fact.label}
-                    </dt>
-                    <dd className="mt-2 font-display text-2xl italic text-[var(--color-bone)]">
-                      {fact.value}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ──────────────────────────────── CLOSER ──────────────────────────────── */}
-      <section className="relative overflow-hidden border-t border-[var(--color-border)] py-32">
-        <div className="gradient-radial-amber pointer-events-none absolute inset-x-0 bottom-0 top-0" />
-        <div className="relative mx-auto max-w-3xl px-6 text-center">
-          <h2 className="text-balance font-display text-5xl leading-[1.02] text-[var(--color-bone)] md:text-7xl">
-            <span className="italic">{marketingContent.closer.headline}</span>
-          </h2>
-          <p className="mx-auto mt-6 max-w-xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
-            {marketingContent.closer.body}
-          </p>
-          <div className="mt-10 flex justify-center">
-            <Button
-              asChild
-              size="lg"
-              className="h-14 rounded-full bg-[var(--color-amber)] px-8 text-base font-medium text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
-            >
-              <Link href={primaryHref}>
-                {marketingContent.primaryCta.label}
-                <ArrowRight className="ml-2 size-4" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* ────────────────────────────── FOOTER ────────────────────────────────── */}
-      <footer className="border-t border-[var(--color-border)] bg-[#070706] py-12">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
-            <div className="flex items-center gap-2">
-              <Hexagon
-                className="size-5 text-[var(--color-bone-faint)]"
-                strokeWidth={1.5}
-              />
-              <span className="font-display text-lg text-[var(--color-bone-muted)]">
-                hostfunc
-              </span>
-              <span className="ml-3 text-xs text-[var(--color-bone-faint)]">
-                © {new Date().getFullYear()}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-x-7 gap-y-2 text-sm">
-              {marketingContent.footerLinks.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className="text-[var(--color-bone-muted)] transition-colors hover:text-[var(--color-bone)]"
-                >
-                  {link.label}
-                </Link>
               ))}
             </div>
           </div>
-          <p className="mt-8 max-w-md text-xs leading-relaxed text-[var(--color-bone-faint)]">
-            {marketingContent.footerNote}
-          </p>
+          <div className="relative h-full min-h-[400px] rounded-2xl bg-black shadow-2xl overflow-hidden border border-white/20">
+             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-transparent pointer-events-none" />
+             <div className="p-8 font-mono text-sm leading-relaxed text-slate-300">
+                <span className="text-blue-400">POST</span> /run/my-org/process-data<br/><br/>
+                <span className="text-slate-500">{'// Payload'}</span><br/>
+                &#123;<br/>
+                &nbsp;&nbsp;<span className="text-green-300">"source"</span>: <span className="text-yellow-300">"webhook"</span>,<br/>
+                &nbsp;&nbsp;<span className="text-green-300">"timestamp"</span>: <span className="text-yellow-300">"2026-04-14T12:36:29Z"</span><br/>
+                &#125;<br/><br/>
+                <span className="text-slate-500">{'// Response: 200 OK'}</span>
+             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#10b981] text-white py-24">
+        <div className="mx-auto max-w-7xl px-6 grid lg:grid-cols-2 gap-16 items-center">
+          <div className="order-2 lg:order-1 rounded-2xl bg-[#0d1117] shadow-2xl overflow-hidden border border-white/10">
+            <div className="bg-[#161b22] border-b border-white/10 px-4 py-3 flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-slate-600" />
+              <div className="w-3 h-3 rounded-full bg-slate-600" />
+              <div className="w-3 h-3 rounded-full bg-slate-600" />
+              <div className="mx-auto text-xs font-mono text-slate-400">composition.ts</div>
+            </div>
+            <pre className="p-6 text-sm font-mono text-slate-300 overflow-x-auto whitespace-pre-wrap leading-relaxed">
+              {marketingContent.compositionSnippet}
+            </pre>
+          </div>
+          <div className="order-1 lg:order-2">
+            <h2 className="text-xs font-bold tracking-widest uppercase text-green-200 mb-3">Collaboration</h2>
+            <h3 className="text-4xl md:text-5xl font-black mb-6 leading-tight">Compose and link functions</h3>
+            <p className="text-lg text-green-50 max-w-md">
+              Chain multiple functions together to build complex, reliable pipelines without managing server infrastructure.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Features Grid */}
+      <section className="mx-auto max-w-7xl px-6 py-24">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-5xl font-black text-white">What you can do today</h2>
+        </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {marketingContent.features.map((feature, idx) => {
+            const Icon = featureIcons[idx % featureIcons.length];
+            return (
+              <div key={feature.title} className="rounded-2xl border border-white/5 bg-white/[0.02] p-8 hover:bg-white/[0.04] transition-colors group">
+                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center mb-6 border border-cyan-500/20 group-hover:scale-110 transition-transform">
+                  {Icon && <Icon className={cn("w-6 h-6 text-cyan-400")} />}
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
+                <p className="text-slate-400 leading-relaxed">{feature.description}</p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 7. Workflow */}
+      <section className="border-t border-white/5 py-24 relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50" />
+        <div className="mx-auto max-w-7xl px-6 text-center">
+          <h2 className="text-3xl md:text-5xl font-black text-white mb-16">Build workflow</h2>
+          <div className="grid md:grid-cols-3 gap-8 relative">
+            {/* Connecting line for desktop */}
+            <div className="hidden md:block absolute top-1/2 left-0 w-full h-px bg-white/10 -translate-y-1/2 z-0" />
+            
+            {marketingContent.workflow.map((item) => (
+              <div key={`workflow-step-${item.step}`} className="relative z-10 rounded-2xl border border-white/10 bg-[#09090b] p-8 flex flex-col items-center shadow-xl">
+                <div className="w-16 h-16 rounded-full bg-cyan-500 text-black flex items-center justify-center text-2xl font-black mb-6">
+                  {item.step.replace(/^\d+\.\s/, '')}
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">{item.step.replace(/^\d+\.\s/, '')}</h3>
+                <p className="text-slate-400">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-sm text-slate-500 mt-12 font-medium">{marketingContent.pricingNote}</p>
+        </div>
+      </section>
+
+      {/* 8. Bottom CTA */}
+      <section className="py-24 px-6">
+        <div className="mx-auto max-w-5xl rounded-[3rem] border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-12 md:p-20 text-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-overlay" />
+          <div className="relative z-10">
+            <h2 className="text-4xl md:text-6xl font-black text-white mb-6">Ready to ship?</h2>
+            <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-10">
+              Start in the dashboard, wire triggers, and monitor every execution instantly.
+            </p>
+            <div className="flex justify-center gap-4 flex-col sm:flex-row">
+              <Button asChild size="lg" className="h-14 px-10 rounded-full bg-white hover:bg-slate-200 text-black font-bold text-lg">
+                <Link href={primaryHref}>{marketingContent.primaryCta.label}</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 9. Footer */}
+      <footer className="border-t border-white/10 bg-[#050505] py-12">
+        <div className="mx-auto max-w-7xl px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2">
+            <Hexagon className="w-5 h-5 text-slate-500" />
+            <p className="text-sm text-slate-500 font-medium">hostfunc © {new Date().getFullYear()}</p>
+          </div>
+          <div className="flex items-center gap-8 text-sm font-medium text-slate-400">
+            {marketingContent.footerLinks.map((link) => (
+              <Link key={link.label} href={link.href} className="hover:text-white transition-colors">
+                {link.label}
+              </Link>
+            ))}
+          </div>
         </div>
       </footer>
     </main>
-  );
-}
-
-/* ─────────────────── Section header — reused throughout ────────────────────── */
-
-function SectionHeader({
-  eyebrow,
-  title,
-  body,
-  center = false,
-}: {
-  eyebrow: string;
-  title: React.ReactNode;
-  body: string;
-  center?: boolean;
-}) {
-  return (
-    <div className={center ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
-      <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-amber)]">
-        {eyebrow}
-      </div>
-      <h2 className="mt-4 text-balance font-display text-4xl leading-[1.05] text-[var(--color-bone)] md:text-5xl">
-        {title}
-      </h2>
-      <p className="mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
-        {body}
-      </p>
-    </div>
   );
 }

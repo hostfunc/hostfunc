@@ -55,25 +55,19 @@ export default async function ExecutionsPage({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-4">
-        <h1 className="font-display text-3xl tracking-tight text-[var(--color-bone)]">Executions</h1>
-        <p className="mt-1 text-sm text-[var(--color-bone-muted)]">
-          Inspect runtime results and filter invocation history for this function.
-        </p>
-      </div>
       <ExecutionsFilters />
       {items.length === 0 ? (
-        <div className="grid place-items-center rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-ink-elevated)]/45 py-16 text-center">
-          <h3 className="text-base font-medium text-[var(--color-bone)]">No executions match these filters</h3>
-          <p className="mt-1 text-sm text-[var(--color-bone-muted)]">
+        <div className="grid place-items-center rounded-lg border border-dashed border-border py-16 text-center">
+          <h3 className="text-base font-medium">No executions match these filters</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
             Try widening the time range or removing status filters.
           </p>
         </div>
       ) : (
         <>
-          <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/55">
+          <div className="overflow-hidden rounded-lg border border-border">
             <table className="w-full text-sm">
-              <thead className="bg-white/[0.03] text-left text-xs uppercase text-[var(--color-bone-faint)]">
+              <thead className="bg-muted/30 text-left text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2 font-medium">Status</th>
                   <th className="px-4 py-2 font-medium">Trigger</th>
@@ -84,22 +78,22 @@ export default async function ExecutionsPage({
               </thead>
               <tbody>
                 {items.map((exec) => (
-                  <tr key={exec.id} className="border-t border-[var(--color-border)] transition hover:bg-white/[0.03]">
+                  <tr key={exec.id} className="border-t border-border transition hover:bg-muted/20">
                     <td className="px-4 py-3">
                       <StatusBadge status={exec.status} />
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-[var(--color-bone-faint)]">{exec.triggerKind}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{exec.triggerKind}</td>
                     <td className="px-4 py-3 tabular-nums">
                       <div className="flex items-center gap-2">
-                        <Clock className="size-3 text-[var(--color-bone-faint)]" />
+                        <Clock className="size-3 text-muted-foreground" />
                         {formatDuration(exec.wallMs)}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-xs text-[var(--color-bone-faint)]">{formatRelative(exec.startedAt)}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{formatRelative(exec.startedAt)}</td>
                     <td className="px-4 py-3 text-right">
                       <Link
                         href={`/dashboard/${fnId}/executions/${exec.id}`}
-                        className="inline-flex items-center gap-1 text-xs text-[var(--color-bone-muted)] transition hover:text-[var(--color-bone)]"
+                        className="inline-flex items-center gap-1 text-xs text-muted-foreground transition hover:text-foreground"
                       >
                         Details <ArrowRight className="size-3" />
                       </Link>

@@ -12,12 +12,12 @@ export default async function McpSettingsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-medium text-[var(--color-bone)]">MCP Install</h3>
-        <p className="text-sm text-[var(--color-bone-muted)]">
+        <h3 className="text-lg font-medium">MCP Install</h3>
+        <p className="text-sm text-muted-foreground">
           Connect Claude Desktop or MCP Inspector to Hostfunc tools.
         </p>
       </div>
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-4 text-sm text-[var(--color-bone)]">
+      <div className="rounded-lg border border-border p-4 text-sm">
         <p>
           Endpoint: <span className="font-mono">{endpoint}</span>
         </p>

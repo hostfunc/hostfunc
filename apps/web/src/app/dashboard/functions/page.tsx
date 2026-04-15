@@ -22,15 +22,15 @@ export default async function FunctionsExplorerPage({
   const functions = await searchFunctionsForOrg(orgId, query, visibility);
 
   return (
-    <div className="mx-auto max-w-6xl animate-in space-y-6 fade-in duration-500">
-      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+    <div className="space-y-6 animate-in fade-in duration-500 max-w-6xl mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="font-display text-4xl tracking-tight text-[var(--color-bone)]">Functions Explorer</h1>
-          <p className="mt-1 text-sm text-[var(--color-bone-muted)]">
+          <h1 className="text-2xl font-bold tracking-tight">Functions Explorer</h1>
+          <p className="text-muted-foreground text-sm mt-1">
             Manage, filter, and discover your deployed serverless workloads.
           </p>
         </div>
-        <Button asChild className="rounded-full bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]">
+        <Button asChild>
           <Link href="/dashboard/new">
             <Plus className="mr-2 h-4 w-4" />
             New Function
@@ -47,17 +47,17 @@ export default async function FunctionsExplorerPage({
           {functions.map((fn) => (
             <div
               key={fn.id}
-              className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)] text-[var(--color-bone)] shadow-sm transition-all duration-300 hover:border-[var(--color-amber)]/40 hover:shadow-lg"
+              className="group relative rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/40 flex flex-col justify-between overflow-hidden"
             >
               <div className="p-5">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded border border-[var(--color-amber)]/30 bg-[var(--color-amber)]/10">
-                      <Activity className="h-4 w-4 text-[var(--color-amber)]" />
+                    <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center border border-primary/20">
+                      <Activity className="h-4 w-4 text-primary" />
                     </div>
                     <div>
                       <h3 className="font-mono text-sm font-semibold">{fn.slug}</h3>
-                      <p className="text-[10px] text-[var(--color-bone-faint)]">
+                      <p className="text-[10px] text-muted-foreground">
                         Deployed {formatDistanceToNow(fn.updatedAt, { addSuffix: true })}
                       </p>
                     </div>
@@ -69,13 +69,13 @@ export default async function FunctionsExplorerPage({
                     {fn.visibility}
                   </Badge>
                 </div>
-                <p className="h-10 line-clamp-2 text-sm text-[var(--color-bone-muted)]">
+                <p className="text-sm text-muted-foreground line-clamp-2 h-10">
                   {fn.description || "No description provided."}
                 </p>
               </div>
 
               {/* Hover Actions Bar */}
-              <div className="flex items-center justify-between border-t border-[var(--color-border)] bg-white/[0.02] p-3 transition-colors group-hover:bg-white/[0.05]">
+              <div className="border-t bg-muted/40 p-3 flex items-center justify-between transition-colors group-hover:bg-muted/80">
                 <div className="flex items-center gap-2">
                   <CopyButton value={`https://${fn.slug}.hostfunc.com`} />
                 </div>
@@ -84,7 +84,7 @@ export default async function FunctionsExplorerPage({
                     variant="ghost"
                     size="sm"
                     asChild
-                    className="h-8 border-[var(--color-border)] bg-transparent shadow-sm"
+                    className="h-8 shadow-sm bg-background border"
                   >
                     <Link href={`/dashboard/${fn.id}/settings`}>
                       <Settings className="h-3.5 w-3.5 mr-1.5" />
@@ -103,10 +103,10 @@ export default async function FunctionsExplorerPage({
           ))}
         </div>
       ) : (
-        <div className="mt-8 grid place-items-center rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-ink-elevated)]/60 py-24 text-center shadow-sm">
-          <Activity className="mb-4 h-10 w-10 text-[var(--color-bone-faint)]/60" />
-          <h2 className="text-xl font-semibold text-[var(--color-bone)]">No functions found</h2>
-          <p className="mb-6 mt-2 max-w-sm text-sm text-[var(--color-bone-muted)]">
+        <div className="grid place-items-center py-24 text-center border rounded-xl bg-card/50 shadow-sm border-dashed mt-8">
+          <Activity className="h-10 w-10 text-muted-foreground/30 mb-4" />
+          <h2 className="text-xl font-semibold">No functions found</h2>
+          <p className="mt-2 text-sm text-muted-foreground mb-6 max-w-sm">
             {query || visibility
               ? "We couldn't find any functions matching your current filters. Try adjusting your search query or visibility filter."
               : "You haven't deployed any functions to this workspace yet."}

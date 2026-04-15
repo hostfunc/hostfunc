@@ -3,7 +3,6 @@ import { env } from "@/lib/env";
 import { trackServerEvent } from "@/server/analytics";
 import { requireCliActor } from "@/server/cli-auth";
 import { executor } from "@/server/executor";
-import { getFunctionPackagesForOrg } from "@/server/functions";
 import { getOrgPlan } from "@/server/plan";
 import { db, genId, schema } from "@hostfunc/db";
 import { and, eq, sql } from "drizzle-orm";
@@ -30,7 +29,6 @@ export async function POST(req: NextRequest) {
     .limit(1);
   const fnRow = fnRows[0];
   if (!fnRow) return Response.json({ error: "not_found" }, { status: 404 });
-  await getFunctionPackagesForOrg(actor.orgId, body.fnId);
   const orgPlan = await getOrgPlan(actor.orgId);
   const maxActiveFunctions = orgPlan?.limits.maxFunctions ?? 3;
 

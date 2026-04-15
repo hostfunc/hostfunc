@@ -18,7 +18,7 @@ export default async function ExecutionDetailPage({
 
   return (
     <div className="space-y-4">
-      <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 text-[var(--color-bone)]">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="font-mono text-sm">{execution.id}</span>
@@ -40,7 +40,7 @@ export default async function ExecutionDetailPage({
       </Card>
 
       {execution.errorMessage ? (
-        <Card className="border-red-500/40 bg-red-500/10 text-[var(--color-bone)]">
+        <Card>
           <CardHeader>
             <CardTitle>Error</CardTitle>
           </CardHeader>
@@ -51,21 +51,21 @@ export default async function ExecutionDetailPage({
         </Card>
       ) : null}
 
-      <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 text-[var(--color-bone)]">
+      <Card>
         <CardHeader>
           <CardTitle>Logs</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          <div className="max-h-64 space-y-1 overflow-auto rounded border border-[var(--color-border)] bg-black/20 p-2 font-mono text-xs">
+          <div className="max-h-64 space-y-1 overflow-auto rounded border border-border bg-muted/20 p-2 font-mono text-xs">
             {logs.map((line, idx) => (
               <div key={`${line.ts.toISOString()}-${idx}`} className="space-y-1">
                 <div className="flex gap-2">
-                  <span className="text-[var(--color-bone-faint)]">{line.ts.toISOString()}</span>
-                  <span className="uppercase text-[var(--color-bone-faint)]">{line.level}</span>
+                  <span className="text-muted-foreground">{line.ts.toISOString()}</span>
+                  <span className="uppercase text-muted-foreground">{line.level}</span>
                   <span>{line.message}</span>
                 </div>
                 {line.fields ? (
-                  <pre className="overflow-x-auto rounded border border-[var(--color-border)] bg-black/35 p-2 text-[10px] text-[var(--color-bone-muted)]">
+                  <pre className="overflow-x-auto rounded bg-black/20 p-2 text-[10px] text-slate-300">
                     {JSON.stringify(line.fields, null, 2)}
                   </pre>
                 ) : null}

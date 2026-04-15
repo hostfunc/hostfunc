@@ -34,9 +34,7 @@ export async function createCheckoutSession() {
     paidPlans[0];
 
   if (!targetPlan?.stripePriceId) {
-    throw new Error(
-      "No purchasable Stripe plans are configured. Run `pnpm db:seed` then `pnpm --filter @hostfunc/web stripe:sync`.",
-    );
+    throw new Error("selected plan is not purchasable");
   }
 
   const existingSub = await db.query.subscription.findFirst({

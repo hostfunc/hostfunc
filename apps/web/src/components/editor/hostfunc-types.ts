@@ -37,9 +37,4 @@ declare module "@hostfunc/fn" {
   export const secret: SecretApi;
   export default fn;
 }
-
-declare module "@hostfunc/sdk" {
-  export { default } from "@hostfunc/fn";
-  export * from "@hostfunc/fn";
-}
 `;

@@ -18,15 +18,15 @@ export default async function TriggersFunctionSettingsPage({
     .limit(1);
   const fnRow = rows[0];
   if (!fnRow) {
-    return <div className="text-sm text-[var(--color-bone-muted)]">Function not found.</div>;
+    return <div className="text-sm text-muted-foreground">Function not found.</div>;
   }
   const triggers = await loadTriggers(fnRow.id);
 
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-medium text-[var(--color-bone)]">Invocation Triggers</h3>
-        <p className="text-sm text-[var(--color-bone-muted)]">
+        <h3 className="text-lg font-medium">Invocation Triggers</h3>
+        <p className="text-sm text-muted-foreground">
           Runtime URL: {`/run/${fnRow.createdById}/${fnRow.slug}`}
         </p>
       </div>

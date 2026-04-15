@@ -44,11 +44,11 @@ export function SettingsLayout({
   return (
     <div className="flex h-full w-full flex-col space-y-6 lg:flex-row lg:space-x-8 lg:space-y-0">
       <aside className="flex-shrink-0 lg:w-72">
-        <div className="mb-8 rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/85 p-6">
+        <div className="mb-8">
           {backHref && (
             <Link
               href={backHref}
-              className="mb-4 inline-flex items-center text-sm font-medium text-[var(--color-bone-muted)] transition-colors hover:text-[var(--color-bone)]"
+              className="mb-4 inline-flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               <svg
                 aria-hidden="true"
@@ -68,10 +68,10 @@ export function SettingsLayout({
               {backLabel}
             </Link>
           )}
-          <h2 className="font-display text-2xl tracking-tight text-[var(--color-bone)]">{title}</h2>
-          {description && <p className="mt-1 text-sm text-[var(--color-bone-muted)]">{description}</p>}
+          <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
+          {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </div>
-        <nav className="flex rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-2 lg:flex-col lg:space-y-1">
+        <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon
@@ -85,13 +85,13 @@ export function SettingsLayout({
                 href={item.href}
                 className={cn(
                   "relative flex items-center justify-start rounded-md px-3 py-2 text-sm font-medium transition-colors hover:text-foreground",
-                  isActive ? "text-[var(--color-bone)]" : "text-[var(--color-bone-muted)] hover:text-[var(--color-bone)]",
+                  isActive ? "text-foreground" : "text-muted-foreground",
                 )}
               >
                 {isActive && (
                   <motion.div
                     layoutId="active-nav"
-                    className="absolute inset-0 rounded-md bg-[var(--color-amber)]/12"
+                    className="absolute inset-0 rounded-md bg-muted"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -111,7 +111,6 @@ export function SettingsLayout({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/45 p-6"
         >
           {children}
         </motion.div>

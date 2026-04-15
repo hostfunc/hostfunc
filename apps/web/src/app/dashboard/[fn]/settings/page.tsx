@@ -23,8 +23,8 @@ export default function GeneralFunctionSettingsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-[var(--color-bone)]">General</h3>
-        <p className="text-sm text-[var(--color-bone-muted)]">
+        <h3 className="text-lg font-medium">General</h3>
+        <p className="text-sm text-muted-foreground">
           Update the general details and visibility of your function.
         </p>
       </div>
@@ -37,7 +37,7 @@ export default function GeneralFunctionSettingsPage({
           </SettingsCardDescription>
         </SettingsCardHeader>
         <SettingsCardContent>
-          <div className="grid max-w-sm gap-2">
+          <div className="grid gap-2 max-w-sm">
             <Label htmlFor="fnName" className="sr-only">
               Name
             </Label>
@@ -57,7 +57,7 @@ export default function GeneralFunctionSettingsPage({
           </SettingsCardDescription>
         </SettingsCardHeader>
         <SettingsCardContent>
-          <div className="grid max-w-lg gap-2">
+          <div className="grid gap-2 max-w-lg">
             <Label htmlFor="fnDesc" className="sr-only">
               Description
             </Label>
@@ -69,16 +69,16 @@ export default function GeneralFunctionSettingsPage({
         </SettingsCardFooter>
       </SettingsCard>
 
-      <SettingsCard className="border-red-500/25 bg-red-500/10">
+      <SettingsCard className="border-red-500/20 bg-red-500/5 dark:bg-red-500/10 dark:border-red-500/30">
         <SettingsCardHeader>
-          <SettingsCardTitle className="text-red-300">
+          <SettingsCardTitle className="text-red-600 dark:text-red-500">
             Danger Zone
           </SettingsCardTitle>
-          <SettingsCardDescription className="text-red-300/85">
+          <SettingsCardDescription className="text-red-600/80 dark:text-red-400">
             Permanently delete this function and all its executions. This cannot be undone.
           </SettingsCardDescription>
         </SettingsCardHeader>
-        <SettingsCardFooter className="justify-end border-red-500/30 bg-red-500/15">
+        <SettingsCardFooter className="bg-red-500/10 border-red-500/20 justify-end">
           <Button variant="destructive">Delete Function</Button>
         </SettingsCardFooter>
       </SettingsCard>

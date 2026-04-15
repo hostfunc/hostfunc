@@ -2,98 +2,17 @@
 
 import type { OnMount } from "@monaco-editor/react";
 import { Editor } from "@monaco-editor/react";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { HOSTFUNC_TYPES_DTS } from "./hostfunc-types";
 
 interface Props {
   value: string;
-  packageNames: string[];
   onChange: (value: string) => void;
   onSave?: () => void;
 }
 
-type Monaco = Parameters<OnMount>[1];
-
-const TYPE_LIST_URL = "https://data.jsdelivr.com/v1/package/npm";
-const TYPE_CDN_URL = "https://cdn.jsdelivr.net/npm";
-const INTERNAL_MODULES = new Set(["@hostfunc/fn", "@hostfunc/sdk"]);
-
-function toDefinitelyTypedName(packageName: string): string {
-  if (packageName.startsWith("@")) {
-    const [scope, name] = packageName.split("/");
-    if (!scope || !name) return `@types/${packageName.replace("@", "").replace("/", "__")}`;
-    return `@types/${scope.slice(1)}__${name}`;
-  }
-  return `@types/${packageName}`;
-}
-
-async function fetchJson<T>(url: string): Promise<T | null> {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    return (await response.json()) as T;
-  } catch {
-    return null;
-  }
-}
-
-async function fetchText(url: string): Promise<string | null> {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    return await response.text();
-  } catch {
-    return null;
-  }
-}
-
-async function addTypePackageLibs(monaco: Monaco, packageName: string, loadedLibs: Set<string>): Promise<boolean> {
-  const typePackage = toDefinitelyTypedName(packageName);
-  const meta = await fetchJson<{ tags?: { latest?: string } }>(
-    `${TYPE_LIST_URL}/${typePackage}`,
-  );
-  const version = meta?.tags?.latest;
-  if (!version) return false;
-
-  const flat = await fetchJson<{ files?: Array<{ name: string }> }>(
-    `${TYPE_LIST_URL}/${typePackage}@${version}/flat`,
-  );
-  const paths = (flat?.files ?? [])
-    .map((file) => file.name)
-    .filter((name) => name.endsWith(".d.ts"))
-    .map((name) => (name.startsWith("/") ? name.slice(1) : name));
-  if (paths.length === 0) return false;
-
-  await Promise.all(
-    paths.map(async (path) => {
-      const libKey = `${typePackage}:${path}`;
-      if (loadedLibs.has(libKey)) return;
-      const libSource = await fetchText(`${TYPE_CDN_URL}/${typePackage}@${version}/${path}`);
-      if (!libSource) return;
-      monaco.languages.typescript.typescriptDefaults.addExtraLib(
-        libSource,
-        `file:///node_modules/${typePackage}/${path}`,
-      );
-      loadedLibs.add(libKey);
-    }),
-  );
-  return true;
-}
-
-function addFallbackModuleDeclaration(monaco: Monaco, packageName: string, loadedLibs: Set<string>) {
-  const libKey = `fallback:${packageName}`;
-  if (loadedLibs.has(libKey)) return;
-  const decl = `declare module "${packageName}" { const value: any; export default value; }\n`;
-  monaco.languages.typescript.typescriptDefaults.addExtraLib(
-    decl,
-    `file:///node_modules/.hostfunc/${packageName.replace(/[^\w@/-]/g, "_")}.d.ts`,
-  );
-  loadedLibs.add(libKey);
-}
-
-export function MonacoEditor({ value, packageNames, onChange, onSave }: Props) {
+export function MonacoEditor({ value, onChange, onSave }: Props) {
   const monacoRef = useRef<Parameters<OnMount>[1] | null>(null);
-  const loadedLibsRef = useRef<Set<string>>(new Set());
 
   const handleMount: OnMount = (editor, monaco) => {
     monacoRef.current = monaco;
@@ -102,10 +21,6 @@ export function MonacoEditor({ value, packageNames, onChange, onSave }: Props) {
     monaco.languages.typescript.typescriptDefaults.addExtraLib(
       HOSTFUNC_TYPES_DTS,
       "file:///node_modules/@hostfunc/fn/index.d.ts",
-    );
-    monaco.languages.typescript.typescriptDefaults.addExtraLib(
-      HOSTFUNC_TYPES_DTS,
-      "file:///node_modules/@hostfunc/sdk/index.d.ts",
     );
 
     // Match our project's strict TS config
@@ -141,23 +56,6 @@ export function MonacoEditor({ value, packageNames, onChange, onSave }: Props) {
       void formatAndSave();
     });
   };
-
-  useEffect(() => {
-    const monaco = monacoRef.current;
-    if (!monaco) return;
-
-    const candidates = [...new Set(packageNames)].filter((name) => name && !INTERNAL_MODULES.has(name));
-    if (candidates.length === 0) return;
-
-    void (async () => {
-      for (const packageName of candidates) {
-        const loaded = await addTypePackageLibs(monaco, packageName, loadedLibsRef.current);
-        if (!loaded) {
-          addFallbackModuleDeclaration(monaco, packageName, loadedLibsRef.current);
-        }
-      }
-    })();
-  }, [packageNames]);
 
   return (
     <Editor

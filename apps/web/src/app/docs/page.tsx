@@ -27,22 +27,22 @@ export default function DocsPage({ params }: { params: { slug?: string[] } }) {
     <div className="animate-in fade-in duration-500 pb-24">
       {/* Header Section */}
       <div className="mb-16">
-        <p className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[var(--color-amber)]">
-          <span className="flex h-2 w-2 animate-pulse rounded-full bg-[var(--color-amber)]" />
+        <p className="text-cyan-400 font-bold mb-4 text-xs tracking-widest uppercase flex items-center gap-2">
+          <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
           Documentation
         </p>
-        <h1 className="mb-6 font-display text-5xl leading-tight tracking-tight text-[var(--color-bone)] sm:text-6xl">
+        <h1 className="text-5xl sm:text-6xl font-black tracking-tighter text-white mb-6 leading-tight">
           {content.title}
         </h1>
-        <p className="max-w-2xl text-xl leading-relaxed text-[var(--color-bone-muted)]">{content.summary}</p>
+        <p className="text-xl text-slate-400 leading-relaxed max-w-2xl">{content.summary}</p>
       </div>
 
-      <div className="my-12 h-px w-full bg-gradient-to-r from-[var(--color-border)] via-[var(--color-border)]/50 to-transparent" />
+      <div className="w-full h-px bg-gradient-to-r from-white/10 via-white/5 to-transparent my-12" />
 
       {/* Highlights Section */}
       <div className="space-y-8">
         <section>
-          <h2 className="mb-6 text-2xl font-bold tracking-tight text-[var(--color-bone)]">
+          <h2 className="text-2xl font-bold text-white mb-6 tracking-tight">
             Explore the Platform
           </h2>
           <div className="grid gap-4 md:grid-cols-2">
@@ -50,30 +50,30 @@ export default function DocsPage({ params }: { params: { slug?: string[] } }) {
               <Link
                 key={card.href}
                 href={card.href}
-                className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-5 transition-all hover:border-[var(--color-amber)]/35 hover:bg-white/[0.04]"
+                className="group rounded-2xl border border-white/10 bg-[#0d1117] p-5 hover:border-cyan-500/40 hover:bg-[#101621] transition-all"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-base font-semibold text-[var(--color-bone)] transition-colors group-hover:text-[var(--color-amber)]">
+                  <h3 className="text-base font-semibold text-white group-hover:text-cyan-300 transition-colors">
                     {card.title}
                   </h3>
-                  <ChevronRight className="h-4 w-4 text-[var(--color-bone-faint)] transition-all group-hover:translate-x-0.5 group-hover:text-[var(--color-amber)]" />
+                  <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-cyan-400 group-hover:translate-x-0.5 transition-all" />
                 </div>
-                <p className="mt-3 text-sm leading-relaxed text-[var(--color-bone-muted)]">{card.summary}</p>
+                <p className="mt-3 text-sm text-slate-400 leading-relaxed">{card.summary}</p>
               </Link>
             ))}
           </div>
         </section>
 
         <section>
-          <h2 className="mb-6 text-2xl font-bold tracking-tight text-[var(--color-bone)]">Key capabilities</h2>
+          <h2 className="text-2xl font-bold text-white mb-6 tracking-tight">Key capabilities</h2>
           <div className="grid gap-4">
             {content.highlights.map((item) => (
               <div
                 key={item}
-                className="flex items-start gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-5 transition-colors hover:bg-white/[0.04]"
+                className="p-5 rounded-2xl border border-white/5 bg-white/[0.02] flex items-start gap-4 hover:bg-white/[0.04] transition-colors"
               >
-                <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[var(--color-amber)] shadow-[0_0_8px_rgba(255,197,107,0.5)]" />
-                <p className="font-medium leading-relaxed text-[var(--color-bone-muted)]">{item}</p>
+                <div className="mt-1.5 w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(34,211,238,0.5)] shrink-0" />
+                <p className="text-slate-300 leading-relaxed font-medium">{item}</p>
               </div>
             ))}
           </div>
@@ -81,10 +81,10 @@ export default function DocsPage({ params }: { params: { slug?: string[] } }) {
       </div>
 
       {/* Footer Navigation */}
-      <div className="mt-20 flex justify-end border-t border-[var(--color-border)] pt-8">
+      <div className="mt-20 pt-8 border-t border-white/5 flex justify-end">
         <Button
           asChild
-          className="group h-14 rounded-full bg-[var(--color-amber)] px-8 text-base font-bold text-[var(--color-ink)] transition-all hover:bg-[var(--color-amber-hover)]"
+          className="group h-14 px-8 rounded-full bg-white text-black hover:bg-slate-200 font-bold text-base transition-all"
         >
           <Link href={content.related[0]?.href ?? "/docs/getting-started"}>
             Next: {content.related[0]?.label ?? "Getting Started"}
