@@ -1,5 +1,9 @@
 name: Release
 
+# Changesets opens a "Version packages" PR (or publishes when on that PR).
+# If the run fails with "GitHub Actions is not permitted to create or approve pull requests",
+# either enable that permission for this repo (Settings → Actions → General → Workflow permissions),
+# or add a fine-grained PAT with contents + pull requests as repo secret CHANGESETS_GITHUB_TOKEN.
 on:
   workflow_dispatch:
   push:
@@ -46,5 +50,6 @@ jobs:
           commit: "chore: version packages"
           title: "chore: version packages"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # PAT bypasses org rules that block GITHUB_TOKEN from opening PRs; falls back to default token.
+          GITHUB_TOKEN: ${{ secrets.CHANGESETS_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
