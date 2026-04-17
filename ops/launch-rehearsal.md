@@ -6,7 +6,7 @@ Execute this in a staging-like environment with real domain routing.
 
 1. Deploy latest candidate.
 2. Run critical smoke checks:
-   - `SMOKE_APP_URL=https://staging-app.hostfunc.com pnpm --filter @hostfunc/web smoke:critical`
+   - `SMOKE_APP_URL=https://staging-app.hostfunc.io pnpm --filter @hostfunc/web smoke:critical`
 3. Auth rehearsal:
    - Login with Google
    - Login with GitHub

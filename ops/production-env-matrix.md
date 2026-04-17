@@ -36,6 +36,7 @@ This matrix defines where each value lives in production and who owns rotation/a
 | `EXEC_TOKEN_SECRET` | Runtime callback signing secret | Runtime |
 | `HOSTFUNC_RUNTIME_URL` | Public runtime base URL | Runtime |
 | `RUNTIME_LOOKUP_TOKEN` | Runtime lookup auth token | Runtime |
+| `RUNTIME_INVOKE_TOKEN` | Server-side `/run` from web (CLI route, email inbound); must match runtime worker | Runtime |
 | `RUNTIME_INGEST_TOKEN` | Runtime ingest auth token | Runtime |
 | `TRIGGER_CONTROL_TOKEN` | Cron/internal trigger auth token | Runtime |
 | `STRIPE_SECRET_KEY` | Stripe live API secret | Billing |
@@ -54,6 +55,7 @@ This matrix defines where each value lives in production and who owns rotation/a
 |---|---|---|
 | `LOOKUP_API_URL` | Control plane API URL | Runtime |
 | `LOOKUP_API_TOKEN` | Control plane lookup token | Runtime |
+| `RUNTIME_INVOKE_TOKEN` | Must match web + cron workers for internal `/run` | Runtime |
 | `WORKERS_SUBDOMAIN` | Cloudflare workers subdomain | Runtime |
 
 ### Cron (`apps/cron`) - Cloudflare
@@ -63,6 +65,7 @@ This matrix defines where each value lives in production and who owns rotation/a
 | `CONTROL_PLANE_URL` | Control plane API URL | Runtime |
 | `CONTROL_PLANE_TOKEN` | Trigger control token | Runtime |
 | `HOSTFUNC_RUNTIME_URL` | Runtime base URL | Runtime |
+| `RUNTIME_INVOKE_TOKEN` | Bearer token for `/run` from cron worker | Runtime |
 
 ### Tail (`apps/tail`) - Cloudflare
 
@@ -79,7 +82,7 @@ This matrix defines where each value lives in production and who owns rotation/a
 
 ## Production DNS Baseline
 
-- App: `app.hostfunc.com` -> Vercel
-- Runtime: `run.hostfunc.com` -> Cloudflare Worker route
-- Optional API alias: `api.hostfunc.com` -> Vercel (`apps/web`)
+- App: `app.hostfunc.io` -> Vercel
+- Runtime: `run.hostfunc.io` -> Cloudflare Worker route
+- Optional API alias: `api.hostfunc.io` -> Vercel (`apps/web`)
 

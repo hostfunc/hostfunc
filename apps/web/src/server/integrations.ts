@@ -64,12 +64,20 @@ interface OrgMetadataShape {
 export async function getWorkspaceIntegrations(orgId: string): Promise<{
   config: WorkspaceIntegrationConfig;
   encrypted: Record<string, string>;
+  previews: {
+    openaiApiKey: string | null;
+    claudeApiKey: string | null;
+  };
 }> {
   const org = await db.query.organization.findFirst({
     where: eq(schema.organization.id, orgId),
     columns: { metadata: true },
   });
   const parsed = parseOrgMetadata(org?.metadata ?? null);
+  const encrypted = parsed.integrations?.encrypted ?? {};
+  const openAiPlain = decryptMaybe(encrypted.openaiApiKey);
+  const claudePlain = decryptMaybe(encrypted.claudeApiKey);
+
   return {
     config: {
       ai: {
@@ -81,7 +89,11 @@ export async function getWorkspaceIntegrations(orgId: string): Promise<{
         secondary: parsed.integrations?.config?.vector?.secondary ?? DEFAULT_WORKSPACE_CONFIG.vector.secondary,
       },
     },
-    encrypted: parsed.integrations?.encrypted ?? {},
+    encrypted,
+    previews: {
+      openaiApiKey: maskSecretPreview(openAiPlain),
+      claudeApiKey: maskSecretPreview(claudePlain),
+    },
   };
 }
 
@@ -247,4 +259,10 @@ function decryptMaybe(value: string | undefined): string | null {
   } catch {
     return null;
   }
+}
+
+function maskSecretPreview(value: string | null): string | null {
+  if (!value) return null;
+  const suffix = value.slice(-4);
+  return `••••••••${suffix}`;
 }

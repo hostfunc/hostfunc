@@ -2,6 +2,17 @@
 
 Production SDK for hostfunc functions.
 
+## Authentication
+
+When using `@hostfunc/sdk` from npm outside the hosted editor/runtime, set:
+
+- `HOSTFUNC_API_KEY` - API token created in Dashboard -> Settings -> Tokens
+- `HOSTFUNC_CONTROL_PLANE_URL` - your hostfunc web app URL
+- `HOSTFUNC_RUNTIME_URL` - your hostfunc runtime URL (optional if same as control plane)
+- `HOSTFUNC_FN_ID` - function id when using `secret.get(...)` outside hosted runtime
+
+Monaco/editor-based function workflows auto-provision and inject a workspace SDK key for you.
+
 ## Modules
 
 - `@hostfunc/sdk` - core function APIs (`executeFunction`, `secret`)

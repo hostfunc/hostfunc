@@ -29,13 +29,17 @@ export async function POST(req: NextRequest) {
   const row = rows[0];
   if (!row) return Response.json({ error: "not_found" }, { status: 404 });
 
+  const triggerKind = body.triggerKind ?? "http";
   const runRes = await fetch(`${env.HOSTFUNC_RUNTIME_URL}/run/${row.orgSlug}/${row.slug}`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-hostfunc-trigger-kind": body.triggerKind ?? "http",
+      authorization: `Bearer ${env.RUNTIME_INVOKE_TOKEN}`,
     },
-    body: JSON.stringify(body.payload ?? {}),
+    body: JSON.stringify({
+      ...(body.payload ?? {}),
+      hostfuncTriggerKind: triggerKind,
+    }),
   });
 
   const contentType = runRes.headers.get("content-type") ?? "";

@@ -145,24 +145,36 @@ export default function LoginPage() {
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-12 w-full rounded-xl border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone)] hover:bg-white/[0.05]"
+                        className="h-12 w-full cursor-pointer rounded-xl border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone)] hover:bg-white/[0.05]"
                         disabled={pending}
                         onClick={() => onSocialClick("github")}
                       >
+                        <img
+                          src="/Github%20logo.svg"
+                          alt=""
+                          aria-hidden="true"
+                          className="mr-2 h-4 w-4 object-contain"
+                        />
                         Continue with GitHub
                       </Button>
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-12 w-full rounded-xl border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone)] hover:bg-white/[0.05]"
+                        className="h-12 w-full cursor-pointer rounded-xl border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone)] hover:bg-white/[0.05]"
                         disabled={pending}
                         onClick={() => onSocialClick("google")}
                       >
+                        <img
+                          src="/Google%20logo.svg"
+                          alt=""
+                          aria-hidden="true"
+                          className="mr-2 h-4 w-4 object-contain"
+                        />
                         Continue with Google
                       </Button>
                       <Button
                         type="button"
-                        className="group h-12 w-full rounded-xl bg-[var(--color-amber)] text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+                        className="group h-12 w-full cursor-pointer rounded-xl bg-[var(--color-amber)] text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
                         disabled={pending}
                         onClick={() => setAuthStep("email")}
                       >
@@ -205,7 +217,7 @@ export default function LoginPage() {
 
                       <Button
                         type="submit"
-                        className="group relative mt-2 h-12 w-full overflow-hidden rounded-xl bg-[var(--color-amber)] text-sm font-semibold text-[var(--color-ink)] transition-all hover:bg-[var(--color-amber-hover)]"
+                        className="group relative mt-2 h-12 w-full cursor-pointer overflow-hidden rounded-xl bg-[var(--color-amber)] text-sm font-semibold text-[var(--color-ink)] transition-all hover:bg-[var(--color-amber-hover)]"
                         disabled={pending || !email}
                       >
                         <span className="relative z-10 flex items-center justify-center">
@@ -226,7 +238,7 @@ export default function LoginPage() {
                       <Button
                         variant="ghost"
                         type="button"
-                        className="h-10 w-full rounded-xl text-xs text-[var(--color-bone-muted)] hover:bg-white/[0.04] hover:text-[var(--color-bone)]"
+                        className="h-10 w-full cursor-pointer rounded-xl text-xs text-[var(--color-bone-muted)] hover:bg-white/[0.04] hover:text-[var(--color-bone)]"
                         disabled={pending}
                         onClick={() => setAuthStep("options")}
                       >
@@ -281,14 +293,14 @@ export default function LoginPage() {
                 By continuing, you agree to our{" "}
                 <Link
                   href="#"
-                  className="underline underline-offset-4 transition-colors hover:text-[var(--color-bone)]"
+                  className="cursor-pointer underline underline-offset-4 transition-colors hover:text-[var(--color-bone)]"
                 >
                   Terms of Service
                 </Link>{" "}
                 and{" "}
                 <Link
                   href="#"
-                  className="underline underline-offset-4 transition-colors hover:text-[var(--color-bone)]"
+                  className="cursor-pointer underline underline-offset-4 transition-colors hover:text-[var(--color-bone)]"
                 >
                   Privacy Policy
                 </Link>

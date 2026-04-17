@@ -28,7 +28,7 @@ Expected:
 
 ## 2) Configure Live Webhook Endpoint
 
-- Endpoint URL: `https://app.hostfunc.com/api/webhooks/stripe`
+- Endpoint URL: `https://app.hostfunc.io/api/webhooks/stripe`
 - Events:
   - `checkout.session.completed`
   - `customer.subscription.updated`

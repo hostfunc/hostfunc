@@ -10,3 +10,4 @@ crons = ["* * * * *", "0 0 * * *"]
 CONTROL_PLANE_URL = "http://localhost:3000"
 CONTROL_PLANE_TOKEN = "dev-trigger-token"
 HOSTFUNC_RUNTIME_URL = "http://localhost:8787"
+RUNTIME_INVOKE_TOKEN = "dev-runtime-invoke-token"

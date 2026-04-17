@@ -13,6 +13,8 @@ export interface DeployInput {
   functionId: FunctionId;
   versionId: VersionId;
   orgId: OrgId;
+  /** Optional runtime auth key passed to hosted SDK context. */
+  runtimeApiKey?: string;
 
   /** Bundled, tree-shaken ESM. Must export `main(input?)`. */
   bundle: {

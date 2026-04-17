@@ -3,6 +3,9 @@ import { SdkError } from "./types";
 export const secret = {
     async get(key) {
         const ctx = getContext();
+        if (ctx.isEnvFallback && !ctx.token) {
+            throw new SdkError("INFRA_EXECUTE_FAILED", "HOSTFUNC_API_KEY is required for npm SDK usage. Create one in dashboard settings > tokens.");
+        }
         if (!ctx.controlPlane || !ctx.token) {
             throw new SdkError("INFRA_EXECUTE_FAILED", "secret service unavailable: missing control-plane headers");
         }
@@ -14,7 +17,10 @@ export const secret = {
                     "content-type": "application/json",
                     authorization: `Bearer ${ctx.token}`,
                 },
-                body: JSON.stringify({ key }),
+                body: JSON.stringify({
+                    key,
+                    ...(ctx.fnId ? { fnId: ctx.fnId } : {}),
+                }),
                 signal: AbortSignal.timeout(10000),
             });
         }

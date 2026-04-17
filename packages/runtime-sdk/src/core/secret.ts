@@ -9,6 +9,12 @@ export interface SecretApi {
 export const secret: SecretApi = {
   async get(key: string): Promise<string | null> {
     const ctx = getContext();
+    if (ctx.isEnvFallback && !ctx.token) {
+      throw new SdkError(
+        "INFRA_EXECUTE_FAILED",
+        "HOSTFUNC_API_KEY is required for npm SDK usage. Create one in dashboard settings > tokens.",
+      );
+    }
     if (!ctx.controlPlane || !ctx.token) {
       throw new SdkError(
         "INFRA_EXECUTE_FAILED",
@@ -23,7 +29,10 @@ export const secret: SecretApi = {
           "content-type": "application/json",
           authorization: `Bearer ${ctx.token}`,
         },
-        body: JSON.stringify({ key }),
+        body: JSON.stringify({
+          key,
+          ...(ctx.fnId ? { fnId: ctx.fnId } : {}),
+        }),
         signal: AbortSignal.timeout(10000),
       });
     } catch (error) {

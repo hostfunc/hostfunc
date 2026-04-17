@@ -31,8 +31,9 @@ export default async function DashboardPage() {
     getDashboardStats(orgId),
     getRecentExecutions(orgId, 5),
   ]);
+  const recentFunctions = functions.slice(0, 6);
 
-  const hasFunctions = functions.length > 0;
+  const hasFunctions = recentFunctions.length > 0;
 
   return (
     <div className="animate-in space-y-8 fade-in duration-500">
@@ -128,7 +129,7 @@ export default async function DashboardPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {functions.map((fn) => (
+              {recentFunctions.map((fn) => (
                 <div
                   key={fn.id}
                   className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)] text-[var(--color-bone)] shadow-sm transition-all duration-300 hover:border-[var(--color-amber)]/40 hover:shadow-lg"

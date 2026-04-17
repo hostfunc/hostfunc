@@ -28,4 +28,5 @@ export interface RuntimeContext {
   callChain: Array<{ fnId: string; execId: string }>;
   maxCallDepth: number;
   debug: boolean;
+  isEnvFallback: boolean;
 }

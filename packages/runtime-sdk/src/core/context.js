@@ -9,22 +9,45 @@ const DEFAULT_CONTEXT = {
     callChain: [],
     maxCallDepth: 3,
     debug: false,
+    isEnvFallback: false,
 };
+function readEnv(name) {
+    const globalAny = globalThis;
+    const value = globalAny.process?.env?.[name];
+    return typeof value === "string" ? value : "";
+}
 export function getContext() {
     const scoped = globalThis.__hostfunc_context;
-    if (!scoped || typeof scoped !== "object")
-        return DEFAULT_CONTEXT;
+    if (!scoped || typeof scoped !== "object") {
+        const token = readEnv("HOSTFUNC_API_KEY");
+        const fnId = readEnv("HOSTFUNC_FN_ID");
+        const controlPlane = readEnv("HOSTFUNC_CONTROL_PLANE_URL");
+        const runtimeUrl = readEnv("HOSTFUNC_RUNTIME_URL") || controlPlane;
+        return {
+            ...DEFAULT_CONTEXT,
+            fnId,
+            token,
+            controlPlane,
+            runtimeUrl,
+            isEnvFallback: Boolean(token || controlPlane || runtimeUrl),
+        };
+    }
     const candidate = scoped;
+    const envToken = readEnv("HOSTFUNC_API_KEY");
+    const envFnId = readEnv("HOSTFUNC_FN_ID");
+    const envControlPlane = readEnv("HOSTFUNC_CONTROL_PLANE_URL");
+    const envRuntimeUrl = readEnv("HOSTFUNC_RUNTIME_URL");
     return {
         execId: candidate.execId ?? "",
-        fnId: candidate.fnId ?? "",
+        fnId: candidate.fnId ?? envFnId,
         orgId: candidate.orgId ?? "",
-        token: candidate.token ?? "",
-        controlPlane: candidate.controlPlane ?? "",
-        runtimeUrl: candidate.runtimeUrl ?? "",
+        token: candidate.token ?? envToken,
+        controlPlane: candidate.controlPlane ?? envControlPlane,
+        runtimeUrl: candidate.runtimeUrl ?? envRuntimeUrl ?? candidate.controlPlane ?? envControlPlane,
         callChain: Array.isArray(candidate.callChain) ? candidate.callChain : [],
         maxCallDepth: Number(candidate.maxCallDepth ?? 3),
         debug: candidate.debug === true,
+        isEnvFallback: !candidate.execId && !candidate.fnId && !candidate.orgId && Boolean(envToken || envControlPlane || envRuntimeUrl),
     };
 }
 export function requireControlPlane() {

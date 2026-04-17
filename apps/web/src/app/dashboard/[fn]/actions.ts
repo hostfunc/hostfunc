@@ -6,6 +6,7 @@ import { DEFAULT_FUNCTION_SDK, type FunctionPackageRecord } from "@/lib/function
 import { getLatestNpmVersion } from "@/lib/npm-registry";
 import { extractExternalPackageNames } from "@/lib/package-imports";
 import { requireOrgPermission } from "@/lib/session";
+import { ensureWorkspaceSdkApiKey } from "@/server/api-tokens";
 import {
   buildPayloadInferenceMessages,
   buildGeneratorMessages,
@@ -218,6 +219,7 @@ async function assertOrgOwnsFunction(orgId: string, fnId: string) {
 export async function saveDraft(input: z.infer<typeof saveDraftSchema>) {
   const { session, orgId } = await requireOrgPermission("edit_draft");
   const parsed = saveDraftSchema.parse(input);
+  await ensureWorkspaceSdkApiKey({ orgId, userId: session.user.id });
 
   await assertOrgOwnsFunction(orgId, parsed.fnId);
 
@@ -502,6 +504,7 @@ async function tryResolveAiForPayload(
 
 export async function deployFunction(fnId: string): Promise<DeployResultUi> {
   const { session, orgId } = await requireOrgPermission("deploy_function");
+  const workspaceSdkApiKey = await ensureWorkspaceSdkApiKey({ orgId, userId: session.user.id });
   const fnRow = await assertOrgOwnsFunction(orgId, fnId);
   const orgRows = await db
     .select({ slug: schema.organization.slug })
@@ -563,6 +566,7 @@ export async function deployFunction(fnId: string): Promise<DeployResultUi> {
       functionId: fnId,
       versionId,
       orgId,
+      runtimeApiKey: workspaceSdkApiKey,
       bundle: { code, sizeBytes, sha256 },
       limits: {
         wallMs: orgPlan?.limits.maxWallMs ?? 10_000,

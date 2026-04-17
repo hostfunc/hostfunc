@@ -134,7 +134,7 @@ export default function NewWorkspacePage() {
                       />
                     </div>
                     <p className="h-4 px-1 text-[11px] text-[var(--color-bone-faint)]">
-                      {slug ? `hostfunc.com/${slug}` : "hostfunc.com/your-url"}
+                      {slug ? `hostfunc.io/${slug}` : "hostfunc.io/your-url"}
                     </p>
                     {state?.error?.slug && (
                       <p className="text-xs text-red-300 mt-1">{state.error.slug[0]}</p>
@@ -206,7 +206,7 @@ export default function NewWorkspacePage() {
                     </div>
                     <div className="overflow-hidden">
                       <p className="truncate font-semibold text-[var(--color-bone)]">{name}</p>
-                      <p className="truncate text-xs text-[var(--color-bone-faint)]">hostfunc.com/{slug}</p>
+                      <p className="truncate text-xs text-[var(--color-bone-faint)]">hostfunc.io/{slug}</p>
                     </div>
                   </div>
 
