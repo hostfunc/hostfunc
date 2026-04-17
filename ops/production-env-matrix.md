@@ -14,6 +14,25 @@ This matrix defines where each value lives in production and who owns rotation/a
 | Redis | Managed Redis | Provider secret manager | Data/Platform |
 | Stripe | Stripe Dashboard (Live mode) | Stripe Dashboard + Vercel vars | Billing |
 | OAuth | Google Cloud + GitHub OAuth Apps | Provider consoles + Vercel vars | App/Auth |
+| GitHub Actions release | `.github/workflows/release.yml` | GitHub Actions secrets | Platform |
+
+## Changesets release (Option A: PAT)
+
+The Release workflow uses `changesets/action` to open a “Version packages” PR. Many orgs block the default `GITHUB_TOKEN` from creating pull requests. **Option A** is to use a dedicated PAT stored as **`CHANGESETS_GITHUB_TOKEN`**.
+
+1. **Create a fine-grained personal access token** (GitHub → Settings → Developer settings → Fine-grained tokens → Generate new token).
+   - **Resource owner:** the `hostfunc` org (or user that owns the repo).
+   - **Repository access:** only the `hostfunc` repository (or the repos this workflow must touch).
+   - **Permissions:**
+     - **Contents:** Read and write (push version branches and tags as needed).
+     - **Pull requests:** Read and write (open/update the version PR).
+     - **Metadata:** Read-only (usually implied).
+2. **Add the token as a secret**
+   - **Repository → Settings → Secrets and variables → Actions.** Add **`CHANGESETS_GITHUB_TOKEN`** with the PAT value.
+   - The Release job also uses **`environment: production`**. If you use **environment protection rules** or only store secrets on that environment, add **`CHANGESETS_GITHUB_TOKEN`** under **Settings → Environments → production → Environment secrets** as well (same value), so the job can read it.
+3. **Optional:** Restrict the token to a **machine user** or **service account** GitHub user instead of a human admin, and rotate the PAT on the same cadence as other CI credentials.
+
+The workflow passes `CHANGESETS_GITHUB_TOKEN` to Changesets before falling back to `GITHUB_TOKEN`; no repo setting change is required for Option A.
 
 ## Required Variables by Environment
 
