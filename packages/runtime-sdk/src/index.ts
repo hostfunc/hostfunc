@@ -1,22 +1,16 @@
-export interface ExecuteFunctionOptions {
-    timeoutMs?: number;
-}
+import { fn } from "./core/fn";
+import { secret } from "./core/secret";
 
-export interface hostfuncApi {
-    executeFunction<T = unknown>(
-        slug: string,
-        input?: unknown,
-        options?: ExecuteFunctionOptions,
-    ): Promise<T>;
-}
-
-export interface SecretApi {
-    get(key: string): Promise<string | null>;
-    getRequired(key: string): Promise<string>;
-}
-
-declare const fn: hostfuncApi;
-declare const secret: SecretApi;
+export type { FnApi } from "./core/fn";
+export type { SecretApi } from "./core/secret";
+export type {
+  ExecuteFunctionOptions,
+  JsonObject,
+  JsonPrimitive,
+  JsonValue,
+  RuntimeContext,
+} from "./core/types";
+export { SdkError } from "./core/types";
 
 export default fn;
-export { secret };
+export { fn, secret };
