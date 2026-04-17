@@ -82,11 +82,16 @@ async function handleFunctionsGet(
 }
 
 async function handleFunctionsExecute(input: {
-  owner: string;
+  orgSlug?: string | undefined;
+  owner?: string | undefined;
   slug: string;
   payload?: Record<string, unknown> | undefined;
 }) {
-  const res = await fetch(`${env.HOSTFUNC_RUNTIME_URL}/run/${input.owner}/${input.slug}`, {
+  const orgSlug = input.orgSlug ?? input.owner;
+  if (!orgSlug) {
+    return { status: 400, body: { error: "missing_org_slug" } };
+  }
+  const res = await fetch(`${env.HOSTFUNC_RUNTIME_URL}/run/${orgSlug}/${input.slug}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input.payload ?? {}),

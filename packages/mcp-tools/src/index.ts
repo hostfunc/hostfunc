@@ -20,11 +20,18 @@ export const functionsGetInputSchema = z.object({
   slug: z.string().optional(),
 });
 
-export const functionsExecuteInputSchema = z.object({
-  owner: z.string(),
-  slug: z.string(),
-  payload: z.record(z.unknown()).optional(),
-});
+export const functionsExecuteInputSchema = z
+  .object({
+    orgSlug: z.string().optional(),
+    /** Deprecated alias for `orgSlug`. Kept so older MCP clients still work. */
+    owner: z.string().optional(),
+    slug: z.string(),
+    payload: z.record(z.unknown()).optional(),
+  })
+  .refine((value) => Boolean(value.orgSlug ?? value.owner), {
+    message: "orgSlug (or legacy 'owner') is required",
+    path: ["orgSlug"],
+  });
 
 export const executionsListInputSchema = z.object({
   fnId: z.string().optional(),
@@ -62,7 +69,7 @@ export const mcpTools = [
   },
   {
     name: "functions.execute",
-    description: "Execute a deployed function by owner and slug",
+    description: "Execute a deployed function by orgSlug and slug",
     inputSchema: functionsExecuteInputSchema,
   },
   {

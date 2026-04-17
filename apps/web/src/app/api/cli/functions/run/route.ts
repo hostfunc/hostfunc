@@ -18,14 +18,18 @@ export async function POST(req: NextRequest) {
   if (!body?.fnId) return Response.json({ error: "invalid_body" }, { status: 400 });
 
   const rows = await db
-    .select({ owner: schema.fn.createdById, slug: schema.fn.slug })
+    .select({
+      orgSlug: schema.organization.slug,
+      slug: schema.fn.slug,
+    })
     .from(schema.fn)
+    .innerJoin(schema.organization, eq(schema.organization.id, schema.fn.orgId))
     .where(and(eq(schema.fn.id, body.fnId), eq(schema.fn.orgId, actor.orgId)))
     .limit(1);
   const row = rows[0];
   if (!row) return Response.json({ error: "not_found" }, { status: 404 });
 
-  const runRes = await fetch(`${env.HOSTFUNC_RUNTIME_URL}/run/${row.owner}/${row.slug}`, {
+  const runRes = await fetch(`${env.HOSTFUNC_RUNTIME_URL}/run/${row.orgSlug}/${row.slug}`, {
     method: "POST",
     headers: {
       "content-type": "application/json",

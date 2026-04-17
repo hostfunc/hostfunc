@@ -1,3 +1,7 @@
 LOOKUP_API_URL=http://localhost:3000
 LOOKUP_API_TOKEN=replace-with-runtime-lookup-token
 WORKERS_SUBDOMAIN=replace-with-cloudflare-workers-subdomain
+# Optional: override the URL that user functions use to invoke other functions
+# via fn.executeFunction(). Defaults to the origin of the inbound /run/... request.
+# Set this when the runtime has a separate public domain from the one callers hit.
+# RUNTIME_PUBLIC_URL=https://run.hostfunc.com

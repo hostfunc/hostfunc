@@ -9,7 +9,9 @@ interface CronCandidate {
   triggerId: string;
   fnId: string;
   orgId: string;
+  /** Kept for backwards compatibility with older cron workers that read this field. */
   owner: string;
+  orgSlug: string;
   slug: string;
   schedule: string;
   timezone?: string;
@@ -26,12 +28,13 @@ export async function GET(req: NextRequest) {
       triggerId: schema.trigger.id,
       fnId: schema.trigger.fnId,
       orgId: schema.trigger.orgId,
-      owner: schema.fn.createdById,
+      orgSlug: schema.organization.slug,
       slug: schema.fn.slug,
       config: schema.trigger.config,
     })
     .from(schema.trigger)
     .innerJoin(schema.fn, eq(schema.fn.id, schema.trigger.fnId))
+    .innerJoin(schema.organization, eq(schema.organization.id, schema.trigger.orgId))
     .where(and(eq(schema.trigger.kind, "cron"), eq(schema.trigger.enabled, true)));
 
   const due = rows
@@ -42,7 +45,8 @@ export async function GET(req: NextRequest) {
         triggerId: row.triggerId,
         fnId: row.fnId,
         orgId: row.orgId,
-        owner: row.owner,
+        owner: row.orgSlug,
+        orgSlug: row.orgSlug,
         slug: row.slug,
         schedule: cron.schedule,
       };

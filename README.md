@@ -256,7 +256,7 @@ pnpm dev
 Copy the example env file in `apps/web`:
 
 ```bash
-cp apps/web/.env.local.example apps/web/.env.local
+cp apps/web/.env.example apps/web/.env.local
 ```
 
 Key variables to configure:
@@ -271,6 +271,94 @@ Key variables to configure:
 | `RUNTIME_LOOKUP_TOKEN` | Shared internal auth token for runtime ↔ web endpoints |
 | `STRIPE_SECRET_KEY` | Stripe secret key (for billing features) |
 
+### Local Development Ops (Tunnel + Runtime + Stripe + CLI)
+
+This section walks through the full local workflow used for runtime callbacks, Stripe webhooks, and CLI testing.
+
+1. **Prepare env files**
+
+```bash
+cp apps/web/.env.example apps/web/.env.local
+cp apps/runtime/.dev.vars.example apps/runtime/.dev.vars
+```
+
+Set at least these values:
+
+- `apps/web/.env.local`
+  - `BETTER_AUTH_URL=http://localhost:3000`
+  - `NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000`
+  - `HOSTFUNC_RUNTIME_URL=http://localhost:8787`
+  - `RUNTIME_LOOKUP_TOKEN` (must match runtime `LOOKUP_API_TOKEN`)
+  - `RUNTIME_INGEST_TOKEN` (if used by your runtime/tail flow)
+  - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (for billing webhook tests)
+- `apps/runtime/.dev.vars`
+  - `LOOKUP_API_URL=http://localhost:3000`
+  - `LOOKUP_API_TOKEN=<same as RUNTIME_LOOKUP_TOKEN>`
+
+2. **Start local services**
+
+```bash
+pnpm infra:up
+pnpm dev:web
+pnpm --filter @hostfunc/runtime dev
+```
+
+This runs:
+- web app at `http://localhost:3000`
+- runtime worker at `http://localhost:8787`
+
+3. **Expose local web app with cloudflared (for OAuth/webhooks)**
+
+```bash
+cloudflared tunnel --url http://localhost:3000
+```
+
+Use the generated HTTPS URL to update local app URL settings when needed (for example OAuth redirect testing):
+- `BETTER_AUTH_URL`
+- `NEXT_PUBLIC_BETTER_AUTH_URL`
+
+4. **Listen for Stripe webhooks locally**
+
+```bash
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
+```
+
+Copy the signing secret printed by Stripe CLI (`whsec_...`) into:
+- `apps/web/.env.local` as `STRIPE_WEBHOOK_SECRET`
+
+5. **Install and use the npm CLI package**
+
+```bash
+npm install -g @hostfunc/cli
+hostfunc login --token <api-token-from-dashboard> --url http://localhost:3000
+hostfunc init --fnId <fn_id>
+hostfunc deploy
+hostfunc run --payload ./payload.json
+```
+
+If you are testing through your tunnel URL, use that URL in `hostfunc login --url`.
+
+6. **Runtime URL shape note**
+
+Runtime endpoints are org-scoped:
+
+```text
+/run/{orgSlug}/{slug}
+```
+
+If you still call legacy owner-based URLs, runtime returns a deprecation error.
+
+### Local Troubleshooting
+
+- **Stripe returns 400/invalid signature**
+  - Verify `STRIPE_WEBHOOK_SECRET` matches the active `stripe listen` session output.
+- **Runtime callbacks fail with unauthorized**
+  - Ensure `RUNTIME_LOOKUP_TOKEN` in web env exactly matches runtime `LOOKUP_API_TOKEN`.
+- **CLI deploy/run points to wrong server**
+  - Re-run `hostfunc login` with the intended `--url` (localhost vs tunnel URL).
+- **OAuth/auth redirect mismatch**
+  - Set `BETTER_AUTH_URL` and `NEXT_PUBLIC_BETTER_AUTH_URL` to the same active origin.
+
 ---
 
 ## Scripts Reference
@@ -282,7 +370,8 @@ All scripts are run from the **repository root** with `pnpm <script>`.
 | Script | Description |
 |---|---|
 | `pnpm dev` | Start all packages in watch/dev mode (Turbo) |
-| `pnpm dev:web` | Start only the Next.js web app |
+| `pnpm dev:web` | Start the Next.js web app + all of its workspace deps in watch mode |
+| `pnpm --filter @hostfunc/web build:deps` | Rebuild every workspace package consumed by `apps/web` (runs automatically on `dev`) |
 | `pnpm build` | Production build for all packages |
 | `pnpm test` | Run tests across all packages |
 | `pnpm test:watch` | Run tests in watch mode |
