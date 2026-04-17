@@ -1,13 +1,21 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "composite": false,
+    "declaration": true,
+    "declarationMap": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "incremental": true,
+    "tsBuildInfoFile": "./.tsbuildinfo",
     "baseUrl": ".",
     "paths": {
-      "@hostfunc/executor-core": ["../executor-core/src/index.ts"]
+      "@hostfunc/sdk": ["./src/index.ts"],
+      "@hostfunc/sdk/ai": ["./src/ai/index.ts"],
+      "@hostfunc/sdk/agent": ["./src/agent/index.ts"],
+      "@hostfunc/sdk/vector": ["./src/vector/index.ts"]
     }
   },
   "include": ["src/**/*"],
-  "references": [{ "path": "../executor-core" }]
+  "exclude": ["src/shim.ts"]
 }

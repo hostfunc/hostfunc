@@ -19,7 +19,7 @@
     "@hostfunc/db": "workspace:*",
     "@hostfunc/executor-cloudflare": "workspace:*",
     "@hostfunc/executor-core": "workspace:*",
-    "@hostfunc/fn": "workspace:*",
+    "@hostfunc/sdk": "workspace:*",
     "@hostfunc/mcp-tools": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.13.1",
     "@monaco-editor/react": "^4.7.0",
