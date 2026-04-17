@@ -2,7 +2,8 @@
 
 import { deployFunction } from "@/app/dashboard/[fn]/actions";
 import { Button } from "@/components/ui/button";
-import { Copy } from "lucide-react";
+import { isQuotaLimitError, openUpgradeModal } from "@/lib/upgrade-modal";
+import { Cloud, Copy } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -39,12 +40,21 @@ export function DeployButton({ fnId, onDeploy }: { fnId: string; onDeploy: () =>
       });
     } catch (e) {
       const reason = e instanceof Error ? e.message : "unknown error";
+      if (isQuotaLimitError(reason)) {
+        openUpgradeModal();
+      }
       setState({ phase: "failed", reason });
       toast.error("Deploy failed", { description: reason });
     }
   }
 
   const busy = state.phase !== "idle" && state.phase !== "live" && state.phase !== "failed";
+  const toneClass =
+    state.phase === "failed"
+      ? "h-8 border-red-500/40 bg-red-500/12 text-red-100 hover:bg-red-500/22"
+      : busy
+        ? "h-8 border-amber-500/40 bg-amber-500/12 text-amber-100 hover:bg-amber-500/22"
+        : "h-8 border-emerald-500/40 bg-emerald-500/12 text-emerald-100 hover:bg-emerald-500/22";
 
   return (
     <div className="flex items-center gap-2">
@@ -62,7 +72,14 @@ export function DeployButton({ fnId, onDeploy }: { fnId: string; onDeploy: () =>
           {truncateUrl(state.runUrl)}
         </button>
       )}
-      <Button onClick={handleClick} disabled={busy}>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handleClick}
+        disabled={busy}
+        className={toneClass}
+      >
+        <Cloud className="mr-2 size-4" />
         {labelFor(state)}
       </Button>
     </div>

@@ -42,7 +42,6 @@ const ADMIN_PERMISSIONS: ReadonlySet<OrgPermission> = new Set([
 const MEMBER_PERMISSIONS: ReadonlySet<OrgPermission> = new Set([
   "view_workspace",
   "create_function",
-  "edit_draft",
 ]);
 
 const PERMISSIONS_BY_ROLE: Record<OrgRole, ReadonlySet<OrgPermission>> = {

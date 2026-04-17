@@ -328,4 +328,43 @@ describe("bundleFunction shim routing", () => {
     // With no runtime URL header, fall back to control plane for backwards compat.
     expect(runCall?.startsWith(CONTROL_PLANE)).toBe(true);
   });
+
+  it("supports @hostfunc/sdk subpath imports during bundle and runtime execution", async () => {
+    const source = `
+      import { askAi } from "@hostfunc/sdk/ai";
+      import { upsert } from "@hostfunc/sdk/vector";
+      export async function main() {
+        const ai = await askAi("Generate a one-line answer", { model: "gpt-4o-mini" });
+        const up = await upsert("ns", [{ id: "1", values: [0.1, 0.2] }]);
+        return { ai, up };
+      }
+    `;
+    const { code } = await bundleFunction({ code: source, fnId: "fn_sdk_subpaths" });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.endsWith("/api/internal/ai/ask")) {
+          return new Response(JSON.stringify({ text: "ok" }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        }
+        if (url.endsWith("/api/internal/vector/upsert")) {
+          return new Response(JSON.stringify({ namespace: "ns", upserted: 1 }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        }
+        return new Response("not found", { status: 404 });
+      }),
+    );
+
+    const response = await invokeWorker({ code });
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { ai: { text: string }; up: { upserted: number } };
+    expect(body.ai.text).toBe("ok");
+    expect(body.up.upserted).toBe(1);
+  });
 });

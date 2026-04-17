@@ -8,6 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import {
   Activity,
   AlertTriangle,
+  ArrowRight,
   CheckCircle2,
   Clock,
   ExternalLink,
@@ -86,15 +87,27 @@ export default async function DashboardPage() {
           <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Compute Time</CardTitle>
-              <Clock className="h-4 w-4 text-[var(--color-bone-faint)]" />
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-[var(--color-bone-faint)]" />
+                <Link
+                  href="/dashboard/settings/billing"
+                  className="inline-flex items-center text-amber-400 transition hover:text-amber-300"
+                  title="Review usage and limits"
+                  aria-label="Review usage and limits in billing"
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                </Link>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {stats.totalCpuMs > 1000
-                  ? `${(stats.totalCpuMs / 1000).toFixed(1)}s`
-                  : `${stats.totalCpuMs}ms`}
+                {stats.totalWallMs > 1000
+                  ? `${(stats.totalWallMs / 1000).toFixed(1)}s`
+                  : `${stats.totalWallMs}ms`}
               </div>
-              <p className="mt-1 text-xs text-[var(--color-bone-faint)]">Total CPU time billed</p>
+              <p className="mt-1 text-xs text-[var(--color-bone-faint)]">
+                Total wall time consumed
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -288,7 +301,9 @@ export default async function DashboardPage() {
                               href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
                               className="block"
                             >
-                              {exec.triggerKind}
+                              <span className="inline-flex items-center rounded-full border border-sky-400/30 bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium tracking-wide text-sky-200">
+                                {exec.triggerKind}
+                              </span>
                             </Link>
                           </td>
                           <td className="px-4 py-3 font-mono text-xs">
@@ -302,9 +317,10 @@ export default async function DashboardPage() {
                           <td className="whitespace-nowrap px-4 py-3 text-right text-[var(--color-bone-faint)]">
                             <Link
                               href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
-                              className="block"
+                              className="inline-flex items-center gap-1"
                             >
                               {formatDistanceToNow(exec.startedAt, { addSuffix: true })}
+                              <ArrowRight className="h-3.5 w-3.5 text-[var(--color-bone-faint)]" />
                             </Link>
                           </td>
                         </tr>

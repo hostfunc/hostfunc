@@ -1,7 +1,7 @@
 "use client";
 
-import type { OnMount } from "@monaco-editor/react";
-import { Editor } from "@monaco-editor/react";
+import type { DiffOnMount, OnMount } from "@monaco-editor/react";
+import { DiffEditor, Editor } from "@monaco-editor/react";
 import { useEffect, useRef } from "react";
 import { HOSTFUNC_TYPES_DTS } from "./hostfunc-types";
 
@@ -10,13 +10,20 @@ interface Props {
   packageNames: string[];
   onChange: (value: string) => void;
   onSave?: () => void;
+  readOnly?: boolean;
 }
 
 type Monaco = Parameters<OnMount>[1];
 
 const TYPE_LIST_URL = "https://data.jsdelivr.com/v1/package/npm";
 const TYPE_CDN_URL = "https://cdn.jsdelivr.net/npm";
-const INTERNAL_MODULES = new Set(["@hostfunc/fn", "@hostfunc/sdk"]);
+const INTERNAL_MODULES = new Set([
+  "@hostfunc/fn",
+  "@hostfunc/sdk",
+  "@hostfunc/sdk/ai",
+  "@hostfunc/sdk/agent",
+  "@hostfunc/sdk/vector",
+]);
 
 function toDefinitelyTypedName(packageName: string): string {
   if (packageName.startsWith("@")) {
@@ -91,45 +98,41 @@ function addFallbackModuleDeclaration(monaco: Monaco, packageName: string, loade
   loadedLibs.add(libKey);
 }
 
-export function MonacoEditor({ value, packageNames, onChange, onSave }: Props) {
+function configureMonacoDefaults(monaco: Monaco) {
+  monaco.languages.typescript.typescriptDefaults.addExtraLib(
+    HOSTFUNC_TYPES_DTS,
+    "file:///node_modules/@hostfunc/sdk/index.d.ts",
+  );
+  monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+    target: monaco.languages.typescript.ScriptTarget.ES2022,
+    module: monaco.languages.typescript.ModuleKind.ESNext,
+    moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+    strict: true,
+    noImplicitAny: true,
+    esModuleInterop: true,
+    allowSyntheticDefaultImports: true,
+    isolatedModules: true,
+    noUncheckedIndexedAccess: true,
+    allowNonTsExtensions: true,
+    resolveJsonModule: true,
+    noEmit: true,
+    lib: ["es2022", "dom"],
+  });
+  monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+    noSemanticValidation: false,
+    noSyntaxValidation: false,
+    noSuggestionDiagnostics: false,
+  });
+  monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
+}
+
+export function MonacoEditor({ value, packageNames, onChange, onSave, readOnly = false }: Props) {
   const monacoRef = useRef<Parameters<OnMount>[1] | null>(null);
   const loadedLibsRef = useRef<Set<string>>(new Set());
 
   const handleMount: OnMount = (editor, monaco) => {
     monacoRef.current = monaco;
-
-    // Inject @hostfunc/sdk types into Monaco's virtual filesystem
-    monaco.languages.typescript.typescriptDefaults.addExtraLib(
-      HOSTFUNC_TYPES_DTS,
-      "file:///node_modules/@hostfunc/sdk/index.d.ts",
-    );
-    monaco.languages.typescript.typescriptDefaults.addExtraLib(
-      HOSTFUNC_TYPES_DTS,
-      "file:///node_modules/@hostfunc/sdk/index.d.ts",
-    );
-
-    // Match our project's strict TS config
-    monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-      target: monaco.languages.typescript.ScriptTarget.ES2022,
-      module: monaco.languages.typescript.ModuleKind.ESNext,
-      moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-      strict: true,
-      noImplicitAny: true,
-      esModuleInterop: true,
-      allowSyntheticDefaultImports: true,
-      isolatedModules: true,
-      noUncheckedIndexedAccess: true,
-      allowNonTsExtensions: true,
-      resolveJsonModule: true,
-      noEmit: true,
-      lib: ["es2022", "dom"],
-    });
-    monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
-      noSemanticValidation: false,
-      noSyntaxValidation: false,
-      noSuggestionDiagnostics: false,
-    });
-    monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
+    configureMonacoDefaults(monaco);
 
     const formatAndSave = async () => {
       await editor.getAction("editor.action.formatDocument")?.run();
@@ -137,9 +140,11 @@ export function MonacoEditor({ value, packageNames, onChange, onSave }: Props) {
     };
 
     // Cmd/Ctrl + S to save
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-      void formatAndSave();
-    });
+    if (!readOnly) {
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+        void formatAndSave();
+      });
+    }
   };
 
   useEffect(() => {
@@ -189,6 +194,55 @@ export function MonacoEditor({ value, packageNames, onChange, onSave }: Props) {
           strings: true,
         },
         tabSize: 2,
+        automaticLayout: true,
+        readOnly,
+      }}
+    />
+  );
+}
+
+interface DiffProps {
+  originalValue: string;
+  modifiedValue: string;
+  packageNames: string[];
+}
+
+export function MonacoDiffEditor({ originalValue, modifiedValue, packageNames }: DiffProps) {
+  const monacoRef = useRef<Monaco | null>(null);
+  const loadedLibsRef = useRef<Set<string>>(new Set());
+
+  const handleMount: DiffOnMount = (_editor, monaco) => {
+    monacoRef.current = monaco;
+    configureMonacoDefaults(monaco);
+  };
+
+  useEffect(() => {
+    const monaco = monacoRef.current;
+    if (!monaco) return;
+    const candidates = [...new Set(packageNames)].filter((name) => name && !INTERNAL_MODULES.has(name));
+    if (candidates.length === 0) return;
+    void (async () => {
+      for (const packageName of candidates) {
+        const loaded = await addTypePackageLibs(monaco, packageName, loadedLibsRef.current);
+        if (!loaded) addFallbackModuleDeclaration(monaco, packageName, loadedLibsRef.current);
+      }
+    })();
+  }, [packageNames]);
+
+  return (
+    <DiffEditor
+      height="100%"
+      original={originalValue}
+      modified={modifiedValue}
+      language="typescript"
+      theme="vs-dark"
+      onMount={handleMount}
+      options={{
+        readOnly: true,
+        renderSideBySide: true,
+        ignoreTrimWhitespace: false,
+        minimap: { enabled: false },
+        fontSize: 14,
         automaticLayout: true,
       }}
     />

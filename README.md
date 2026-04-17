@@ -187,6 +187,26 @@ the migration window. New code should use `@hostfunc/sdk`.
 
 The shim communicates with the control plane via internal headers (`x-hostfunc-exec-id`, `x-hostfunc-call-chain`, etc.) and enforces call-depth limits to prevent infinite loops.
 
+### SDK integration setup (AI / Agent / Vector)
+
+Before calling `@hostfunc/sdk/ai`, `@hostfunc/sdk/agent`, or `@hostfunc/sdk/vector`, configure
+workspace defaults in `/dashboard/settings/integrations`:
+
+- AI default provider + model (`openai` or `claude`)
+- Vector backend priority/fallback (`external_http` and/or `postgres`)
+- Credentials:
+  - OpenAI API key
+  - Claude API key
+  - Vector service URL
+  - Vector database URL
+
+Per-function overrides can be configured in `/dashboard/[fn]/settings` and are resolved with:
+
+1. Function override
+2. Workspace default
+
+Missing credentials return structured `missing_secret` errors from internal APIs.
+
 ---
 
 ## Getting Started
@@ -309,6 +329,25 @@ pnpm --filter @hostfunc/runtime dev
 This runs:
 - web app at `http://localhost:3000`
 - runtime worker at `http://localhost:8787`
+
+Optional for tail-origin logs:
+
+```bash
+pnpm --filter @hostfunc/tail dev
+```
+
+7. **Verify live log pipeline (runtime/tail -> ingest -> SSE)**
+
+Use an existing execution id (`exe_...`) and probe the log pipeline:
+
+```bash
+curl -sS -X POST http://localhost:3000/api/internal/logs/health \
+  -H "authorization: Bearer $RUNTIME_LOOKUP_TOKEN" \
+  -H "content-type: application/json" \
+  -d '{"executionId":"exe_xxx","message":"health check"}'
+```
+
+Then open the function editor execution pane and confirm the synthetic line appears in the live stream.
 
 3. **Expose local web app with cloudflared (for OAuth/webhooks)**
 

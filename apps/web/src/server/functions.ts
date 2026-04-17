@@ -173,6 +173,16 @@ export async function getDraft(fnId: string, userId: string) {
   return rows[0] ?? null;
 }
 
+export async function getCurrentVersionCodeForFunction(orgId: string, fnId: string): Promise<string | null> {
+  const rows = await db
+    .select({ code: schema.fnVersion.code })
+    .from(schema.fn)
+    .innerJoin(schema.fnVersion, sql`${schema.fnVersion.id} = ${schema.fn.currentVersionId}`)
+    .where(compat(sql`${schema.fn.orgId} = ${orgId} and ${schema.fn.id} = ${fnId}`) as never)
+    .limit(1);
+  return rows[0]?.code ?? null;
+}
+
 export async function listSecretsForFunction(orgId: string, fnId: string) {
   const rows = await db
     .select({

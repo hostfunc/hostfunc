@@ -29,7 +29,9 @@ export default async function BillingSettingsPage() {
       ),
     )
     .orderBy(asc(schema.plan.priceMonthlyCents));
-  const cycleStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const cycleStart = new Date();
+  cycleStart.setUTCDate(1);
+  cycleStart.setUTCHours(0, 0, 0, 0);
 
   const usage = await db
     .select({
@@ -41,10 +43,18 @@ export default async function BillingSettingsPage() {
 
   const executionCount = usage[0]?.executions ?? 0;
   const wallMs = usage[0]?.wallMs ?? 0;
+  const rawMonthlyWallLimit =
+    typeof plan.limits.maxWallMsPerMonth === "number" && Number.isFinite(plan.limits.maxWallMsPerMonth)
+      ? plan.limits.maxWallMsPerMonth
+      : plan.limits.maxWallMs;
+  const maxWallMsPerMonth = Math.max(rawMonthlyWallLimit, 1);
   const executionPercent = clampPercent(
     (executionCount / Math.max(plan.limits.maxExecutionsPerDay, 1)) * 100,
   );
-  const wallPercent = clampPercent((wallMs / Math.max(plan.limits.maxWallMs, 1)) * 100);
+  const wallPercent = clampPercent((wallMs / maxWallMsPerMonth) * 100);
+  const isWallOverLimit = wallMs >= maxWallMsPerMonth;
+  const wallBarClass =
+    wallPercent >= 80 ? "h-full rounded-full bg-amber-500" : "h-full rounded-full bg-emerald-500";
 
   return (
     <div className="space-y-10 pb-10">
@@ -94,6 +104,14 @@ export default async function BillingSettingsPage() {
 
           <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 p-6">
             <h4 className="mb-6 text-lg font-semibold">Current Cycle Usage</h4>
+            {isWallOverLimit ? (
+              <div className="mb-6 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-100">
+                <p className="font-medium text-amber-200">Monthly wall-time limit reached</p>
+                <p className="mt-1">
+                  New executions are blocked on the free tier until you upgrade your plan.
+                </p>
+              </div>
+            ) : null}
 
             <div className="mb-8">
               <div className="mb-2 flex items-end justify-between">
@@ -115,14 +133,11 @@ export default async function BillingSettingsPage() {
               <div className="mb-2 flex items-end justify-between">
                 <span className="text-sm font-medium">Wall Time (ms)</span>
                 <span className="font-mono text-sm">
-                  {wallMs.toLocaleString()} / {plan.limits.maxWallMs.toLocaleString()}
+                  {wallMs.toLocaleString()} / {maxWallMsPerMonth.toLocaleString()}
                 </span>
               </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/30">
-                <div
-                  className="h-full rounded-full bg-emerald-500"
-                  style={{ width: `${wallPercent}%` }}
-                />
+                <div className={wallBarClass} style={{ width: `${wallPercent}%` }} />
               </div>
             </div>
           </div>

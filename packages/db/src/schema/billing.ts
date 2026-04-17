@@ -20,6 +20,7 @@ import { organization } from "./organizations.js";
 export interface PlanLimits {
   maxFunctions: number;
   maxExecutionsPerDay: number;
+  maxWallMsPerMonth: number;
   maxWallMs: number;
   maxCpuMs: number;
   maxMemoryMb: number;

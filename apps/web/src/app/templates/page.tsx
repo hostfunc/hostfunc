@@ -89,7 +89,7 @@ export default function TemplatesPage() {
                 className="h-12 rounded-full bg-[var(--color-amber)] px-7 text-base font-medium text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
               >
                 <Link href={primaryHref}>
-                  Start with a template
+                  Open guided creator
                   <ArrowRight className="ml-2 size-4" />
                 </Link>
               </Button>
@@ -122,7 +122,8 @@ export default function TemplatesPage() {
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
             Every template is designed to be customized, composed, and deployed with your existing
-            hostfunc workflow.
+            hostfunc workflow. You will be taken to the guided create screen with your template
+            preselected.
           </p>
           <div className="mt-10">
             <Button
@@ -131,7 +132,7 @@ export default function TemplatesPage() {
               className="h-12 rounded-full bg-[var(--color-amber)] px-8 text-base font-medium text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
             >
               <Link href={primaryHref}>
-                Launch your first one
+                Continue to create function
                 <ArrowRight className="ml-2 size-4" />
               </Link>
             </Button>

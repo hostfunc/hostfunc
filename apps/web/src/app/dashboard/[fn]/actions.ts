@@ -6,14 +6,26 @@ import { DEFAULT_FUNCTION_SDK, type FunctionPackageRecord } from "@/lib/function
 import { getLatestNpmVersion } from "@/lib/npm-registry";
 import { extractExternalPackageNames } from "@/lib/package-imports";
 import { requireOrgPermission } from "@/lib/session";
+import {
+  buildPayloadInferenceMessages,
+  buildGeneratorMessages,
+  buildRepairMessages,
+  extractJsonObject,
+  extractTsCode,
+  validateGeneratedCode,
+} from "@/server/ai-generator";
+import { fetchExternalDocsContext } from "@/server/ai-docs";
 import { executor } from "@/server/executor";
 import {
   deleteSecretForFunction,
+  getDraft,
   getFunctionPackagesForOrg,
   listSecretsForFunction,
   setFunctionPackagesForOrg,
   setSecretForFunction,
 } from "@/server/functions";
+import { IntegrationConfigError, type AiProvider, resolveAiConfigForGeneration } from "@/server/integrations";
+import { inferPayloadStatic, parsePayloadCandidate } from "@/server/payload-inference";
 import { getOrgPlan } from "@/server/plan";
 import { db, genId, schema, sql } from "@hostfunc/db";
 import { revalidatePath } from "next/cache";
@@ -30,6 +42,18 @@ const saveDraftSchema = z.object({
 const generateCodeSchema = z.object({
   fnId: z.string(),
   prompt: z.string().min(8).max(4_000),
+  provider: z.enum(["openai", "claude"]),
+  model: z.string().trim().min(1).max(120),
+  useLiveLookup: z.boolean().default(false),
+  lookupHints: z.array(z.string().trim().min(1).max(100)).max(8).default([]),
+});
+const runFunctionSchema = z.object({
+  fnId: z.string(),
+  payloadJson: z.string().max(1_000_000).optional(),
+});
+const inferRunPayloadSchema = z.object({
+  fnId: z.string(),
+  code: z.string().max(1_000_000),
 });
 const setSecretSchema = z.object({
   fnId: z.string(),
@@ -56,6 +80,29 @@ const updateDescriptionSchema = z.object({
   fnId: z.string(),
   description: z.string().max(280),
 });
+const updateIntegrationOverridesSchema = z.object({
+  fnId: z.string(),
+  aiProvider: z.enum(["", "openai", "claude"]),
+  aiModel: z.string().max(120).optional(),
+  openaiApiKey: z.string().max(8_192).optional(),
+  claudeApiKey: z.string().max(8_192).optional(),
+  vectorPrimary: z.enum(["", "external_http", "postgres"]),
+  vectorSecondary: z.enum(["", "none", "external_http", "postgres"]),
+  vectorServiceUrl: z.string().max(8_192).optional(),
+  vectorDatabaseUrl: z.string().max(8_192).optional(),
+});
+
+type FunctionSettingsActionState = {
+  ok?: boolean;
+  message?: string;
+  error?: { form?: string[] };
+} | null;
+
+const CLAUDE_MODEL_FALLBACKS = [
+  "claude-3-5-sonnet-latest",
+  "claude-3-5-haiku-latest",
+  "claude-3-haiku-20240307",
+] as const;
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -210,37 +257,247 @@ export async function saveDraft(input: z.infer<typeof saveDraftSchema>) {
 }
 
 export async function generateCodeFromPrompt(input: z.infer<typeof generateCodeSchema>) {
-  const { orgId } = await requireOrgPermission("edit_draft");
+  const { orgId, session } = await requireOrgPermission("edit_draft");
   const parsed = generateCodeSchema.parse(input);
-  await assertOrgOwnsFunction(orgId, parsed.fnId);
+  const fnRow = await assertOrgOwnsFunction(orgId, parsed.fnId);
+  const draft = await getDraft(parsed.fnId, session.user.id);
+  const packages = await getFunctionPackagesForOrg(orgId, parsed.fnId);
 
-  const prompt = parsed.prompt.trim();
-  const escapedPrompt = JSON.stringify(prompt);
-  const generated = `import fn from "@hostfunc/fn";
+  const ai = await resolveAiConfigForGeneration({
+    orgId,
+    fnId: parsed.fnId,
+    provider: parsed.provider as AiProvider,
+    model: parsed.model,
+  });
 
-/**
- * AI generated scaffold (stub provider).
- * Prompt: ${escapedPrompt}
- */
-export default async function main(input: unknown) {
-  fn.log("info", "Function invoked", { hasInput: Boolean(input) });
+  const externalDocsContext = parsed.useLiveLookup
+    ? await fetchExternalDocsContext({
+        query: parsed.prompt.trim(),
+        hints: parsed.lookupHints,
+      })
+    : "";
 
-  // TODO: Replace this scaffold with your implementation.
-  return {
-    ok: true,
-    summary: "Generated from prompt",
-    prompt: ${escapedPrompt},
-    input,
-  };
+  const messages = buildGeneratorMessages({
+    userPrompt: parsed.prompt.trim(),
+    currentCode: draft?.code ?? "",
+    fnSlug: fnRow.slug,
+    packages,
+    externalDocsContext,
+  });
+
+  try {
+    let generated = extractTsCode(await generateWithProvider(ai.provider, ai.apiKey, ai.model, messages));
+    const validation = validateGeneratedCode(generated);
+    if (!validation.ok) {
+      const repaired = await generateWithProvider(
+        ai.provider,
+        ai.apiKey,
+        ai.model,
+        buildRepairMessages({ priorCode: generated, reasons: validation.reasons }),
+      );
+      generated = extractTsCode(repaired);
+    }
+    return { code: generated };
+  } catch (error) {
+    if (error instanceof IntegrationConfigError) throw error;
+    const message = error instanceof Error ? error.message : "generation_failed";
+    throw new Error(message);
+  }
 }
-`;
-  return { code: generated };
+
+async function generateWithProvider(
+  provider: AiProvider,
+  apiKey: string,
+  model: string,
+  messages: Array<{ role: "system" | "user"; content: string }>,
+): Promise<string> {
+  if (provider === "openai") {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: 0.2,
+      }),
+    });
+    const json = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(`provider_error:${response.status}:${JSON.stringify(json)}`);
+    }
+    return json?.choices?.[0]?.message?.content ?? "";
+  }
+
+  const systemParts = messages
+    .filter((m) => m.role === "system")
+    .map((m) => m.content)
+    .filter(Boolean);
+  const anthropicMessages = messages
+    .filter((m) => m.role !== "system")
+    .map((m) => ({ role: "user" as const, content: m.content }));
+  const candidateModels = [model, ...CLAUDE_MODEL_FALLBACKS.filter((m) => m !== model)];
+  let lastError = "";
+  for (const modelName of candidateModels) {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: modelName,
+        max_tokens: 2400,
+        ...(systemParts.length > 0 ? { system: systemParts.join("\n\n") } : {}),
+        messages: anthropicMessages.length > 0 ? anthropicMessages : [{ role: "user", content: "" }],
+      }),
+    });
+    const json = await response.json().catch(() => null);
+    if (response.ok) {
+      return json?.content?.[0]?.text ?? "";
+    }
+    const raw = JSON.stringify(json);
+    lastError = `provider_error:${response.status}:${raw}`;
+    const modelNotFound =
+      response.status === 404 || raw.includes("not_found_error") || raw.includes('"model:');
+    if (!modelNotFound) break;
+  }
+  throw new Error(lastError || "provider_error:anthropic_generation_failed");
 }
 
 export interface DeployResultUi {
   ok: boolean;
   versionId: string;
   runUrl: string;
+}
+
+export async function getFunctionRunUrl(fnId: string): Promise<string> {
+  const { orgId } = await requireOrgPermission("view_workspace");
+  const fnRow = await assertOrgOwnsFunction(orgId, fnId);
+  const orgRows = await db
+    .select({ slug: schema.organization.slug })
+    .from(schema.organization)
+    .where(compatWhere(sql`${schema.organization.id} = ${orgId}`) as never)
+    .limit(1);
+  const orgSlug = orgRows[0]?.slug;
+  if (!orgSlug) throw new Error("org_not_found");
+  return `${env.HOSTFUNC_RUNTIME_URL}/run/${orgSlug}/${fnRow.slug}`;
+}
+
+export async function runFunctionNow(input: z.infer<typeof runFunctionSchema>) {
+  const parsed = runFunctionSchema.parse(input);
+  const runUrl = await getFunctionRunUrl(parsed.fnId);
+  const raw = (parsed.payloadJson ?? "").trim();
+  let payload: unknown = {};
+  if (raw.length > 0) {
+    try {
+      payload = JSON.parse(raw);
+    } catch {
+      throw new Error("invalid_json_payload");
+    }
+  }
+
+  const response = await fetch(runUrl, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload ?? {}),
+  });
+  const bodyText = await response.text().catch(() => "");
+  let bodyJson: unknown = null;
+  if (bodyText) {
+    try {
+      bodyJson = JSON.parse(bodyText);
+    } catch {
+      bodyJson = null;
+    }
+  }
+
+  return {
+    runUrl,
+    ok: response.ok,
+    status: response.status,
+    executionId: response.headers.get("x-hostfunc-exec-id"),
+    wallMs: response.headers.get("x-hostfunc-wall-ms"),
+    bodyText,
+    bodyJson,
+  };
+}
+
+export async function inferRunPayload(input: z.infer<typeof inferRunPayloadSchema>): Promise<{
+  payloadJson: string;
+  source: "static" | "ai_fallback" | "default";
+  reason?: string;
+}> {
+  const { orgId } = await requireOrgPermission("view_workspace");
+  const parsed = inferRunPayloadSchema.parse(input);
+  const fnRow = await assertOrgOwnsFunction(orgId, parsed.fnId);
+
+  const staticResult = inferPayloadStatic(parsed.code);
+  if (staticResult.ok) {
+    return {
+      payloadJson: JSON.stringify(staticResult.payload, null, 2),
+      source: "static",
+    };
+  }
+
+  try {
+    const ai =
+      (await tryResolveAiForPayload(orgId, parsed.fnId, "openai", "gpt-4o-mini")) ??
+      (await tryResolveAiForPayload(orgId, parsed.fnId, "claude", "claude-3-5-sonnet-latest"));
+    if (!ai) {
+      return {
+        payloadJson: "{}",
+        source: "default",
+        reason: "ai_not_configured_for_payload_inference",
+      };
+    }
+    const content = await generateWithProvider(
+      ai.provider,
+      ai.apiKey,
+      ai.model,
+      buildPayloadInferenceMessages({
+        fnSlug: fnRow.slug,
+        currentCode: parsed.code,
+      }),
+    );
+    const candidate = extractJsonObject(content);
+    const parsedPayload = parsePayloadCandidate(candidate);
+    if (!parsedPayload.ok) {
+      return {
+        payloadJson: "{}",
+        source: "default",
+        reason: parsedPayload.reason ?? "ai_output_invalid",
+      };
+    }
+    return {
+      payloadJson: JSON.stringify(parsedPayload.payload, null, 2),
+      source: "ai_fallback",
+      ...(staticResult.reason ? { reason: staticResult.reason } : {}),
+    };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "payload_inference_failed";
+    return {
+      payloadJson: "{}",
+      source: "default",
+      reason,
+    };
+  }
+}
+
+async function tryResolveAiForPayload(
+  orgId: string,
+  fnId: string,
+  provider: AiProvider,
+  model: string,
+) {
+  try {
+    return await resolveAiConfigForGeneration({ orgId, fnId, provider, model });
+  } catch {
+    return null;
+  }
 }
 
 export async function deployFunction(fnId: string): Promise<DeployResultUi> {
@@ -515,6 +772,63 @@ export async function updateFunctionDescriptionAction(formData: FormData) {
   revalidatePath(`/dashboard/${parsed.fnId}/settings`);
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/functions");
+}
+
+export async function updateFunctionIntegrationOverridesAction(formData: FormData) {
+  const { orgId, session } = await requireOrgPermission("manage_secrets");
+  const parsed = updateIntegrationOverridesSchema.parse({
+    fnId: formData.get("fnId"),
+    aiProvider: formData.get("aiProvider"),
+    aiModel: (formData.get("aiModel") ?? "").toString().trim() || undefined,
+    openaiApiKey: (formData.get("openaiApiKey") ?? "").toString().trim() || undefined,
+    claudeApiKey: (formData.get("claudeApiKey") ?? "").toString().trim() || undefined,
+    vectorPrimary: formData.get("vectorPrimary"),
+    vectorSecondary: formData.get("vectorSecondary"),
+    vectorServiceUrl: (formData.get("vectorServiceUrl") ?? "").toString().trim() || undefined,
+    vectorDatabaseUrl: (formData.get("vectorDatabaseUrl") ?? "").toString().trim() || undefined,
+  });
+  await assertOrgOwnsFunction(orgId, parsed.fnId);
+
+  const upsert = async (key: string, value?: string | null) => {
+    if (!value || value === "none") {
+      await deleteSecretForFunction(orgId, parsed.fnId, key);
+      return;
+    }
+    await setSecretForFunction({
+      orgId,
+      fnId: parsed.fnId,
+      key,
+      value,
+      userId: session.user.id,
+    });
+  };
+
+  await upsert("HF_FN_AI_PROVIDER", parsed.aiProvider || null);
+  await upsert("HF_FN_AI_MODEL", parsed.aiModel);
+  await upsert("HF_FN_OPENAI_API_KEY", parsed.openaiApiKey);
+  await upsert("HF_FN_CLAUDE_API_KEY", parsed.claudeApiKey);
+  await upsert("HF_FN_VECTOR_BACKEND_PRIMARY", parsed.vectorPrimary || null);
+  await upsert("HF_FN_VECTOR_BACKEND_SECONDARY", parsed.vectorSecondary || null);
+  await upsert("HF_FN_VECTOR_SERVICE_URL", parsed.vectorServiceUrl);
+  await upsert("HF_FN_VECTOR_DATABASE_URL", parsed.vectorDatabaseUrl);
+
+  revalidatePath(`/dashboard/${parsed.fnId}/settings`);
+}
+
+export async function updateFunctionIntegrationOverridesStateAction(
+  _prevState: FunctionSettingsActionState,
+  formData: FormData,
+): Promise<FunctionSettingsActionState> {
+  try {
+    await updateFunctionIntegrationOverridesAction(formData);
+    return { ok: true, message: "Function integration overrides updated." };
+  } catch (error) {
+    return {
+      error: {
+        form: [error instanceof Error ? error.message : "Failed to update function integrations."],
+      },
+    };
+  }
 }
 
 async function purgeLookupCache(orgSlug: string, slug: string) {

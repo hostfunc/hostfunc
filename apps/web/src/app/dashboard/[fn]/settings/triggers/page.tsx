@@ -31,8 +31,15 @@ export default async function TriggersFunctionSettingsPage({
             Invocation Triggers <RadioTower className="h-6 w-6 text-[var(--color-amber)]" />
           </h3>
           <p className="mt-2 text-sm text-[var(--color-bone-muted)]">
-            Runtime URL: <span className="font-mono">{`/run/${fnRow.createdById}/${fnRow.slug}`}</span>
+            Configure how this function is invoked across HTTP, Cron, Email, and MCP.
           </p>
+          <p className="mt-2 text-xs text-[var(--color-bone-faint)]">
+            Recommended order: HTTP baseline, then add Cron/Email/MCP as needed.
+          </p>
+          <div className="mt-3 inline-flex items-center rounded-md border border-[var(--color-border)] bg-black/20 px-3 py-1.5 text-xs text-[var(--color-bone-faint)]">
+            Runtime path:{" "}
+            <span className="ml-2 font-mono text-[var(--color-bone)]">{`/run/${fnRow.createdById}/${fnRow.slug}`}</span>
+          </div>
         </div>
       </div>
       <TriggersClient fnId={fnRow.id} triggers={triggers} />

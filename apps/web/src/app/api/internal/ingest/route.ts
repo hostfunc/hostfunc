@@ -1,5 +1,6 @@
 import { env } from "@/lib/env";
 import { redis } from "@/lib/redis";
+import { toStreamLine } from "@/server/live-log-events";
 import { captureServerError } from "@/server/observability";
 import { enforceRateLimit } from "@/server/rate-limit";
 import { findVersionIdForExecution, symbolicateStack } from "@/server/symbolicate";
@@ -178,15 +179,21 @@ async function publishLogLine(
   fields: Record<string, unknown> | null | undefined,
   ts: Date,
 ) {
-  const event = {
-    type: "log",
-    executionId,
+  const event = toStreamLine({
     level,
     message,
     fields: fields ?? undefined,
-    ts: ts.toISOString(),
-  };
-  await redis.publish(`logs:${executionId}`, JSON.stringify(event));
+    ts,
+  });
+  try {
+    await redis.publish(`logs:${executionId}`, JSON.stringify(event));
+  } catch (error) {
+    await captureServerError({
+      source: "runtime_ingest_publish",
+      message: error instanceof Error ? error.message : "publish_failed",
+      context: { executionId, level, message },
+    });
+  }
 }
 
 async function readEgressCounter(executionId: string, fallback: number): Promise<number> {

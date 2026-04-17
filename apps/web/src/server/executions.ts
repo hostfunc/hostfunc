@@ -8,6 +8,7 @@ export interface DashboardStats {
   totalExecutions: number;
   totalFailures: number;
   totalCpuMs: number;
+  totalWallMs: number;
 }
 
 export async function getDashboardStats(orgId: string): Promise<DashboardStats> {
@@ -17,6 +18,7 @@ export async function getDashboardStats(orgId: string): Promise<DashboardStats> 
       totalExecutions: sql<number>`count(${schema.execution.id})::int`,
       totalFailures: sql<number>`count(${schema.execution.id}) filter (where ${schema.execution.status} != 'ok')::int`,
       totalCpuMs: sql<number>`coalesce(sum(${schema.execution.cpuMs}), 0)::int`,
+      totalWallMs: sql<number>`coalesce(sum(${schema.execution.wallMs}), 0)::int`,
     })
     .from(schema.execution)
     .where(eq(schema.execution.orgId, orgId));
@@ -34,6 +36,7 @@ export async function getDashboardStats(orgId: string): Promise<DashboardStats> 
     totalExecutions: Number(execStats?.totalExecutions ?? 0),
     totalFailures: Number(execStats?.totalFailures ?? 0),
     totalCpuMs: Number(execStats?.totalCpuMs ?? 0),
+    totalWallMs: Number(execStats?.totalWallMs ?? 0),
   };
 }
 

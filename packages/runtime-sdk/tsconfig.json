@@ -17,5 +17,5 @@
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["src/shim.ts"]
+  "exclude": ["src/shim.ts", "src/**/*.spec.ts", "src/**/__tests__/**"]
 }

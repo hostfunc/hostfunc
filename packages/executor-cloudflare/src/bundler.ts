@@ -231,6 +231,85 @@ const __ofn_fn_module = {
   },
 };
 
+async function __ofn_post_internal(path, body, timeoutMs = 30000) {
+  const ctx = __ofn_ctx();
+  if (!ctx.controlPlane) {
+    throw new HostfuncError(
+      "INFRA_EXECUTE_FAILED",
+      "internal api unavailable: missing control-plane headers"
+    );
+  }
+  const headers = { "content-type": "application/json" };
+  if (ctx.token) headers.authorization = "Bearer " + ctx.token;
+  const res = await fetch(ctx.controlPlane + path, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body ?? {}),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new HostfuncError(
+      "INFRA_EXECUTE_FAILED",
+      "internal api request failed (" + res.status + ")" + (detail ? ": " + detail : "")
+    );
+  }
+  return await res.json().catch(() => null);
+}
+
+const __ofn_ai_module = {
+  async askAi(prompt, options) {
+    return await __ofn_post_internal("/api/internal/ai/ask", { prompt, options: options ?? {} });
+  },
+  async *streamAi(prompt, options) {
+    const result = await __ofn_ai_module.askAi(prompt, options);
+    yield { type: "delta", text: result && result.text ? result.text : "" };
+    yield { type: "done", done: true };
+  },
+  async createEmbedding(text, options) {
+    return await __ofn_post_internal("/api/internal/ai/embed", { text, options: options ?? {} });
+  },
+};
+
+const __ofn_agent_module = {
+  async createAgent(config) {
+    return await __ofn_post_internal("/api/internal/agents/create", { config });
+  },
+  async runAgent(config) {
+    return await __ofn_post_internal("/api/internal/agents/run", { config });
+  },
+};
+
+const __ofn_vector_module = {
+  async upsert(namespace, vectors) {
+    return await __ofn_post_internal("/api/internal/vector/upsert", { namespace, vectors });
+  },
+  async query(namespace, embedding, options) {
+    return await __ofn_post_internal("/api/internal/vector/query", {
+      namespace,
+      embedding,
+      topK: options && options.topK != null ? options.topK : 8,
+      includeValues: Boolean(options && options.includeValues),
+    });
+  },
+  async deleteVectors(namespace, ids) {
+    return await __ofn_post_internal("/api/internal/vector/delete", { namespace, ids });
+  },
+  getNamespace(namespace) {
+    return {
+      upsert(vectors) {
+        return __ofn_vector_module.upsert(namespace, vectors);
+      },
+      query(embedding, options) {
+        return __ofn_vector_module.query(namespace, embedding, options);
+      },
+      deleteVectors(ids) {
+        return __ofn_vector_module.deleteVectors(namespace, ids);
+      },
+    };
+  },
+};
+
 async function __ofn_resolve_slug(ctx, owner, fnSlug) {
   if (!ctx.controlPlane || !ctx.token) return null;
   try {
@@ -258,6 +337,15 @@ ${RUNTIME_SHIM}
 const __ofn_fn = __ofn_fn_module.default;
 const fn = __ofn_fn;
 const secret = __ofn_fn_module.secret;
+const askAi = __ofn_ai_module.askAi;
+const streamAi = __ofn_ai_module.streamAi;
+const createEmbedding = __ofn_ai_module.createEmbedding;
+const createAgent = __ofn_agent_module.createAgent;
+const runAgent = __ofn_agent_module.runAgent;
+const upsert = __ofn_vector_module.upsert;
+const query = __ofn_vector_module.query;
+const deleteVectors = __ofn_vector_module.deleteVectors;
+const getNamespace = __ofn_vector_module.getNamespace;
 
 // User code begins
 ${userCode}
@@ -404,7 +492,10 @@ export async function bundleFunction(opts: BundleOptions): Promise<BundleResult>
 
 function normalizeUserCode(code: string): string {
   return code
-    .replace(/^\s*import\s+[^;]*["']@hostfunc\/fn["'];?\s*$/gm, "")
+    .replace(
+      /^\s*import\s+[^;]*["']@hostfunc\/(?:fn|sdk(?:\/(?:ai|agent|vector))?)["'];?\s*$/gm,
+      "",
+    )
     .replace(/\bexport\s+default\s+async\s+function\s+main\b/g, "async function main")
     .replace(/\bexport\s+default\s+function\s+main\b/g, "function main")
     .replace(/\bexport\s+async\s+function\s+main\b/g, "async function main")

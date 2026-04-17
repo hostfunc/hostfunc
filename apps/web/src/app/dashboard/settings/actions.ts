@@ -1,6 +1,11 @@
 "use server";
 
 import { requireOrgPermission } from "@/lib/session";
+import {
+  type AiProvider,
+  type VectorBackend,
+  updateWorkspaceIntegrations,
+} from "@/server/integrations";
 import { db, schema } from "@hostfunc/db";
 import { and, eq, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -28,6 +33,17 @@ const slugSchema = z.object({
     .min(3, "Slug must be at least 3 characters")
     .max(64, "Slug must be 64 characters or fewer")
     .regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers, and hyphens only"),
+});
+
+const integrationsSchema = z.object({
+  aiProvider: z.enum(["openai", "claude"]),
+  aiModel: z.string().trim().min(1).max(120),
+  vectorPrimary: z.enum(["external_http", "postgres"]),
+  vectorSecondary: z.enum(["external_http", "postgres", "none"]),
+  openaiApiKey: z.string().trim().max(8_192).optional(),
+  claudeApiKey: z.string().trim().max(8_192).optional(),
+  vectorServiceUrl: z.string().trim().max(8_192).optional(),
+  vectorDatabaseUrl: z.string().trim().max(8_192).optional(),
 });
 
 function asErrorMessage(error: unknown): string {
@@ -110,4 +126,60 @@ export async function updateWorkspaceSlugAction(
   } catch (error) {
     return { error: { form: [asErrorMessage(error)] } };
   }
+}
+
+export async function updateWorkspaceIntegrationsAction(
+  _prevState: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  const parsed = integrationsSchema.safeParse({
+    aiProvider: formData.get("aiProvider"),
+    aiModel: formData.get("aiModel"),
+    vectorPrimary: formData.get("vectorPrimary"),
+    vectorSecondary: formData.get("vectorSecondary"),
+    openaiApiKey: formData.get("openaiApiKey") || undefined,
+    claudeApiKey: formData.get("claudeApiKey") || undefined,
+    vectorServiceUrl: formData.get("vectorServiceUrl") || undefined,
+    vectorDatabaseUrl: formData.get("vectorDatabaseUrl") || undefined,
+  });
+  if (!parsed.success) {
+    return { error: { form: ["Invalid integration settings form input."] } };
+  }
+
+  try {
+    const { orgId } = await requireOrgPermission("manage_workspace_settings");
+    await updateWorkspaceIntegrations({
+      orgId,
+      config: {
+        ai: {
+          provider: parsed.data.aiProvider as AiProvider,
+          model: parsed.data.aiModel,
+        },
+        vector: {
+          primary: parsed.data.vectorPrimary as VectorBackend,
+          secondary:
+            parsed.data.vectorSecondary === "none"
+              ? null
+              : (parsed.data.vectorSecondary as VectorBackend),
+        },
+      },
+      plaintextSecrets: {
+        ...(parsed.data.openaiApiKey ? { openaiApiKey: parsed.data.openaiApiKey } : {}),
+        ...(parsed.data.claudeApiKey ? { claudeApiKey: parsed.data.claudeApiKey } : {}),
+        ...(parsed.data.vectorServiceUrl ? { vectorServiceUrl: parsed.data.vectorServiceUrl } : {}),
+        ...(parsed.data.vectorDatabaseUrl
+          ? { vectorDatabaseUrl: parsed.data.vectorDatabaseUrl }
+          : {}),
+      },
+    });
+    revalidatePath("/dashboard/settings");
+    revalidatePath("/dashboard/settings/integrations");
+    return { ok: true, message: "Integration defaults updated." };
+  } catch (error) {
+    return { error: { form: [asErrorMessage(error)] } };
+  }
+}
+
+export async function updateWorkspaceIntegrationsFormAction(formData: FormData): Promise<void> {
+  await updateWorkspaceIntegrationsAction(null, formData);
 }
