@@ -30,7 +30,7 @@ Self-host on your own cloud or use the managed version.
 hostfunc is a developer-first serverless platform purpose-built for small, composable TypeScript functions. Instead of wrestling with cloud provider consoles, IAM roles, and deployment pipelines, you write a single exported `main()` function and hostfunc handles everything else—bundling, deployment, secret injection, scheduling, and observability.
 
 ```typescript
-import fn, { secret } from "@hostfunc/fn";
+import fn, { secret } from "@hostfunc/sdk";
 
 export async function main(input: { orderId: string }) {
   const apiKey = await secret.getRequired("STRIPE_SECRET_KEY");
@@ -78,14 +78,14 @@ hostfunc/
     ├── db/                   # Drizzle ORM schema, migrations, and Postgres client
     ├── executor-core/        # Backend-agnostic executor interface & types
     ├── executor-cloudflare/  # Cloudflare Workers execution backend
-    └── runtime-sdk/          # The @hostfunc/fn in-function API shim
+    └── runtime-sdk/          # The @hostfunc/sdk in-function SDK
 ```
 
 ### Data Flow
 
 ```
 User Code (fn)
-     │  imports @hostfunc/fn (runtime-sdk shim)
+     │  imports @hostfunc/sdk (runtime-sdk shim)
      ▼
 Edge Trigger  ──────────────────────────────────────────┐
   (HTTP / Cron / Email / MCP)                           │
@@ -170,10 +170,10 @@ Concrete implementation of `ExecutorBackend` targeting Cloudflare Workers. Handl
 
 #### `packages/runtime-sdk` — The In-Function SDK
 
-The virtual `@hostfunc/fn` module users import inside their functions:
+The primary module is `@hostfunc/sdk`:
 
 ```typescript
-import fn, { secret } from "@hostfunc/fn";
+import fn, { secret } from "@hostfunc/sdk";
 
 // Call another function
 const result = await fn.executeFunction("my-org/my-other-fn", { input: 42 });
@@ -181,6 +181,9 @@ const result = await fn.executeFunction("my-org/my-other-fn", { input: 42 });
 // Access an encrypted secret
 const key = await secret.getRequired("MY_API_KEY");
 ```
+
+Compatibility note: `@hostfunc/fn` remains supported as a deprecated alias during
+the migration window. New code should use `@hostfunc/sdk`.
 
 The shim communicates with the control plane via internal headers (`x-hostfunc-exec-id`, `x-hostfunc-call-chain`, etc.) and enforces call-depth limits to prevent infinite loops.
 
