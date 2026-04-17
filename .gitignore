@@ -36,6 +36,7 @@ pnpm-debug.log*
 
 # misc
 .cache/
+tmp-pack/
 
 # local runtime/dev artifacts
 apps/runtime/.wrangler/
