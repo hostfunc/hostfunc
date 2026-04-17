@@ -26,12 +26,13 @@ export async function POST(req: NextRequest) {
       triggerId: schema.trigger.id,
       fnId: schema.trigger.fnId,
       orgId: schema.trigger.orgId,
-      owner: schema.fn.createdById,
+      orgSlug: schema.organization.slug,
       slug: schema.fn.slug,
       config: schema.trigger.config,
     })
     .from(schema.trigger)
     .innerJoin(schema.fn, eq(schema.fn.id, schema.trigger.fnId))
+    .innerJoin(schema.organization, eq(schema.organization.id, schema.trigger.orgId))
     .where(and(eq(schema.trigger.kind, "email"), eq(schema.trigger.enabled, true)));
 
   const match = rows.find((row) => {
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
 
   if (!match) return Response.json({ ok: true, matched: false });
 
-  const res = await fetch(`${env.HOSTFUNC_RUNTIME_URL}/run/${match.owner}/${match.slug}`, {
+  const res = await fetch(`${env.HOSTFUNC_RUNTIME_URL}/run/${match.orgSlug}/${match.slug}`, {
     method: "POST",
     headers: {
       "content-type": "application/json",

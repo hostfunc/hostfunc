@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "pnpm build:deps && next dev",
     "build": "next build",
+    "build:deps": "pnpm --filter=@hostfunc/db --filter=@hostfunc/executor-core --filter=@hostfunc/executor-cloudflare --filter=@hostfunc/mcp-tools --filter=@hostfunc/fn build",
     "start": "next start",
     "lint": "biome check .",
     "typecheck": "tsc --noEmit",

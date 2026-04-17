@@ -17,8 +17,8 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "dev:web": "turbo run dev --filter=@hostfunc/web",
-    "dev:docs": "turbo run dev --filter=@hostfunc/docs",
+    "dev:web": "turbo run dev --filter=@hostfunc/web...",
+    "dev:docs": "turbo run dev --filter=@hostfunc/docs...",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "lint": "biome check .",

@@ -8,7 +8,10 @@ interface Env {
 
 interface DueTrigger {
   triggerId: string;
-  owner: string;
+  /** Preferred: organization slug. */
+  orgSlug?: string;
+  /** Legacy field for back-compat with older control-plane deployments. */
+  owner?: string;
   slug: string;
   dedupeKey: string;
 }
@@ -29,8 +32,18 @@ export default {
     }
     const payload = (await dueRes.json()) as { due?: DueTrigger[] };
     for (const row of payload.due ?? []) {
+      const orgSlug = row.orgSlug ?? row.owner;
+      if (!orgSlug) {
+        await ack(env, {
+          dedupeKey: row.dedupeKey,
+          triggerId: row.triggerId,
+          ok: false,
+          error: "missing_org_slug",
+        });
+        continue;
+      }
       try {
-        const runRes = await fetch(`${env.HOSTFUNC_RUNTIME_URL}/run/${row.owner}/${row.slug}`, {
+        const runRes = await fetch(`${env.HOSTFUNC_RUNTIME_URL}/run/${orgSlug}/${row.slug}`, {
           method: "POST",
           headers: {
             "content-type": "application/json",
