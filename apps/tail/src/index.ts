@@ -51,7 +51,7 @@ export default {
   },
 };
 
-function normalizeTailPayload(payload: unknown): NormalizedIngestBody | null {
+export function normalizeTailPayload(payload: unknown): NormalizedIngestBody | null {
   if (!payload || typeof payload !== "object") return null;
   const direct = payload as {
     executionId?: unknown;

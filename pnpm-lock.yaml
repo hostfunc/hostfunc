@@ -132,12 +132,12 @@ importers:
       '@hostfunc/executor-core':
         specifier: workspace:*
         version: link:../../packages/executor-core
-      '@hostfunc/fn':
-        specifier: workspace:*
-        version: link:../../packages/runtime-sdk
       '@hostfunc/mcp-tools':
         specifier: workspace:*
         version: link:../../packages/mcp-tools
+      '@hostfunc/sdk':
+        specifier: workspace:*
+        version: link:../../packages/runtime-sdk
       '@modelcontextprotocol/sdk':
         specifier: ^1.13.1
         version: 1.29.0(zod@3.25.76)

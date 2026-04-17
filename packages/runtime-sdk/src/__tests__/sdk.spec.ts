@@ -51,6 +51,26 @@ describe("@hostfunc/sdk modules", () => {
     vi.unstubAllGlobals();
   });
 
+  it("surfaces integration errors from internal APIs", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            error: "missing_secret",
+            message: "Missing openai API key for AI integration",
+          }),
+          { status: 400, headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+    vi.stubGlobal("__hostfunc_context", { controlPlane: "https://cp.local", token: "tok" });
+    await expect(askAi("hello")).rejects.toMatchObject({
+      code: "AI_REQUEST_FAILED",
+    });
+    vi.unstubAllGlobals();
+  });
+
   it("calls agent and vector endpoints", async () => {
     const fetchMock = vi.fn(async (url: string) => {
       if (url.includes("/agents/")) {

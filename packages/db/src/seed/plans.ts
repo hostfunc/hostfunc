@@ -15,6 +15,7 @@ export const PLANS: readonly PlanSeed[] = [
     limits: {
       maxFunctions: 3,
       maxExecutionsPerDay: 100,
+      maxWallMsPerMonth: 300_000,
       maxWallMs: 10_000,
       maxCpuMs: 1_000,
       maxMemoryMb: 128,
@@ -32,6 +33,7 @@ export const PLANS: readonly PlanSeed[] = [
     limits: {
       maxFunctions: 2_000,
       maxExecutionsPerDay: 2_000_000,
+      maxWallMsPerMonth: 1_800_000_000,
       maxWallMs: 120_000,
       maxCpuMs: 20_000,
       maxMemoryMb: 512,
@@ -49,6 +51,7 @@ export const PLANS: readonly PlanSeed[] = [
     limits: {
       maxFunctions: 20_000,
       maxExecutionsPerDay: 20_000_000,
+      maxWallMsPerMonth: 7_200_000_000,
       maxWallMs: 600_000,
       maxCpuMs: 120_000,
       maxMemoryMb: 2_048,

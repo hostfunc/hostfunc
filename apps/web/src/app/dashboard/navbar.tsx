@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { getWorkspaceCreationEligibilityAction } from "../new-workspace/actions";
 import { switchActiveOrganization } from "./org-actions";
@@ -78,6 +78,7 @@ export function DashboardNavbar({
   const [isSwitching, startSwitchTransition] = useTransition();
   const [isCheckingWorkspace, startWorkspaceCheckTransition] = useTransition();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<"workspaces" | "quotas">("workspaces");
   const activeOrg =
     organizations.find((organization) => organization.id === activeOrganizationId) ??
     organizations[0];
@@ -108,12 +109,22 @@ export function DashboardNavbar({
           router.push("/new-workspace");
           return;
         }
+        setUpgradeReason("workspaces");
         setShowUpgradeModal(true);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Unable to verify workspace limits");
       }
     });
   };
+
+  useEffect(() => {
+    const onQuotaEvent = () => {
+      setUpgradeReason("quotas");
+      setShowUpgradeModal(true);
+    };
+    window.addEventListener("hostfunc:open-upgrade-modal", onQuotaEvent);
+    return () => window.removeEventListener("hostfunc:open-upgrade-modal", onQuotaEvent);
+  }, []);
 
   const navLinks = [
     { name: "Overview", href: "/dashboard", icon: Activity, exact: true },
@@ -297,14 +308,15 @@ export function DashboardNavbar({
           <DialogHeader className="text-left">
             <div className="mb-2 inline-flex w-fit items-center gap-2 rounded-full border border-[var(--color-amber)]/40 bg-[var(--color-amber)]/12 px-3 py-1 text-xs uppercase tracking-widest text-[var(--color-amber)]">
               <Crown className="size-3.5" />
-              Upgrade to scale
+              {upgradeReason === "quotas" ? "Usage limit reached" : "Upgrade to scale"}
             </div>
             <DialogTitle className="font-display text-3xl tracking-tight text-[var(--color-bone)]">
-              Unlock more workspaces
+              {upgradeReason === "quotas" ? "Unlock higher usage limits" : "Unlock more workspaces"}
             </DialogTitle>
             <DialogDescription className="max-w-lg text-[var(--color-bone-muted)]">
-              Free tier includes one workspace. Upgrade to Pro for up to 3 workspaces, or Team for
-              unlimited workspaces and higher execution capacity.
+              {upgradeReason === "quotas"
+                ? "This workspace reached a free-tier execution quota. Upgrade to Pro or Team to continue running and deploying at higher limits."
+                : "Free tier includes one workspace. Upgrade to Pro for up to 3 workspaces, or Team for unlimited workspaces and higher execution capacity."}
             </DialogDescription>
           </DialogHeader>
 

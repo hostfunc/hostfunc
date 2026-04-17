@@ -37,7 +37,7 @@ export function CopyButton({
       onClick={onCopy}
       disabled={disabled}
       title={title}
-      className="h-8 border-[var(--color-border)] bg-white/[0.02] px-2.5 text-[11px] text-[var(--color-bone-muted)] shadow-sm hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
+      className="h-8 border-[var(--color-border)] cursor-pointer bg-white/[0.02] px-2.5 text-[11px] text-[var(--color-bone-muted)] shadow-sm hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
     >
       {disabled ? (
         <Copy className="mr-1.5 h-3.5 w-3.5 text-[var(--color-bone-faint)]" />

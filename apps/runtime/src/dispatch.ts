@@ -31,6 +31,10 @@ interface RegisterResponse {
   wallMs?: number;
 }
 
+interface RegisterError {
+  error: string;
+}
+
 interface CallChainFrame {
   fnId: string;
   execId: string;
@@ -83,6 +87,26 @@ export default {
         callChain,
       });
     } catch (e) {
+      if (e instanceof RegisterExecutionError) {
+        if (e.error === "daily_execution_limit_exceeded") {
+          return json(
+            {
+              error: "daily_execution_limit_exceeded",
+              message: "Daily execution limit reached for this workspace plan.",
+            },
+            429,
+          );
+        }
+        if (e.error === "monthly_wall_time_limit_exceeded") {
+          return json(
+            {
+              error: "monthly_wall_time_limit_exceeded",
+              message: "Monthly wall-time quota reached for this workspace plan.",
+            },
+            429,
+          );
+        }
+      }
       return json({ error: "register_failed", message: String(e) }, 502);
     }
 
@@ -356,8 +380,22 @@ async function registerExecution(
     },
     body: JSON.stringify(input),
   });
-  if (!res.ok) throw new Error(`register status ${res.status}`);
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as RegisterError | null;
+    throw new RegisterExecutionError(body?.error ?? "register_failed", res.status);
+  }
   return (await res.json()) as RegisterResponse;
+}
+
+class RegisterExecutionError extends Error {
+  status: number;
+  error: string;
+
+  constructor(error: string, status: number) {
+    super(`register status ${status}`);
+    this.error = error;
+    this.status = status;
+  }
 }
 
 async function unregisterExecution(env: Env, execId: string): Promise<void> {

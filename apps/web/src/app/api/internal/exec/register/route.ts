@@ -38,6 +38,9 @@ export async function POST(req: NextRequest) {
     if (error instanceof Error && error.message === "daily_execution_limit_exceeded") {
       return Response.json({ error: "daily_execution_limit_exceeded" }, { status: 429 });
     }
+    if (error instanceof Error && error.message === "monthly_wall_time_limit_exceeded") {
+      return Response.json({ error: "monthly_wall_time_limit_exceeded" }, { status: 429 });
+    }
     return Response.json({ error: "register_failed" }, { status: 500 });
   }
 }

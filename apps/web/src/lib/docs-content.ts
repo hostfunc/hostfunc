@@ -701,6 +701,98 @@ hostfunc secrets set CLAUDE_API_KEY <value>`,
       "Import agent helpers from `@hostfunc/sdk/agent` (`createAgent`, `runAgent`).",
       "Import vector helpers from `@hostfunc/sdk/vector` (`upsert`, `query`, `deleteVectors`, `getNamespace`).",
     ],
+    sdkGuide: {
+      quickstart:
+        "Use @hostfunc/sdk as the default runtime import for all new functions. The legacy @hostfunc/fn alias still works during migration, but new code should target @hostfunc/sdk.",
+      apiReference: [
+        {
+          name: "fn.executeFunction",
+          signature:
+            "await fn.executeFunction<T = unknown>(slug: string, input?: unknown, options?: { timeoutMs?: number }): Promise<T>",
+          description:
+            "Invoke another function by org/slug. The runtime preserves call lineage and applies call-depth protection.",
+          args: [
+            {
+              name: "slug",
+              type: "string (`orgSlug/fnSlug`)",
+              required: true,
+              description: "Target function identifier.",
+            },
+            {
+              name: "input",
+              type: "unknown",
+              required: false,
+              description: "JSON-serializable payload sent to the downstream function.",
+            },
+            {
+              name: "options.timeoutMs",
+              type: "number",
+              required: false,
+              description: "Optional per-call timeout (bounded by runtime limits).",
+            },
+          ],
+          returns: "Parsed downstream JSON response (or raw text for non-JSON responses).",
+          throws: [
+            "FN_CALL_DEPTH when depth is exceeded or cycle detected.",
+            "FN_CALL_TIMEOUT when the child call exceeds timeout.",
+            "FN_EXECUTE_FAILED when downstream returns non-2xx or network failure occurs.",
+          ],
+        },
+        {
+          name: "secret.get",
+          signature: "await secret.get(key: string): Promise<string | null>",
+          description: "Retrieve an optional secret value for the current function.",
+          args: [
+            {
+              name: "key",
+              type: "string",
+              required: true,
+              description: "Secret key configured in function settings.",
+            },
+          ],
+          returns: "Secret string value or null when not configured.",
+          throws: ["INFRA_EXECUTE_FAILED if secret service cannot be reached/authenticated."],
+        },
+        {
+          name: "secret.getRequired",
+          signature: "await secret.getRequired(key: string): Promise<string>",
+          description:
+            "Retrieve a required secret. Throws a structured missing_secret error when unset.",
+          args: [
+            {
+              name: "key",
+              type: "string",
+              required: true,
+              description: "Secret key configured in function settings.",
+            },
+          ],
+          returns: "Secret string value.",
+          throws: ["MISSING_SECRET when key is missing (includes key + docsUrl detail)."],
+        },
+      ],
+      codeExamples: [
+        {
+          title: "Core composition pattern",
+          description: "Call one function from another with a required secret.",
+          code: `import fn, { secret } from "@hostfunc/sdk";
+
+export async function main(input: { customerId: string }) {
+  const apiKey = await secret.getRequired("CLAUDE_API_KEY");
+  const report = await fn.executeFunction("org/generate-report", {
+    customerId: input.customerId,
+    apiKey,
+  });
+  return await fn.executeFunction("org/post-to-slack", { report, channel: "#alerts" });
+}`,
+        },
+      ],
+      bestPractices: [
+        "Prefer @hostfunc/sdk for all new code; keep @hostfunc/fn only for legacy compatibility.",
+        "Use org/slug identifiers, not mutable user-provided values.",
+        "Keep chained payloads compact and pass IDs/references for large data.",
+        "Configure AI/Vector defaults in /dashboard/settings/integrations before using module helpers.",
+      ],
+    },
     related: [
       { label: "AI module", href: "/docs/sdk/ai" },
       { label: "Agent module", href: "/docs/sdk/agent" },
@@ -716,6 +808,53 @@ hostfunc secrets set CLAUDE_API_KEY <value>`,
       "`streamAi(prompt, options)` yields async stream chunks for incremental responses.",
       "`createEmbedding(text)` returns numeric vectors for semantic indexing and search.",
     ],
+    sdkGuide: {
+      apiReference: [
+        {
+          name: "askAi",
+          signature:
+            "await askAi(prompt: string | AiMessage[], options?: AiOptions): Promise<AiResponse>",
+          description: "Request a non-streamed completion from the configured workspace AI model.",
+          returns: "AiResponse with text, model, token usage, and finish reason.",
+        },
+        {
+          name: "streamAi",
+          signature:
+            "for await (const chunk of streamAi(prompt, options)) { ... }",
+          description:
+            "Async generator for streaming model output chunks. Current implementation emits delta + done chunks.",
+          returns: "AsyncGenerator<{ type: 'delta' | 'done'; text?: string; done?: boolean }>",
+        },
+        {
+          name: "createEmbedding",
+          signature:
+            "await createEmbedding(text: string, options?: { model?: string }): Promise<EmbeddingResult>",
+          description:
+            "Generate an embedding vector suitable for vector upsert/query workflows.",
+          returns: "EmbeddingResult containing numeric embedding array and usage metadata.",
+        },
+      ],
+      codeExamples: [
+        {
+          title: "Prompt + structured options",
+          description: "Use explicit model controls for deterministic summaries.",
+          code: `import { askAi } from "@hostfunc/sdk/ai";
+
+const result = await askAi(
+  [
+    { role: "system", content: "You summarize execution logs." },
+    { role: "user", content: "Summarize this run in 3 bullets." },
+  ],
+  { model: "gpt-4o", temperature: 0.2, maxTokens: 300 },
+);`,
+        },
+      ],
+      bestPractices: [
+        "Set low temperature for operational summaries and deterministic outputs.",
+        "Generate embeddings once and cache them for repeated vector queries.",
+        "Set workspace defaults first, then use per-function overrides only when a function needs isolation.",
+      ],
+    },
     related: [
       { label: "SDK overview", href: "/docs/sdk" },
       { label: "Vector module", href: "/docs/sdk/vector" },
@@ -730,6 +869,43 @@ hostfunc secrets set CLAUDE_API_KEY <value>`,
       "`runAgent(config)` starts execution immediately and returns status metadata.",
       "Agent payloads support goals, model selection, tool whitelists, and max-step limits.",
     ],
+    sdkGuide: {
+      apiReference: [
+        {
+          name: "createAgent",
+          signature: "await createAgent(config: AgentConfig): Promise<AgentResult>",
+          description:
+            "Create an agent run record and schedule execution with the given configuration.",
+          returns: "AgentResult with id, status, timestamps, and step history.",
+        },
+        {
+          name: "runAgent",
+          signature: "await runAgent(config: AgentConfig): Promise<AgentResult>",
+          description:
+            "Start agent execution immediately and return the current run state.",
+          returns: "AgentResult with current status and collected steps.",
+        },
+      ],
+      codeExamples: [
+        {
+          title: "Simple triage agent",
+          description: "Run an agent that can call selected tools/functions.",
+          code: `import { runAgent } from "@hostfunc/sdk/agent";
+
+const run = await runAgent({
+  name: "incident-triage",
+  goal: "Classify incidents and trigger escalation functions.",
+  maxSteps: 6,
+  tools: ["functions.execute", "executions.list"],
+});`,
+        },
+      ],
+      bestPractices: [
+        "Set maxSteps and timeoutMs to keep agent runs bounded.",
+        "Restrict tools to least-privilege capabilities for each agent role.",
+        "Agent execution uses the same AI provider resolution as askAi (function override -> workspace default).",
+      ],
+    },
     related: [
       { label: "SDK overview", href: "/docs/sdk" },
       { label: "MCP", href: "/docs/mcp" },
@@ -744,6 +920,57 @@ hostfunc secrets set CLAUDE_API_KEY <value>`,
       "`query(namespace, embedding, options)` performs top-K similarity search.",
       "`deleteVectors(namespace, ids)` removes vectors; `getNamespace(name)` creates a scoped helper API.",
     ],
+    sdkGuide: {
+      apiReference: [
+        {
+          name: "upsert",
+          signature:
+            "await upsert(namespace: string, vectors: VectorRecord[]): Promise<UpsertResult>",
+          description: "Insert or update vectors and metadata in a namespace.",
+          returns: "UpsertResult with namespace + upserted count.",
+        },
+        {
+          name: "query",
+          signature:
+            "await query(namespace: string, embedding: number[], options?: { topK?: number; includeValues?: boolean }): Promise<QueryResult>",
+          description: "Execute similarity search against the namespace.",
+          returns: "QueryResult containing ranked matches.",
+        },
+        {
+          name: "deleteVectors",
+          signature:
+            "await deleteVectors(namespace: string, ids: string[]): Promise<DeleteResult>",
+          description: "Delete vectors by id from a namespace.",
+          returns: "DeleteResult with namespace + deleted count.",
+        },
+        {
+          name: "getNamespace",
+          signature: "const ns = getNamespace(namespace: string)",
+          description:
+            "Create a scoped helper object with upsert/query/delete bound to one namespace.",
+          returns:
+            "{ upsert(vectors), query(embedding, options), deleteVectors(ids) } helper object.",
+        },
+      ],
+      codeExamples: [
+        {
+          title: "Embedding + semantic query",
+          description: "Create embeddings with AI module and search nearest matches.",
+          code: `import { createEmbedding } from "@hostfunc/sdk/ai";
+import { upsert, query } from "@hostfunc/sdk/vector";
+
+const { embedding } = await createEmbedding("customer profile text");
+await upsert("profiles", [{ id: "cus_123", values: embedding }]);
+const results = await query("profiles", embedding, { topK: 5 });`,
+        },
+      ],
+      bestPractices: [
+        "Use stable namespace names by domain (profiles, docs, incidents, etc.).",
+        "Store lightweight metadata for filtering and downstream display.",
+        "Tune topK based on latency/quality trade-offs for each workload.",
+        "Configure backend order (primary/fallback) in integrations settings and provide credentials for both.",
+      ],
+    },
     related: [
       { label: "SDK overview", href: "/docs/sdk" },
       { label: "AI module", href: "/docs/sdk/ai" },

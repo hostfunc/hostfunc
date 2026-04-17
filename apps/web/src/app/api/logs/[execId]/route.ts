@@ -1,7 +1,9 @@
 import { requireActiveOrg } from "@/lib/session";
+import { redis } from "@/lib/redis";
+import { listLogsForExecution } from "@/server/executions";
+import { clampBackfillLimit, toSseEvent } from "@/server/live-log-events";
 import { db, schema } from "@hostfunc/db";
 import { and, eq } from "drizzle-orm";
-import { Redis } from "ioredis";
 import type { NextRequest } from "next/server";
 
 export const runtime = "nodejs";
@@ -9,6 +11,7 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest, { params }: { params: Promise<{ execId: string }> }) {
   const { orgId } = await requireActiveOrg();
   const { execId } = await params;
+  const backfillLimit = clampBackfillLimit(req.nextUrl.searchParams.get("backfill"));
 
   const check = await db
     .select({ id: schema.execution.id })
@@ -17,8 +20,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ exec
     .limit(1);
   if (!check[0]) return new Response("not found", { status: 404 });
 
-  const redis = new Redis(process.env.REDIS_URL ?? "redis://127.0.0.1:6379");
-  await redis.subscribe(`logs:${execId}`);
+  const subscriber = redis.duplicate();
 
   const encoder = new TextEncoder();
   let cleanedUp = false;
@@ -26,19 +28,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ exec
     if (cleanedUp) return;
     cleanedUp = true;
     try {
-      await redis.unsubscribe(`logs:${execId}`);
+      await subscriber.unsubscribe(`logs:${execId}`);
     } catch {
       // Ignore disconnect race conditions.
     }
     try {
-      await redis.quit();
+      await subscriber.quit();
     } catch {
       // Ignore already-closed redis clients.
     }
   };
 
   const stream = new ReadableStream<Uint8Array>({
-    start(controller) {
+    async start(controller) {
       const safeEnqueue = (payload: string) => {
         try {
           controller.enqueue(encoder.encode(payload));
@@ -47,6 +49,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ exec
         }
       };
 
+      safeEnqueue(toSseEvent({ ok: true, executionId: execId }, "ready"));
+      if (backfillLimit > 0) {
+        const historical = await listLogsForExecution(orgId, execId);
+        const lines = historical.slice(Math.max(0, historical.length - backfillLimit));
+        safeEnqueue(toSseEvent({ count: lines.length }, "snapshot"));
+        for (const line of lines) {
+          safeEnqueue(toSseEvent(line));
+        }
+      } else {
+        safeEnqueue(toSseEvent({ count: 0 }, "snapshot"));
+      }
+
+      await subscriber.subscribe(`logs:${execId}`);
       const onMessage = (channel: string, message: string) => {
         if (channel !== `logs:${execId}`) return;
         safeEnqueue(`data: ${message}\n\n`);
@@ -54,11 +69,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ exec
       const heartbeat = setInterval(() => {
         safeEnqueue(`event: ping\ndata: {"ok":true}\n\n`);
       }, 15_000);
-      redis.on("message", onMessage);
+      subscriber.on("message", onMessage);
 
       const teardown = async () => {
         clearInterval(heartbeat);
-        redis.off("message", onMessage);
+        subscriber.off("message", onMessage);
         await cleanup();
       };
       req.signal.addEventListener("abort", () => {
