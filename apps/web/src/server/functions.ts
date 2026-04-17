@@ -1,12 +1,22 @@
 import "server-only";
 
-import { db, genId, schema, sql } from "@hostfunc/db";
 import { decryptSecret, encryptSecret } from "@/lib/crypto";
+import { env } from "@/lib/env";
 import { DEFAULT_FUNCTION_SDK, type FunctionPackageRecord } from "@/lib/function-packages";
 import { getLatestNpmVersion } from "@/lib/npm-registry";
+import { db, genId, schema, sql } from "@hostfunc/db";
 
 function compat<T>(value: T): T {
   return value;
+}
+
+function buildDeployedUrl(
+  orgSlug: string,
+  slug: string,
+  currentVersionId: string | null,
+): string | null {
+  if (!currentVersionId) return null;
+  return `${env.HOSTFUNC_RUNTIME_URL}/run/${orgSlug}/${slug}`;
 }
 
 function toPackageRecord(
@@ -22,7 +32,9 @@ function toPackageRecord(
   };
 }
 
-function normalizePackages(packages: FunctionPackageRecord[] | null | undefined): FunctionPackageRecord[] {
+function normalizePackages(
+  packages: FunctionPackageRecord[] | null | undefined,
+): FunctionPackageRecord[] {
   const byName = new Map<string, FunctionPackageRecord>();
   for (const pkg of packages ?? []) {
     if (!pkg?.name) continue;
@@ -37,21 +49,52 @@ async function ensureDefaultSdk(
   const normalized = normalizePackages(packages);
   if (normalized.some((pkg) => pkg.name === DEFAULT_FUNCTION_SDK)) return normalized;
   const latest = await getLatestNpmVersion(DEFAULT_FUNCTION_SDK);
-  return normalizePackages([...normalized, toPackageRecord(DEFAULT_FUNCTION_SDK, "default", latest)]);
+  return normalizePackages([
+    ...normalized,
+    toPackageRecord(DEFAULT_FUNCTION_SDK, "default", latest),
+  ]);
 }
 
 export async function listFunctionsForOrg(orgId: string) {
-  return db
+  const rows = await db
     .select({
       id: schema.fn.id,
+      createdById: schema.fn.createdById,
+      orgSlug: schema.organization.slug,
       slug: schema.fn.slug,
       description: schema.fn.description,
       visibility: schema.fn.visibility,
+      currentVersionId: schema.fn.currentVersionId,
+      packageCount: sql<number>`coalesce(jsonb_array_length(${schema.fn.packages}), 0)`,
+      envVarCount: sql<number>`(
+        select count(*)::int
+        from ${schema.secret}
+        where ${schema.secret.orgId} = ${schema.fn.orgId}
+          and ${schema.secret.fnId} = ${schema.fn.id}
+      )`,
+      executionCount: sql<number>`(
+        select count(*)::int
+        from ${schema.execution}
+        where ${schema.execution.fnId} = ${schema.fn.id}
+      )`,
+      latestExecutionStatus: sql<"ok" | "fn_error" | "limit_exceeded" | "infra_error" | null>`(
+        select ${schema.execution.status}
+        from ${schema.execution}
+        where ${schema.execution.fnId} = ${schema.fn.id}
+        order by ${schema.execution.startedAt} desc
+        limit 1
+      )`,
       updatedAt: schema.fn.updatedAt,
     })
     .from(schema.fn)
+    .innerJoin(schema.organization, sql`${schema.organization.id} = ${schema.fn.orgId}`)
     .where(compat(sql`${schema.fn.orgId} = ${orgId}`) as never)
     .orderBy(compat(sql`${schema.fn.updatedAt} desc`) as never);
+
+  return rows.map((row) => ({
+    ...row,
+    deployedUrl: buildDeployedUrl(row.orgSlug, row.slug, row.currentVersionId),
+  }));
 }
 export async function searchFunctionsForOrg(orgId: string, query?: string, visibility?: string) {
   const conditions = [sql`${schema.fn.orgId} = ${orgId}`];
@@ -67,17 +110,45 @@ export async function searchFunctionsForOrg(orgId: string, query?: string, visib
 
   const whereClause = conditions.reduce((acc, condition) => sql`${acc} and ${condition}`);
 
-  return db
+  const rows = await db
     .select({
       id: schema.fn.id,
+      createdById: schema.fn.createdById,
+      orgSlug: schema.organization.slug,
       slug: schema.fn.slug,
       description: schema.fn.description,
       visibility: schema.fn.visibility,
+      currentVersionId: schema.fn.currentVersionId,
+      packageCount: sql<number>`coalesce(jsonb_array_length(${schema.fn.packages}), 0)`,
+      envVarCount: sql<number>`(
+        select count(*)::int
+        from ${schema.secret}
+        where ${schema.secret.orgId} = ${schema.fn.orgId}
+          and ${schema.secret.fnId} = ${schema.fn.id}
+      )`,
+      executionCount: sql<number>`(
+        select count(*)::int
+        from ${schema.execution}
+        where ${schema.execution.fnId} = ${schema.fn.id}
+      )`,
+      latestExecutionStatus: sql<"ok" | "fn_error" | "limit_exceeded" | "infra_error" | null>`(
+        select ${schema.execution.status}
+        from ${schema.execution}
+        where ${schema.execution.fnId} = ${schema.fn.id}
+        order by ${schema.execution.startedAt} desc
+        limit 1
+      )`,
       updatedAt: schema.fn.updatedAt,
     })
     .from(schema.fn)
+    .innerJoin(schema.organization, sql`${schema.organization.id} = ${schema.fn.orgId}`)
     .where(compat(whereClause) as never)
     .orderBy(compat(sql`${schema.fn.updatedAt} desc`) as never);
+
+  return rows.map((row) => ({
+    ...row,
+    deployedUrl: buildDeployedUrl(row.orgSlug, row.slug, row.currentVersionId),
+  }));
 }
 
 export async function getFunctionForOrg(orgId: string, fnId: string) {
@@ -93,7 +164,11 @@ export async function getDraft(fnId: string, userId: string) {
   const rows = await db
     .select()
     .from(schema.fnDraft)
-    .where(compat(sql`${schema.fnDraft.fnId} = ${fnId} and ${schema.fnDraft.userId} = ${userId}`) as never)
+    .where(
+      compat(
+        sql`${schema.fnDraft.fnId} = ${fnId} and ${schema.fnDraft.userId} = ${userId}`,
+      ) as never,
+    )
     .limit(1);
   return rows[0] ?? null;
 }
@@ -106,7 +181,9 @@ export async function listSecretsForFunction(orgId: string, fnId: string) {
       updatedAt: schema.secret.updatedAt,
     })
     .from(schema.secret)
-    .where(compat(sql`${schema.secret.orgId} = ${orgId} and ${schema.secret.fnId} = ${fnId}`) as never)
+    .where(
+      compat(sql`${schema.secret.orgId} = ${orgId} and ${schema.secret.fnId} = ${fnId}`) as never,
+    )
     .orderBy(compat(sql`${schema.secret.key} asc`) as never);
   return rows;
 }
@@ -152,14 +229,22 @@ export async function setSecretForFunction(input: {
 export async function deleteSecretForFunction(orgId: string, fnId: string, key: string) {
   await db
     .delete(schema.secret)
-    .where(compat(sql`${schema.secret.orgId} = ${orgId} and ${schema.secret.fnId} = ${fnId} and ${schema.secret.key} = ${key}`) as never);
+    .where(
+      compat(
+        sql`${schema.secret.orgId} = ${orgId} and ${schema.secret.fnId} = ${fnId} and ${schema.secret.key} = ${key}`,
+      ) as never,
+    );
 }
 
 export async function getSecretValueForFunction(orgId: string, fnId: string, key: string) {
   const rows = await db
     .select({ ciphertext: schema.secret.ciphertext })
     .from(schema.secret)
-    .where(compat(sql`${schema.secret.orgId} = ${orgId} and ${schema.secret.fnId} = ${fnId} and ${schema.secret.key} = ${key}`) as never)
+    .where(
+      compat(
+        sql`${schema.secret.orgId} = ${orgId} and ${schema.secret.fnId} = ${fnId} and ${schema.secret.key} = ${key}`,
+      ) as never,
+    )
     .limit(1);
   const row = rows[0];
   return row ? decryptSecret(row.ciphertext) : null;

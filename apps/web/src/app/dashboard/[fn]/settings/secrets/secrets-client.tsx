@@ -69,8 +69,8 @@ export function SecretsClient({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65">
+    <div className="space-y-8">
+      <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 shadow-xl">
         <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
           <div className="flex items-center gap-2 text-sm font-medium">
             <KeyRound className="h-4 w-4 text-primary" />
@@ -107,23 +107,27 @@ export function SecretsClient({
         </div>
       </div>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-4">
-        <div className="mb-3 text-sm font-medium">Add or update secret</div>
+      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-6 shadow-xl">
+        <div className="mb-3 text-sm font-semibold text-[var(--color-bone)]">Add or update secret</div>
         <div className="grid gap-3 md:grid-cols-[1fr_2fr_auto]">
           <Input
             value={key}
             onChange={(event) => setKey(event.target.value)}
             placeholder="KEY (e.g. API_TOKEN)"
-            className="font-mono"
+            className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 font-mono text-[var(--color-bone)] placeholder:text-[var(--color-bone-faint)] focus-visible:ring-[var(--color-amber)]"
           />
           <Input
             type="password"
             value={value}
             onChange={(event) => setValue(event.target.value)}
             placeholder="Secret value"
-            className="font-mono"
+            className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 font-mono text-[var(--color-bone)] placeholder:text-[var(--color-bone-faint)] focus-visible:ring-[var(--color-amber)]"
           />
-          <Button onClick={() => void onAdd()} disabled={saving || !key.trim() || !value.trim()}>
+          <Button
+            onClick={() => void onAdd()}
+            disabled={saving || !key.trim() || !value.trim()}
+            className="h-11 rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+          >
             <Plus className="mr-1 h-4 w-4" />
             {saving ? "Saving..." : "Save"}
           </Button>

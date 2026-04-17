@@ -1,17 +1,11 @@
 import { requireActiveOrg, requireSession } from "@/lib/session";
-import { getSetupState } from "@/server/setup-state";
 import { db, schema } from "@hostfunc/db";
 import { eq } from "drizzle-orm";
-import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { DashboardNavbar } from "./navbar";
+import { DashboardNavbar } from "../dashboard/navbar";
 
-export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const setup = getSetupState();
-  if (!setup.complete) {
-    redirect("/setup");
-  }
-  const [{ orgId }, baseSession] = await Promise.all([requireActiveOrg(), requireSession()]);
+export default async function NewWorkspaceLayout({ children }: { children: ReactNode }) {
+  const [{ orgId }, session] = await Promise.all([requireActiveOrg(), requireSession()]);
   const memberships = await db
     .select({
       organizationId: schema.organization.id,
@@ -24,7 +18,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     })
     .from(schema.member)
     .innerJoin(schema.organization, eq(schema.organization.id, schema.member.organizationId))
-    .where(eq(schema.member.userId, baseSession.user.id));
+    .where(eq(schema.member.userId, session.user.id));
 
   const ownerRows = await db
     .select({
@@ -57,20 +51,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <div className="gradient-radial-amber pointer-events-none absolute inset-x-0 top-0 h-[420px] opacity-70" />
       <div className="border-grid pointer-events-none absolute inset-0 opacity-30" />
       <DashboardNavbar
-        user={baseSession.user}
+        user={session.user}
         organizations={organizations}
         activeOrganizationId={orgId}
       />
-      <main className="relative mx-auto max-w-6xl px-6 py-8">
-        {/* <UsageStatusBar
-          planName={usage.planName}
-          executionsToday={usage.usage.executionsToday}
-          maxExecutionsPerDay={usage.usage.maxExecutionsPerDay}
-          alerts={usage.alerts}
-          errorRateLast24h={0}
-        /> */}
-        {children}
-      </main>
+      <main className="relative mx-auto max-w-6xl px-6 py-8">{children}</main>
     </div>
   );
 }

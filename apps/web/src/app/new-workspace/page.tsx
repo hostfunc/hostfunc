@@ -50,212 +50,196 @@ export default function NewWorkspacePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 relative overflow-hidden text-slate-200">
-      {/* Background Visuals */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none" />
+    <div className="mx-auto w-full max-w-lg py-6">
+      <div className="mb-8 flex flex-col items-center text-center">
+        <div className="mb-4 rounded-2xl border border-[var(--color-amber)]/30 bg-[var(--color-amber)]/12 p-3">
+          <FolderPlus className="h-6 w-6 text-[var(--color-amber)]" />
+        </div>
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--color-bone)]">Create Workspace</h1>
+        <p className="mt-2 text-sm text-[var(--color-bone-muted)]">
+          Deploy serverless infrastructure in seconds.
+        </p>
+      </div>
 
-      {/* Main Container */}
-      <div className="w-full max-w-md relative z-10">
-        {/* Header Ribbon */}
-        <div className="mb-8 flex flex-col items-center text-center">
-          <div className="bg-primary/20 p-3 rounded-2xl mb-4 shadow-[0_0_30px_rgba(var(--primary),0.2)]">
-            <FolderPlus className="h-6 w-6 text-primary" />
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Create Workspace</h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            Deploy serverless infrastructure in seconds.
-          </p>
+      <div className="overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/80 shadow-2xl">
+        {/* Progress Bar */}
+        <div className="h-1 w-full bg-white/[0.05]">
+          <motion.div
+            className="h-full bg-[var(--color-amber)]"
+            initial={{ width: "50%" }}
+            animate={{ width: step === 1 ? "50%" : "100%" }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+          />
         </div>
 
-        {/* Morphing Form Card */}
-        <div className="bg-[#0f0f11]/80 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden relative">
-          {/* Progress Bar */}
-          <div className="h-1 w-full bg-white/5">
-            <motion.div
-              className="h-full bg-primary"
-              initial={{ width: "50%" }}
-              animate={{ width: step === 1 ? "50%" : "100%" }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
-            />
-          </div>
+        <div className="p-8">
+          <form action={formAction}>
+            {/* HIDDEN INPUTS to preserve state across UI steps */}
+            <input type="hidden" name="name" value={name} />
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="logo" value={selectedBrand} />
 
-          <div className="p-8">
-            <form action={formAction}>
-              {/* HIDDEN INPUTS to preserve state across UI steps */}
-              <input type="hidden" name="name" value={name} />
-              <input type="hidden" name="slug" value={slug} />
-              <input type="hidden" name="logo" value={selectedBrand} />
+            <AnimatePresence mode="wait">
+              {/* STEP 1: Naming */}
+              {step === 1 && (
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-6"
+                >
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="orgName"
+                      className="text-xs font-semibold uppercase tracking-widest text-[var(--color-bone-faint)]"
+                    >
+                      Workspace Name
+                    </Label>
+                    <Input
+                      id="orgName"
+                      placeholder="Acme Corp"
+                      className="h-14 rounded-xl border-[var(--color-border)] bg-[var(--color-ink)]/70 text-lg text-[var(--color-bone)] placeholder:text-[var(--color-bone-faint)] focus-visible:ring-[var(--color-amber)]"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && name.length >= 2) {
+                          e.preventDefault();
+                          nextStep();
+                        }
+                      }}
+                    />
+                    {state?.error?.name && (
+                      <p className="text-xs text-red-300 mt-1">{state.error.name[0]}</p>
+                    )}
+                  </div>
 
-              <AnimatePresence mode="wait">
-                {/* STEP 1: Naming */}
-                {step === 1 && (
-                  <motion.div
-                    key="step1"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-6"
-                  >
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="orgName"
-                        className="text-xs uppercase tracking-widest text-muted-foreground font-semibold"
-                      >
-                        Workspace Name
-                      </Label>
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="orgSlug"
+                      className="text-xs font-semibold uppercase tracking-widest text-[var(--color-bone-faint)]"
+                    >
+                      Workspace URL
+                    </Label>
+                    <div className="relative flex items-center">
+                      <Globe className="absolute left-4 h-4 w-4 text-[var(--color-bone-faint)]" />
                       <Input
-                        id="orgName"
-                        placeholder="Acme Corp"
-                        className="h-14 bg-black/40 border-white/10 text-lg focus-visible:ring-primary focus-visible:border-primary transition-all placeholder:text-muted-foreground/50 rounded-xl"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && name.length >= 2) {
-                            e.preventDefault();
-                            nextStep();
-                          }
-                        }}
+                        id="orgSlug"
+                        placeholder="acme-corp"
+                        className="h-12 rounded-xl border-[var(--color-border)] bg-[var(--color-ink)]/70 pl-11 text-[var(--color-bone)] placeholder:text-[var(--color-bone-faint)] focus-visible:ring-[var(--color-amber)]"
+                        value={slug}
+                        onChange={handleSlugChange}
                       />
-                      {state?.error?.name && (
-                        <p className="text-red-400 text-xs mt-1">{state.error.name[0]}</p>
-                      )}
                     </div>
+                    <p className="h-4 px-1 text-[11px] text-[var(--color-bone-faint)]">
+                      {slug ? `hostfunc.com/${slug}` : "hostfunc.com/your-url"}
+                    </p>
+                    {state?.error?.slug && (
+                      <p className="text-xs text-red-300 mt-1">{state.error.slug[0]}</p>
+                    )}
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="orgSlug"
-                        className="text-xs uppercase tracking-widest text-muted-foreground font-semibold"
-                      >
-                        Workspace URL
+                  <Button
+                    type="button"
+                    onClick={nextStep}
+                    disabled={name.length < 2}
+                    className="relative mt-4 h-12 w-full overflow-hidden rounded-xl text-base font-semibold bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+                  >
+                    <span className="relative z-10 flex items-center">
+                      Continue{" "}
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  </Button>
+                </motion.div>
+              )}
+
+              {/* STEP 2: Branding & Submit */}
+              {step === 2 && (
+                <motion.div
+                  key="step2"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-8"
+                >
+                  <div className="space-y-3">
+                    <div className="mb-4 flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-[var(--color-amber)]" />
+                      <Label className="text-xs font-semibold uppercase tracking-widest text-[var(--color-bone-faint)]">
+                        Select Avatar
                       </Label>
-                      <div className="relative flex items-center">
-                        <Globe className="absolute left-4 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="orgSlug"
-                          placeholder="acme-corp"
-                          className="h-12 pl-11 bg-black/40 border-white/10 focus-visible:ring-primary focus-visible:border-primary transition-all rounded-xl"
-                          value={slug}
-                          onChange={handleSlugChange}
-                        />
-                      </div>
-                      <p className="text-[11px] text-muted-foreground px-1 h-4">
-                        {slug ? `hostfunc.com/${slug}` : "hostfunc.com/your-url"}
-                      </p>
-                      {state?.error?.slug && (
-                        <p className="text-red-400 text-xs mt-1">{state.error.slug[0]}</p>
-                      )}
                     </div>
 
+                    <div className="grid grid-cols-4 gap-3">
+                      {BRAND_PRESETS.map((brand) => (
+                        <button
+                          key={brand.id}
+                          type="button"
+                          onClick={() => setSelectedBrand(brand.id)}
+                          className={cn(
+                            "relative aspect-square cursor-pointer rounded-2xl border-0 p-0 transition-all duration-300",
+                            brand.css,
+                            selectedBrand === brand.id
+                              ? "ring-2 ring-[var(--color-bone)] ring-offset-4 ring-offset-[var(--color-ink-elevated)] scale-95 shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                              : "opacity-60 hover:scale-105 hover:opacity-100",
+                          )}
+                        >
+                          <Hexagon className="absolute inset-0 m-auto h-6 w-6 text-white/50" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink)]/70 p-4">
+                    <div
+                      className={cn(
+                        "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
+                        BRAND_PRESETS.find((b) => b.id === selectedBrand)?.css,
+                      )}
+                    >
+                      <span className="text-lg font-bold text-white">
+                        {name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="overflow-hidden">
+                      <p className="truncate font-semibold text-[var(--color-bone)]">{name}</p>
+                      <p className="truncate text-xs text-[var(--color-bone-faint)]">hostfunc.com/{slug}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex w-full gap-3 pt-2">
                     <Button
                       type="button"
-                      onClick={nextStep}
-                      disabled={name.length < 2}
-                      className="w-full h-12 rounded-xl text-base font-semibold group mt-4 relative overflow-hidden"
+                      variant="ghost"
+                      onClick={() => setStep(1)}
+                      className="h-12 w-12 shrink-0 rounded-xl border border-[var(--color-border)] bg-transparent hover:bg-white/[0.05]"
+                      disabled={isPending}
                     >
-                      <span className="relative z-10 flex items-center">
-                        Continue{" "}
-                        <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={isPending}
+                      className="group relative h-12 min-w-0 flex-1 overflow-hidden rounded-xl bg-[var(--color-amber)] text-base font-semibold text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+                    >
+                      <span className="relative z-10 flex items-center justify-center whitespace-nowrap px-2 text-center">
+                        {isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-5 w-5 shrink-0 animate-spin" /> Creating Workspace...
+                          </>
+                        ) : (
+                          <>Create Workspace</>
+                        )}
                       </span>
                     </Button>
-                  </motion.div>
-                )}
-
-                {/* STEP 2: Branding & Submit */}
-                {step === 2 && (
-                  <motion.div
-                    key="step2"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-8"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 mb-4">
-                        <Sparkles className="w-4 h-4 text-primary" />
-                        <Label className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
-                          Select Avatar
-                        </Label>
-                      </div>
-
-                      <div className="grid grid-cols-4 gap-3">
-                        {BRAND_PRESETS.map((brand) => (
-                          <button
-                            key={brand.id}
-                            type="button"
-                            onClick={() => setSelectedBrand(brand.id)}
-                            className={cn(
-                              "aspect-square rounded-2xl cursor-pointer relative transition-all duration-300 p-0 border-0",
-                              brand.css,
-                              selectedBrand === brand.id
-                                ? "ring-2 ring-white ring-offset-4 ring-offset-[#0f0f11] scale-95 shadow-[0_0_20px_rgba(255,255,255,0.2)]"
-                                : "hover:scale-105 opacity-60 hover:opacity-100",
-                            )}
-                          >
-                            <Hexagon className="absolute inset-0 m-auto w-6 h-6 text-white/50" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="bg-black/40 border border-white/5 p-4 rounded-2xl flex items-center gap-4">
-                      <div
-                        className={cn(
-                          "w-12 h-12 rounded-xl shrink-0 flex items-center justify-center",
-                          BRAND_PRESETS.find((b) => b.id === selectedBrand)?.css,
-                        )}
-                      >
-                        <span className="text-white font-bold text-lg">
-                          {name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="overflow-hidden">
-                        <p className="font-semibold text-white truncate">{name}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          hostfunc.com/{slug}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-3 pt-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => setStep(1)}
-                        className="h-12 w-12 rounded-xl shrink-0 border border-white/10 hover:bg-white/5"
-                        disabled={isPending}
-                      >
-                        <ArrowLeft className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        type="submit"
-                        disabled={isPending}
-                        className="w-full h-12 rounded-xl text-base font-semibold group relative overflow-hidden"
-                      >
-                        <span className="relative z-10 flex items-center justify-center">
-                          {isPending ? (
-                            <>
-                              <Loader2 className="mr-2 w-5 h-5 animate-spin" /> Constructing
-                              Interface...
-                            </>
-                          ) : (
-                            <>Create Workspace</>
-                          )}
-                        </span>
-                        {!isPending && (
-                          <div className="absolute inset-0 bg-gradient-to-r from-primary-foreground/0 via-primary-foreground/10 to-primary-foreground/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
-                        )}
-                      </Button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </form>
-          </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </form>
         </div>
       </div>
     </div>

@@ -18,7 +18,7 @@ export function DocsArticle({ path }: { path: string }) {
         </p>
       </header>
 
-      <div className="h-px w-full bg-gradient-to-r from-[var(--color-border)] via-[var(--color-border)]/50 to-transparent" />
+      {/* <div className="h-px w-full bg-gradient-to-r from-[var(--color-border)] via-[var(--color-border)]/50 to-transparent" /> */}
 
       {page.guideSections?.length ? (
         <>

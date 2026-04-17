@@ -8,9 +8,10 @@ import {
   markWebhookEventProcessed,
   recordWebhookEvent,
 } from "@/server/webhook-events";
-import { CloudflareApi } from "@hostfunc/executor-cloudflare/api";
 import { db, genId, schema } from "@hostfunc/db";
+import { CloudflareApi } from "@hostfunc/executor-cloudflare/api";
 import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import type { NextRequest } from "next/server";
 
 export const runtime = "nodejs";
@@ -73,11 +74,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const execRows = await db
-      .select({ orgId: schema.execution.orgId })
+      .select({ orgId: schema.execution.orgId, fnId: schema.execution.fnId })
       .from(schema.execution)
       .where(eq(schema.execution.id, body.executionId))
       .limit(1);
     const orgId = execRows[0]?.orgId;
+    const fnId = execRows[0]?.fnId;
     if (!orgId) {
       await markWebhookEventFailed(event.id, "execution_not_found");
       return Response.json({ error: "execution_not_found" }, { status: 404 });
@@ -146,14 +148,20 @@ export async function POST(req: NextRequest) {
         await publishLogLine(body.executionId, value.level, value.message, value.fields, value.ts);
       }
     }
+
+    // Keep dashboard cards/execution badges fresh after runtime writes.
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/functions");
+    if (fnId) {
+      revalidatePath(`/dashboard/${fnId}`);
+      revalidatePath(`/dashboard/${fnId}/executions`);
+    }
+
     await markWebhookEventProcessed(event.id);
     return Response.json({ ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "ingest_failed";
-    await markWebhookEventFailed(
-      event.id,
-      message,
-    );
+    await markWebhookEventFailed(event.id, message);
     await captureServerError({
       source: "runtime_ingest",
       message,

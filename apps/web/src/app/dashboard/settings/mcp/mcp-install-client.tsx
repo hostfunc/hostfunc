@@ -1,5 +1,6 @@
 "use client";
 
+import { DocsCodeBlock } from "@/app/docs/_components/docs-code-block";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -28,14 +29,15 @@ export function McpInstallClient({
   );
 
   return (
-    <div className="space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-4">
-      <p className="text-sm text-[var(--color-bone-muted)]">
+    <div className="space-y-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-6 shadow-xl">
+      <p className="text-sm leading-relaxed text-[var(--color-bone-muted)]">
         Use an API token from the Tokens page and paste it into your MCP client config.
       </p>
-      <pre className="overflow-auto rounded-md border border-[var(--color-border)] bg-black/25 p-3 text-xs text-[var(--color-bone)]">{config}</pre>
+      <DocsCodeBlock code={config} language="json" />
       <Button
         variant="outline"
         size="sm"
+        className="w-fit rounded-full border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
         onClick={async () => {
           await navigator.clipboard.writeText(config);
           setCopied(true);

@@ -1,4 +1,4 @@
-import { requireActiveOrg } from "@/lib/session";
+import { requireOrgPermission } from "@/lib/session";
 import { getEffectivePlan } from "@/server/plans";
 import { db, schema } from "@hostfunc/db";
 import { and, asc, eq, gt, gte, isNotNull, sql } from "drizzle-orm";
@@ -9,7 +9,7 @@ function clampPercent(value: number) {
 }
 
 export default async function BillingSettingsPage() {
-  const { orgId } = await requireActiveOrg();
+  const { orgId } = await requireOrgPermission("manage_billing");
   const plan = await getEffectivePlan(orgId);
   const purchasablePlans = await db
     .select({
@@ -49,7 +49,9 @@ export default async function BillingSettingsPage() {
   return (
     <div className="space-y-10 pb-10">
       <div className="border-b border-[var(--color-border)] pb-6">
-        <h3 className="font-display text-4xl tracking-tight text-[var(--color-bone)]">Billing & Usage</h3>
+        <h3 className="font-display text-4xl tracking-tight text-[var(--color-bone)]">
+          Billing & Usage
+        </h3>
         <p className="mt-2 max-w-xl text-[var(--color-bone-muted)]">
           Usage is tracked for the active workspace. Upgrade to unlock higher limits and manage your
           subscription in Stripe.
@@ -97,11 +99,15 @@ export default async function BillingSettingsPage() {
               <div className="mb-2 flex items-end justify-between">
                 <span className="text-sm font-medium">Executions</span>
                 <span className="font-mono text-sm">
-                  {executionCount.toLocaleString()} / {plan.limits.maxExecutionsPerDay.toLocaleString()}
+                  {executionCount.toLocaleString()} /{" "}
+                  {plan.limits.maxExecutionsPerDay.toLocaleString()}
                 </span>
               </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/30">
-                <div className="h-full rounded-full bg-primary" style={{ width: `${executionPercent}%` }} />
+                <div
+                  className="h-full rounded-full bg-primary"
+                  style={{ width: `${executionPercent}%` }}
+                />
               </div>
             </div>
 
@@ -113,7 +119,10 @@ export default async function BillingSettingsPage() {
                 </span>
               </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/30">
-                <div className="h-full rounded-full bg-emerald-500" style={{ width: `${wallPercent}%` }} />
+                <div
+                  className="h-full rounded-full bg-emerald-500"
+                  style={{ width: `${wallPercent}%` }}
+                />
               </div>
             </div>
           </div>
@@ -126,7 +135,10 @@ export default async function BillingSettingsPage() {
             </span>
             <h4 className="mt-2 text-2xl font-bold">{plan.planName}</h4>
             <p className="mt-2 text-sm text-[var(--color-bone-muted)]">
-              Status: <span className="font-medium text-[var(--color-bone)]">{plan.subscriptionStatus}</span>
+              Status:{" "}
+              <span className="font-medium text-[var(--color-bone)]">
+                {plan.subscriptionStatus}
+              </span>
             </p>
             <p className="mt-4 text-sm text-[var(--color-bone-muted)]">
               {plan.priceMonthlyCents === 0

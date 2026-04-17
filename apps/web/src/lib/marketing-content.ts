@@ -1,3 +1,5 @@
+import { FUNCTION_TEMPLATES } from "@/lib/templates";
+
 export interface MarketingLink {
   label: string;
   href: string;
@@ -97,10 +99,12 @@ export interface MarketingContent {
 
   /** Templates marquee */
   templates: Array<{
+    templateId: string;
     name: string;
     icon: string;
     category: string;
     description: string;
+    snippet: string;
   }>;
 
   /** Architecture / how it works */
@@ -127,6 +131,24 @@ export interface MarketingContent {
     facts: Array<{ label: string; value: string }>;
   };
 
+  /** Pricing */
+  pricing: {
+    eyebrow: string;
+    headline: string;
+    body: string;
+    plans: Array<{
+      slug: "free" | "pro" | "team";
+      name: string;
+      priceMonthly: string;
+      description: string;
+      workspaces: string;
+      executionsPerDay: string;
+      teamMembers: string;
+      runtime: string;
+      highlighted?: boolean;
+    }>;
+  };
+
   /** Big closer CTA */
   closer: {
     headline: string;
@@ -142,7 +164,7 @@ export const marketingContent: MarketingContent = {
 
   headlineLead: "Tiny functions,",
   headlineEmphasis: "composed by anyone",
-  headlineTail: "— including the agents in your stack.",
+  headlineTail: ", including the agents in your stack",
 
   subheadline:
     "hostfunc is a TypeScript function platform built for the post-LLM era. Deploy from your editor, your CLI, or directly from a Claude conversation. Compose functions into systems. Watch the lineage graph fill in live.",
@@ -288,7 +310,7 @@ export async function main() {
   "mcpServers": {
     "hostfunc": {
       "url": "https://you.run/api/mcp",
-      "headers": { "Authorization": "Bearer ofn_live_…" }
+      "headers": { "Authorization": "Bearer hf_live_…" }
     }
   }
 }`,
@@ -385,56 +407,14 @@ export async function main(input: { url: string }) {
     { name: "Stripe", slug: "stripe", available: false, description: "Coming soon." },
   ],
 
-  templates: [
-    {
-      name: "Hacker News digest",
-      icon: "📰",
-      category: "data",
-      description: "Top 10 stories, daily.",
-    },
-    {
-      name: "GitHub profile lookup",
-      icon: "🐙",
-      category: "integrations",
-      description: "Profile + repos for any user.",
-    },
-    {
-      name: "URL metadata extractor",
-      icon: "🔗",
-      category: "utilities",
-      description: "Title, OG tags, og:image.",
-    },
-    {
-      name: "Webhook logger",
-      icon: "📥",
-      category: "utilities",
-      description: "Catch + log any POST.",
-    },
-    {
-      name: "AI text summarizer",
-      icon: "🤖",
-      category: "ai",
-      description: "Summarize via Claude.",
-    },
-    {
-      name: "Uptime monitor",
-      icon: "📡",
-      category: "notifications",
-      description: "Ping a URL, alert on fail.",
-    },
-    {
-      name: "JSON transformer",
-      icon: "🔧",
-      category: "utilities",
-      description: "Reshape via composition.",
-    },
-    {
-      name: "Hello world",
-      icon: "👋",
-      category: "utilities",
-      description: "The starter.",
-    },
-  ],
+  templates: FUNCTION_TEMPLATES.map((template) => ({
+    templateId: template.id,
+    name: template.name,
+    icon: template.icon,
+    category: template.category,
+    description: template.description,
+    snippet: template.code,
+  })),
 
   architecture: {
     eyebrow: "Built for scale",
@@ -506,6 +486,45 @@ export async function main(input: { url: string }) {
       { label: "Stack", value: "TypeScript / Next.js 16 / Cloudflare" },
       { label: "Status", value: "Alpha" },
       { label: "Self-host", value: "Docker Compose" },
+    ],
+  },
+
+  pricing: {
+    eyebrow: "Pricing",
+    headline: "Clear limits. Predictable scale.",
+    body: "Start free, grow into higher execution and runtime ceilings as your automations mature.",
+    plans: [
+      {
+        slug: "free",
+        name: "Free",
+        priceMonthly: "$0",
+        description: "Great for personal projects and first workflows.",
+        workspaces: "1 workspace",
+        executionsPerDay: "100 executions / day",
+        teamMembers: "1 team member",
+        runtime: "10s wall · 1s CPU · 128MB memory",
+      },
+      {
+        slug: "pro",
+        name: "Pro",
+        priceMonthly: "$5",
+        description: "For production side projects and independent teams.",
+        workspaces: "Up to 3 workspaces",
+        executionsPerDay: "2,000,000 executions / day",
+        teamMembers: "Up to 6 team members",
+        runtime: "120s wall · 20s CPU · 512MB memory",
+        highlighted: true,
+      },
+      {
+        slug: "team",
+        name: "Team",
+        priceMonthly: "$25",
+        description: "For high-volume workloads across many teams.",
+        workspaces: "Unlimited workspaces",
+        executionsPerDay: "20,000,000 executions / day",
+        teamMembers: "Up to 50 team members",
+        runtime: "600s wall · 120s CPU · 2048MB memory",
+      },
     ],
   },
 

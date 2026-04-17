@@ -3,11 +3,10 @@
 import { createHash } from "node:crypto";
 import { env } from "@/lib/env";
 import { DEFAULT_FUNCTION_SDK, type FunctionPackageRecord } from "@/lib/function-packages";
-import { extractExternalPackageNames } from "@/lib/package-imports";
-import { requireActiveOrg } from "@/lib/session";
-import { executor } from "@/server/executor";
 import { getLatestNpmVersion } from "@/lib/npm-registry";
-import { getOrgPlan } from "@/server/plan";
+import { extractExternalPackageNames } from "@/lib/package-imports";
+import { requireOrgPermission } from "@/lib/session";
+import { executor } from "@/server/executor";
 import {
   deleteSecretForFunction,
   getFunctionPackagesForOrg,
@@ -15,6 +14,7 @@ import {
   setFunctionPackagesForOrg,
   setSecretForFunction,
 } from "@/server/functions";
+import { getOrgPlan } from "@/server/plan";
 import { db, genId, schema, sql } from "@hostfunc/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -52,6 +52,10 @@ const refreshPackageSchema = z.object({
   fnId: z.string(),
   name: z.string().min(1).max(214),
 });
+const updateDescriptionSchema = z.object({
+  fnId: z.string(),
+  description: z.string().max(280),
+});
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -70,10 +74,7 @@ function toImportIdentifier(packageName: string): string {
     ? (packageName.split("/")[1] ?? "pkg")
     : (packageName.split("/")[0] ?? "pkg");
   const cleaned = base.replace(/[^a-zA-Z0-9]+/g, " ");
-  const parts = cleaned
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
+  const parts = cleaned.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "pkg";
   const [first = "pkg", ...rest] = parts;
   const camel = `${first.toLowerCase()}${rest
@@ -122,7 +123,11 @@ function nowIso(): string {
 
 function mergePackages(
   existing: FunctionPackageRecord[],
-  additions: Array<{ name: string; source: FunctionPackageRecord["source"]; version: string | null }>,
+  additions: Array<{
+    name: string;
+    source: FunctionPackageRecord["source"];
+    version: string | null;
+  }>,
 ): FunctionPackageRecord[] {
   const byName = new Map(existing.map((pkg) => [pkg.name, pkg]));
   for (const addition of additions) {
@@ -149,7 +154,11 @@ function mergePackages(
 
 async function assertOrgOwnsFunction(orgId: string, fnId: string) {
   const rows = await db
-    .select({ id: schema.fn.id, slug: schema.fn.slug, currentVersionId: schema.fn.currentVersionId })
+    .select({
+      id: schema.fn.id,
+      slug: schema.fn.slug,
+      currentVersionId: schema.fn.currentVersionId,
+    })
     .from(schema.fn)
     .where(compatWhere(sql`${schema.fn.id} = ${fnId} and ${schema.fn.orgId} = ${orgId}`) as never)
     .limit(1);
@@ -160,7 +169,7 @@ async function assertOrgOwnsFunction(orgId: string, fnId: string) {
 }
 
 export async function saveDraft(input: z.infer<typeof saveDraftSchema>) {
-  const { session, orgId } = await requireActiveOrg();
+  const { session, orgId } = await requireOrgPermission("edit_draft");
   const parsed = saveDraftSchema.parse(input);
 
   await assertOrgOwnsFunction(orgId, parsed.fnId);
@@ -171,7 +180,9 @@ export async function saveDraft(input: z.infer<typeof saveDraftSchema>) {
     const existingNames = new Set(existing.map((pkg) => pkg.name));
     const missing = detected.filter((pkgName) => !existingNames.has(pkgName));
     if (missing.length > 0) {
-      const latestVersions = await Promise.all(missing.map((pkgName) => getLatestNpmVersion(pkgName)));
+      const latestVersions = await Promise.all(
+        missing.map((pkgName) => getLatestNpmVersion(pkgName)),
+      );
       const additions = missing.map((name, idx) => ({
         name,
         source: "auto" as const,
@@ -199,7 +210,7 @@ export async function saveDraft(input: z.infer<typeof saveDraftSchema>) {
 }
 
 export async function generateCodeFromPrompt(input: z.infer<typeof generateCodeSchema>) {
-  const { orgId } = await requireActiveOrg();
+  const { orgId } = await requireOrgPermission("edit_draft");
   const parsed = generateCodeSchema.parse(input);
   await assertOrgOwnsFunction(orgId, parsed.fnId);
 
@@ -233,8 +244,15 @@ export interface DeployResultUi {
 }
 
 export async function deployFunction(fnId: string): Promise<DeployResultUi> {
-  const { session, orgId } = await requireActiveOrg();
+  const { session, orgId } = await requireOrgPermission("deploy_function");
   const fnRow = await assertOrgOwnsFunction(orgId, fnId);
+  const orgRows = await db
+    .select({ slug: schema.organization.slug })
+    .from(schema.organization)
+    .where(compatWhere(sql`${schema.organization.id} = ${orgId}`) as never)
+    .limit(1);
+  const orgSlug = orgRows[0]?.slug;
+  if (!orgSlug) throw new Error("org_not_found");
   await getFunctionPackagesForOrg(orgId, fnId);
   const orgPlan = await getOrgPlan(orgId);
   const maxActiveFunctions = orgPlan?.limits.maxFunctions ?? 3;
@@ -256,7 +274,11 @@ export async function deployFunction(fnId: string): Promise<DeployResultUi> {
     const activeCountRows = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(schema.fn)
-      .where(compatWhere(sql`${schema.fn.orgId} = ${orgId} and ${schema.fn.currentVersionId} is not null`) as never)
+      .where(
+        compatWhere(
+          sql`${schema.fn.orgId} = ${orgId} and ${schema.fn.currentVersionId} is not null`,
+        ) as never,
+      )
       .limit(1);
     const activeCount = activeCountRows[0]?.count ?? 0;
     if (activeCount >= maxActiveFunctions) {
@@ -316,13 +338,13 @@ export async function deployFunction(fnId: string): Promise<DeployResultUi> {
       .set({ currentVersionId: versionId, updatedAt: new Date() })
       .where(compatWhere(sql`${schema.fn.id} = ${fnId}`) as never);
 
-    await purgeLookupCache(session.user.id, fnRow.slug).catch(() => {
+    await purgeLookupCache(orgSlug, fnRow.slug).catch(() => {
       // Cache is best-effort; deploy success should not hinge on purge availability.
     });
 
     revalidatePath(`/dashboard/${fnId}`);
 
-    const runUrl = `${env.HOSTFUNC_RUNTIME_URL}/run/${session.user.id}/${fnRow.slug}`;
+    const runUrl = `${env.HOSTFUNC_RUNTIME_URL}/run/${orgSlug}/${fnRow.slug}`;
     return { ok: true, versionId, runUrl };
   } catch (e) {
     const message = e instanceof Error ? e.message : "unknown error";
@@ -335,19 +357,19 @@ export async function deployFunction(fnId: string): Promise<DeployResultUi> {
 }
 
 export async function listSecrets(fnId: string) {
-  const { orgId } = await requireActiveOrg();
+  const { orgId } = await requireOrgPermission("view_workspace");
   await assertOrgOwnsFunction(orgId, fnId);
   return listSecretsForFunction(orgId, fnId);
 }
 
 export async function listFunctionPackages(fnId: string) {
-  const { orgId } = await requireActiveOrg();
+  const { orgId } = await requireOrgPermission("view_workspace");
   await assertOrgOwnsFunction(orgId, fnId);
   return getFunctionPackagesForOrg(orgId, fnId);
 }
 
 export async function addFunctionPackage(input: z.infer<typeof addPackageSchema>) {
-  const { orgId, session } = await requireActiveOrg();
+  const { orgId, session } = await requireOrgPermission("manage_packages");
   const parsed = addPackageSchema.parse(input);
   await assertOrgOwnsFunction(orgId, parsed.fnId);
 
@@ -390,7 +412,7 @@ export async function addFunctionPackage(input: z.infer<typeof addPackageSchema>
 }
 
 export async function removeFunctionPackage(input: z.infer<typeof removePackageSchema>) {
-  const { orgId, session } = await requireActiveOrg();
+  const { orgId, session } = await requireOrgPermission("manage_packages");
   const parsed = removePackageSchema.parse(input);
   await assertOrgOwnsFunction(orgId, parsed.fnId);
 
@@ -433,7 +455,7 @@ export async function removeFunctionPackage(input: z.infer<typeof removePackageS
 }
 
 export async function refreshFunctionPackageVersion(input: z.infer<typeof refreshPackageSchema>) {
-  const { orgId } = await requireActiveOrg();
+  const { orgId } = await requireOrgPermission("manage_packages");
   const parsed = refreshPackageSchema.parse(input);
   await assertOrgOwnsFunction(orgId, parsed.fnId);
 
@@ -451,7 +473,7 @@ export async function refreshFunctionPackageVersion(input: z.infer<typeof refres
 }
 
 export async function setSecret(input: z.infer<typeof setSecretSchema>) {
-  const { orgId, session } = await requireActiveOrg();
+  const { orgId, session } = await requireOrgPermission("manage_secrets");
   const parsed = setSecretSchema.parse(input);
   await assertOrgOwnsFunction(orgId, parsed.fnId);
   await setSecretForFunction({
@@ -466,7 +488,7 @@ export async function setSecret(input: z.infer<typeof setSecretSchema>) {
 }
 
 export async function deleteSecret(input: z.infer<typeof deleteSecretSchema>) {
-  const { orgId } = await requireActiveOrg();
+  const { orgId } = await requireOrgPermission("manage_secrets");
   const parsed = deleteSecretSchema.parse(input);
   await assertOrgOwnsFunction(orgId, parsed.fnId);
   await deleteSecretForFunction(orgId, parsed.fnId, parsed.key);
@@ -474,10 +496,31 @@ export async function deleteSecret(input: z.infer<typeof deleteSecretSchema>) {
   return { ok: true };
 }
 
-async function purgeLookupCache(owner: string, slug: string) {
+export async function updateFunctionDescriptionAction(formData: FormData) {
+  const { orgId } = await requireOrgPermission("edit_draft");
+  const parsed = updateDescriptionSchema.parse({
+    fnId: formData.get("fnId"),
+    description: formData.get("description") ?? "",
+  });
+  await assertOrgOwnsFunction(orgId, parsed.fnId);
+
+  await db
+    .update(schema.fn)
+    .set({ description: parsed.description.trim(), updatedAt: new Date() })
+    .where(
+      compatWhere(sql`${schema.fn.id} = ${parsed.fnId} and ${schema.fn.orgId} = ${orgId}`) as never,
+    );
+
+  revalidatePath(`/dashboard/${parsed.fnId}`);
+  revalidatePath(`/dashboard/${parsed.fnId}/settings`);
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/functions");
+}
+
+async function purgeLookupCache(orgSlug: string, slug: string) {
   if (!env.CF_FN_INDEX_KV_ID) return;
   const maybeExecutor = executor as typeof executor & {
     purgeLookupCache?: (key: string) => Promise<void>;
   };
-  await maybeExecutor.purgeLookupCache?.(`${owner}:${slug}`);
+  await maybeExecutor.purgeLookupCache?.(`${orgSlug}:${slug}`);
 }

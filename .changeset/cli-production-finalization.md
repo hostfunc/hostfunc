@@ -1,3 +1,4 @@
+---
 "@hostfunc/cli": minor
 ---
 

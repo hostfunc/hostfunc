@@ -5,9 +5,21 @@ import { requireActiveOrg } from "@/lib/session";
 import { getDashboardStats, getRecentExecutions } from "@/server/executions";
 import { listFunctionsForOrg } from "@/server/functions";
 import { formatDistanceToNow } from "date-fns";
-import { Activity, AlertTriangle, Clock, ExternalLink, Layers, Settings } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  ExternalLink,
+  Layers,
+  Package,
+  Save,
+  Settings,
+} from "lucide-react";
 import Link from "next/link";
 import { CopyButton } from "./functions/copy-button";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const { orgId } = await requireActiveOrg();
@@ -25,7 +37,9 @@ export default async function DashboardPage() {
     <div className="animate-in space-y-8 fade-in duration-500">
       {/* High-Level Metrics */}
       <div>
-        <h1 className="mb-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">Dashboard Overview</h1>
+        <h1 className="mb-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
+          Dashboard Overview
+        </h1>
         <p className="mb-6 max-w-2xl text-sm text-[var(--color-bone-muted)]">
           Monitor your function fleet, recent activity, and performance from one control surface.
         </p>
@@ -48,7 +62,9 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalExecutions.toLocaleString()}</div>
-              <p className="mt-1 text-xs text-[var(--color-bone-faint)]">Total requests processed</p>
+              <p className="mt-1 text-xs text-[var(--color-bone-faint)]">
+                Total requests processed
+              </p>
             </CardContent>
           </Card>
 
@@ -91,10 +107,10 @@ export default async function DashboardPage() {
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold tracking-tight">Your Functions</h2>
               <Link
-                href="/dashboard/new"
+                href="/dashboard/functions"
                 className="text-sm font-medium text-[var(--color-amber)] hover:underline"
               >
-                Create new
+                View all
               </Link>
             </div>
 
@@ -126,15 +142,72 @@ export default async function DashboardPage() {
                         {fn.visibility}
                       </Badge>
                     </div>
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                      <Badge
+                        variant="secondary"
+                        className="border-[var(--color-border)] bg-white/[0.04] text-[10px] font-medium text-[var(--color-bone)]"
+                      >
+                        {fn.currentVersionId ? "Deployed" : "Saved"}
+                      </Badge>
+                      {fn.envVarCount > 0 ? (
+                        <Badge
+                          variant="secondary"
+                          className="border-emerald-400/30 bg-emerald-500/10 text-[10px] font-medium text-emerald-300"
+                        >
+                          <CheckCircle2 className="mr-1 h-3 w-3" />
+                          Env set ({fn.envVarCount})
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="secondary"
+                          className="border-[var(--color-border)] bg-white/[0.02] text-[10px] font-medium text-[var(--color-bone-faint)]"
+                        >
+                          <Save className="mr-1 h-3 w-3" />
+                          No env vars
+                        </Badge>
+                      )}
+                      <Badge
+                        variant="secondary"
+                        className="border-[var(--color-border)] bg-white/[0.02] text-[10px] font-medium text-[var(--color-bone-faint)]"
+                      >
+                        <Package className="mr-1 h-3 w-3" />
+                        npm ({fn.packageCount})
+                      </Badge>
+                      <Badge
+                        variant="secondary"
+                        className="border-[var(--color-border)] bg-white/[0.02] text-[10px] font-medium text-[var(--color-bone-faint)]"
+                      >
+                        <Activity className="mr-1 h-3 w-3" />
+                        exec ({fn.executionCount})
+                      </Badge>
+                      {fn.latestExecutionStatus ? (
+                        <Badge
+                          variant="secondary"
+                          className={
+                            fn.latestExecutionStatus === "ok"
+                              ? "border-emerald-400/30 bg-emerald-500/10 text-[10px] font-medium text-emerald-300"
+                              : "border-red-400/30 bg-red-500/10 text-[10px] font-medium text-red-300"
+                          }
+                        >
+                          Last {fn.latestExecutionStatus === "ok" ? "200" : "500"}
+                        </Badge>
+                      ) : null}
+                    </div>
                     <p className="mt-1 h-10 line-clamp-2 text-sm text-[var(--color-bone-muted)]">
-                      {fn.description || "No description provided."}
+                      {fn.description?.trim() || "No description provided."}
                     </p>
                   </div>
 
                   {/* Hover Actions Bar */}
                   <div className="flex items-center justify-between border-t border-[var(--color-border)] bg-white/[0.02] p-2.5 transition-colors group-hover:bg-white/[0.04]">
                     <div className="flex items-center">
-                      <CopyButton value={`https://${fn.slug}.hostfunc.com`} />
+                      <CopyButton
+                        value={fn.deployedUrl ?? ""}
+                        disabled={!fn.deployedUrl}
+                        title={
+                          fn.deployedUrl ? "Copy deployed endpoint" : "Host the function first"
+                        }
+                      />
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Button
@@ -165,7 +238,9 @@ export default async function DashboardPage() {
           <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
-              <CardDescription className="text-[var(--color-bone-muted)]">Latest executions across all your functions</CardDescription>
+              <CardDescription className="text-[var(--color-bone-muted)]">
+                Latest executions across all your functions
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {recentExecutions.length > 0 ? (
@@ -184,26 +259,53 @@ export default async function DashboardPage() {
                       {recentExecutions.map((exec) => (
                         <tr key={exec.id} className="transition-colors hover:bg-white/[0.03]">
                           <td className="px-4 py-3 font-mono font-medium">
-                            {exec.fnSlug ?? exec.fnId}
+                            <Link
+                              href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
+                              className="block"
+                            >
+                              {exec.fnSlug ?? exec.fnId}
+                            </Link>
                           </td>
                           <td className="px-4 py-3">
-                            <Badge
-                              variant={exec.status === "ok" ? "default" : "destructive"}
-                              className={
-                                exec.status === "ok"
-                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
-                                  : ""
-                              }
+                            <Link
+                              href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
+                              className="block"
                             >
-                              {exec.status}
-                            </Badge>
+                              <Badge
+                                variant={exec.status === "ok" ? "default" : "destructive"}
+                                className={
+                                  exec.status === "ok"
+                                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
+                                    : ""
+                                }
+                              >
+                                {exec.status}
+                              </Badge>
+                            </Link>
                           </td>
                           <td className="px-4 py-3 text-xs uppercase tracking-wider text-[var(--color-bone-faint)]">
-                            {exec.triggerKind}
+                            <Link
+                              href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
+                              className="block"
+                            >
+                              {exec.triggerKind}
+                            </Link>
                           </td>
-                          <td className="px-4 py-3 font-mono text-xs">{exec.wallMs}ms</td>
+                          <td className="px-4 py-3 font-mono text-xs">
+                            <Link
+                              href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
+                              className="block"
+                            >
+                              {exec.wallMs}ms
+                            </Link>
+                          </td>
                           <td className="whitespace-nowrap px-4 py-3 text-right text-[var(--color-bone-faint)]">
-                            {formatDistanceToNow(exec.startedAt, { addSuffix: true })}
+                            <Link
+                              href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
+                              className="block"
+                            >
+                              {formatDistanceToNow(exec.startedAt, { addSuffix: true })}
+                            </Link>
                           </td>
                         </tr>
                       ))}

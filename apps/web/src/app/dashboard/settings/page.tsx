@@ -1,17 +1,8 @@
-import {
-  SettingsCard,
-  SettingsCardContent,
-  SettingsCardDescription,
-  SettingsCardFooter,
-  SettingsCardHeader,
-  SettingsCardTitle,
-} from "@/components/settings/settings-card";
 import { requireActiveOrg } from "@/lib/session";
 import { db, schema } from "@hostfunc/db";
-import { Button } from "@/components/ui/button";
 import { eq } from "drizzle-orm";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ShieldCheck } from "lucide-react";
+import { GeneralSettingsClient } from "./general-settings-client";
 
 export default async function GeneralOrgSettingsPage() {
   const { orgId } = await requireActiveOrg();
@@ -21,62 +12,24 @@ export default async function GeneralOrgSettingsPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-[var(--color-bone)]">General</h3>
-        <p className="text-sm text-[var(--color-bone-muted)]">
-          Update your organization's display name and primary identifier.
-        </p>
+    <div className="animate-in space-y-10 fade-in duration-500 pb-10">
+      <div className="flex flex-col justify-between gap-6 border-b border-[var(--color-border)] pb-6 md:flex-row md:items-center">
+        <div>
+          <h3 className="flex items-center gap-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
+            General Settings <ShieldCheck className="h-6 w-6 text-[var(--color-amber)]" />
+          </h3>
+          <p className="mt-2 max-w-xl leading-relaxed text-[var(--color-bone-muted)]">
+            Update workspace identity details used throughout your dashboard, links, and user-facing surfaces.
+          </p>
+        </div>
       </div>
 
-      <SettingsCard>
-        <SettingsCardHeader>
-          <SettingsCardTitle>Organization Name</SettingsCardTitle>
-          <SettingsCardDescription>
-            This is your organization's displayed name across the platform.
-          </SettingsCardDescription>
-        </SettingsCardHeader>
-        <SettingsCardContent>
-          <div className="grid max-w-6xl gap-2">
-            <Label htmlFor="orgName" className="sr-only">
-              Name
-            </Label>
-            <Input id="orgName" defaultValue={org?.name ?? ""} />
-          </div>
-        </SettingsCardContent>
-        <SettingsCardFooter className="justify-end">
-          <Button>Save Name</Button>
-        </SettingsCardFooter>
-      </SettingsCard>
-
-      <SettingsCard>
-        <SettingsCardHeader>
-          <SettingsCardTitle>Organization Slug</SettingsCardTitle>
-          <SettingsCardDescription>
-            Used in URLs to identify your organization. Once changed, old links will break.
-          </SettingsCardDescription>
-        </SettingsCardHeader>
-        <SettingsCardContent>
-          <div className="grid max-w-6xl gap-2">
-            <Label htmlFor="orgSlug" className="sr-only">
-              Slug
-            </Label>
-            <div className="flex items-center rounded-md border border-[var(--color-border)] shadow-sm focus-within:ring-1 focus-within:ring-[var(--color-amber)]">
-              <span className="rounded-l-md border-r border-[var(--color-border)] bg-white/[0.04] px-3 py-2 text-sm text-[var(--color-bone-faint)]">
-                hostfunc.com/
-              </span>
-              <Input
-                id="orgSlug"
-                defaultValue={org?.slug ?? ""}
-                className="rounded-l-none border-0 bg-transparent text-[var(--color-bone)] shadow-none focus-visible:ring-0"
-              />
-            </div>
-          </div>
-        </SettingsCardContent>
-        <SettingsCardFooter className="justify-end">
-          <Button variant="destructive">Update Slug</Button>
-        </SettingsCardFooter>
-      </SettingsCard>
+      <section className="space-y-4">
+        <div className="flex items-center gap-2">
+          <h4 className="text-lg font-semibold text-[var(--color-bone)]">Workspace Identity</h4>
+        </div>
+        <GeneralSettingsClient initialName={org?.name ?? ""} initialSlug={org?.slug ?? ""} />
+      </section>
     </div>
   );
 }
