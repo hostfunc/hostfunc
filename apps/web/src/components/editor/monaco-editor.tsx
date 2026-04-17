@@ -98,10 +98,10 @@ export function MonacoEditor({ value, packageNames, onChange, onSave }: Props) {
   const handleMount: OnMount = (editor, monaco) => {
     monacoRef.current = monaco;
 
-    // Inject @hostfunc/fn types into Monaco's virtual filesystem
+    // Inject @hostfunc/sdk types into Monaco's virtual filesystem
     monaco.languages.typescript.typescriptDefaults.addExtraLib(
       HOSTFUNC_TYPES_DTS,
-      "file:///node_modules/@hostfunc/fn/index.d.ts",
+      "file:///node_modules/@hostfunc/sdk/index.d.ts",
     );
     monaco.languages.typescript.typescriptDefaults.addExtraLib(
       HOSTFUNC_TYPES_DTS,

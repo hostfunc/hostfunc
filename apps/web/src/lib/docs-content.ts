@@ -58,6 +58,15 @@ export const docsSections: DocsSection[] = [
       { name: "MCP", href: "/docs/mcp" },
     ],
   },
+  {
+    title: "SDK",
+    links: [
+      { name: "@hostfunc/sdk", href: "/docs/sdk" },
+      { name: "AI module", href: "/docs/sdk/ai" },
+      { name: "Agent module", href: "/docs/sdk/agent" },
+      { name: "Vector module", href: "/docs/sdk/vector" },
+    ],
+  },
 ];
 
 export const docsPages: Record<string, DocsPageContent> = {
@@ -74,7 +83,7 @@ export const docsPages: Record<string, DocsPageContent> = {
     related: [
       { label: "Go to dashboard", href: "/dashboard" },
       { label: "View triggers docs", href: "/docs/triggers" },
-      { label: "View CLI docs", href: "/docs/cli" },
+      { label: "View SDK docs", href: "/docs/sdk" },
     ],
   },
   "/docs/getting-started": {
@@ -680,6 +689,64 @@ hostfunc secrets set CLAUDE_API_KEY <value>`,
     related: [
       { label: "Security", href: "/docs/security" },
       { label: "CLI", href: "/docs/cli" },
+    ],
+  },
+  "/docs/sdk": {
+    title: "@hostfunc/sdk",
+    summary:
+      "The hostfunc runtime SDK provides composable function calls, secret access, AI helpers, agent orchestration, and vector operations.",
+    highlights: [
+      "Import core APIs from `@hostfunc/sdk` (`executeFunction`, `secret`, `log`).",
+      "Import AI helpers from `@hostfunc/sdk/ai` (`askAi`, `streamAi`, `createEmbedding`).",
+      "Import agent helpers from `@hostfunc/sdk/agent` (`createAgent`, `runAgent`).",
+      "Import vector helpers from `@hostfunc/sdk/vector` (`upsert`, `query`, `deleteVectors`, `getNamespace`).",
+    ],
+    related: [
+      { label: "AI module", href: "/docs/sdk/ai" },
+      { label: "Agent module", href: "/docs/sdk/agent" },
+      { label: "Vector module", href: "/docs/sdk/vector" },
+    ],
+  },
+  "/docs/sdk/ai": {
+    title: "SDK AI Module",
+    summary:
+      "Use `@hostfunc/sdk/ai` to call workspace AI providers for text generation and embeddings.",
+    highlights: [
+      "`askAi(prompt, options)` returns structured model output with usage metadata.",
+      "`streamAi(prompt, options)` yields async stream chunks for incremental responses.",
+      "`createEmbedding(text)` returns numeric vectors for semantic indexing and search.",
+    ],
+    related: [
+      { label: "SDK overview", href: "/docs/sdk" },
+      { label: "Vector module", href: "/docs/sdk/vector" },
+    ],
+  },
+  "/docs/sdk/agent": {
+    title: "SDK Agent Module",
+    summary:
+      "Use `@hostfunc/sdk/agent` to create and run autonomous jobs with structured status and step traces.",
+    highlights: [
+      "`createAgent(config)` provisions a queued agent run.",
+      "`runAgent(config)` starts execution immediately and returns status metadata.",
+      "Agent payloads support goals, model selection, tool whitelists, and max-step limits.",
+    ],
+    related: [
+      { label: "SDK overview", href: "/docs/sdk" },
+      { label: "MCP", href: "/docs/mcp" },
+    ],
+  },
+  "/docs/sdk/vector": {
+    title: "SDK Vector Module",
+    summary:
+      "Use `@hostfunc/sdk/vector` for vector CRUD and retrieval workflows.",
+    highlights: [
+      "`upsert(namespace, vectors)` writes vectors and metadata.",
+      "`query(namespace, embedding, options)` performs top-K similarity search.",
+      "`deleteVectors(namespace, ids)` removes vectors; `getNamespace(name)` creates a scoped helper API.",
+    ],
+    related: [
+      { label: "SDK overview", href: "/docs/sdk" },
+      { label: "AI module", href: "/docs/sdk/ai" },
     ],
   },
 };

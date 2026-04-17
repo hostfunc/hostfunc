@@ -5,7 +5,7 @@ const config: NextConfig = {
   output: "standalone",
   transpilePackages: [
     "@hostfunc/db",
-    "@hostfunc/fn",
+    "@hostfunc/sdk",
     "@hostfunc/mcp-tools",
     "@hostfunc/executor-core",
     "@hostfunc/executor-cloudflare",
