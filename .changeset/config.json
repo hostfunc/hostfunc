@@ -7,5 +7,13 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@hostfunc/web", "@hostfunc/api", "@hostfunc/runtime", "@hostfunc/mcp"]
+  "ignore": [
+    "@hostfunc/cron",
+    "@hostfunc/docs",
+    "@hostfunc/email",
+    "@hostfunc/outbound",
+    "@hostfunc/runtime",
+    "@hostfunc/tail",
+    "@hostfunc/web"
+  ]
 }
