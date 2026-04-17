@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
+import { motion } from "framer-motion";
 import {
   assertMarketingContent,
   marketingContent,
@@ -10,6 +11,7 @@ import {
   Activity,
   ArrowRight,
   Calendar,
+  Check,
   Code,
   Gauge,
   GitBranch,
@@ -53,6 +55,7 @@ export default function HomePage() {
   const { data: session, isPending } = useSession();
   assertMarketingContent();
   const primaryHref = session ? "/dashboard" : marketingContent.primaryCta.href;
+  const pricingCtaHref = session ? "/dashboard/settings/billing" : "/login";
 
   return (
     <main className="relative min-h-screen bg-[var(--color-ink)] text-[var(--color-bone)]">
@@ -262,11 +265,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-6">
           <SectionHeader
             eyebrow={marketingContent.composition.eyebrow}
-            title={
-              <>
-                <span className="italic">{marketingContent.composition.headline}</span>
-              </>
-            }
+            title={<span className="italic">{marketingContent.composition.headline}</span>}
             body={marketingContent.composition.body}
           />
           <div className="mt-16 grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-center">
@@ -300,7 +299,7 @@ export default function HomePage() {
               </p>
               <div className="mt-8 flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-ink-elevated)] px-4 py-3 font-mono text-sm">
                 <span className="text-[var(--color-bone-faint)]">$</span>
-                <span className="text-[var(--color-bone)]">npm i -g hostfunc</span>
+                <span className="text-[var(--color-bone)]">npm i -g @hostfunc/cli</span>
               </div>
             </div>
             <TerminalDemo sequence={marketingContent.cli.sequence} />
@@ -314,13 +313,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-6">
           <SectionHeader
             eyebrow={marketingContent.architecture.eyebrow}
-            title={
-              <>
-                <span className="italic">
-                  {marketingContent.architecture.headline}
-                </span>
-              </>
-            }
+            title={<span className="italic">{marketingContent.architecture.headline}</span>}
             body={marketingContent.architecture.body}
           />
           <div className="mt-20">
@@ -410,9 +403,84 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ────────────────────────────── PRICING ───────────────────────────────── */}
+      <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
+        <div className="mx-auto max-w-7xl px-6">
+          <SectionHeader
+            eyebrow={marketingContent.pricing.eyebrow}
+            title={
+              <>
+                {marketingContent.pricing.headline.split(".")[0]}.{" "}
+                <span className="italic text-[var(--color-bone-muted)]">
+                  {marketingContent.pricing.headline.split(".").slice(1).join(".").trim()}
+                </span>
+              </>
+            }
+            body={marketingContent.pricing.body}
+          />
+          <div className="mt-16 grid gap-5 lg:grid-cols-3">
+            {marketingContent.pricing.plans.map((plan, index) => (
+              <motion.div
+                key={plan.slug}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ duration: 0.45, delay: index * 0.08 }}
+                className={`group rounded-2xl border bg-[var(--color-ink-elevated)]/75 p-6 transition-all duration-300 hover:-translate-y-0.5 ${
+                  plan.highlighted
+                    ? "border-[var(--color-amber)]/45 shadow-[0_0_0_1px_rgba(232,163,23,0.2),0_20px_50px_rgba(232,163,23,0.08)]"
+                    : "border-[var(--color-border)] hover:border-[var(--color-border-strong)]"
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-[var(--color-bone-faint)]">{plan.name}</p>
+                    <div className="mt-3 flex items-baseline gap-1">
+                      <span className="font-display text-4xl leading-none text-[var(--color-bone)]">{plan.priceMonthly}</span>
+                      <span className="text-sm text-[var(--color-bone-muted)]">/month</span>
+                    </div>
+                  </div>
+                  {plan.highlighted ? (
+                    <span className="rounded-full border border-[var(--color-amber)]/40 bg-[var(--color-amber)]/15 px-2.5 py-1 text-[10px] uppercase tracking-wider text-[var(--color-amber)]">
+                      Popular
+                    </span>
+                  ) : null}
+                </div>
+
+                <p className="mt-4 text-sm leading-relaxed text-[var(--color-bone-muted)]">{plan.description}</p>
+
+                <div className="mt-6 space-y-3">
+                  {[plan.executionsPerDay, plan.workspaces, plan.teamMembers, plan.runtime].map((item) => (
+                    <div key={`${plan.slug}-${item}`} className="flex items-center gap-2 text-sm text-[var(--color-bone)]">
+                      <Check className="size-4 text-[var(--color-amber)]" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <Button
+                  asChild
+                  className={`mt-7 h-11 w-full rounded-full text-sm font-medium ${
+                    plan.highlighted
+                      ? "bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+                      : "border border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone)] hover:bg-white/[0.05]"
+                  }`}
+                  variant={plan.highlighted ? "default" : "outline"}
+                >
+                  <Link href={pricingCtaHref}>
+                    {session ? "Manage plan" : "Get started"}
+                    <ArrowRight className="ml-2 size-4" />
+                  </Link>
+                </Button>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ───────────────────────────── COMMUNITY ──────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
-        <div className="mx-auto max-w-5xl px-6">
+        <div className="mx-auto max-w-7xl px-6">
           <div className="grid gap-16 md:grid-cols-2 md:items-center">
             <div>
               <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-amber)]">

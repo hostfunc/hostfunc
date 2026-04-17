@@ -2,7 +2,18 @@
 
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Blocks, Bot, CreditCard, KeyRound, Settings, Users, type LucideIcon } from "lucide-react";
+import {
+  Activity,
+  Blocks,
+  Bot,
+  CreditCard,
+  GitBranch,
+  KeyRound,
+  type LucideIcon,
+  Settings,
+  Users,
+  Zap,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type * as React from "react";
@@ -14,6 +25,9 @@ const SETTINGS_ICONS = {
   blocks: Blocks,
   keyRound: KeyRound,
   bot: Bot,
+  zap: Zap,
+  activity: Activity,
+  gitBranch: GitBranch,
 } as const satisfies Record<string, LucideIcon>;
 
 export interface SettingsNavItem {
@@ -69,7 +83,9 @@ export function SettingsLayout({
             </Link>
           )}
           <h2 className="font-display text-2xl tracking-tight text-[var(--color-bone)]">{title}</h2>
-          {description && <p className="mt-1 text-sm text-[var(--color-bone-muted)]">{description}</p>}
+          {description && (
+            <p className="mt-1 text-sm text-[var(--color-bone-muted)]">{description}</p>
+          )}
         </div>
         <nav className="flex rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-2 lg:flex-col lg:space-y-1">
           {navItems.map((item) => {
@@ -85,7 +101,9 @@ export function SettingsLayout({
                 href={item.href}
                 className={cn(
                   "relative flex items-center justify-start rounded-md px-3 py-2 text-sm font-medium transition-colors hover:text-foreground",
-                  isActive ? "text-[var(--color-bone)]" : "text-[var(--color-bone-muted)] hover:text-[var(--color-bone)]",
+                  isActive
+                    ? "text-[var(--color-bone)]"
+                    : "text-[var(--color-bone-muted)] hover:text-[var(--color-bone)]",
                 )}
               >
                 {isActive && (

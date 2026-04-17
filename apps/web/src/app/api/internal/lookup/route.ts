@@ -10,8 +10,20 @@ export async function GET(req: NextRequest) {
   }
 
   const owner = req.nextUrl.searchParams.get("owner");
+  if (owner) {
+    return Response.json(
+      {
+        ok: false,
+        error: "legacy_lookup_params",
+        message: "owner/slug lookup is deprecated. Use org/slug lookup.",
+      },
+      { status: 410 },
+    );
+  }
+
+  const org = req.nextUrl.searchParams.get("org");
   const slug = req.nextUrl.searchParams.get("slug");
-  if (!owner || !slug) {
+  if (!org || !slug) {
     return Response.json({ ok: false, error: "missing_params" }, { status: 400 });
   }
 
@@ -23,8 +35,9 @@ export async function GET(req: NextRequest) {
       versionId: schema.fnVersion.id,
     })
     .from(schema.fn)
+    .innerJoin(schema.organization, eq(schema.organization.id, schema.fn.orgId))
     .leftJoin(schema.fnVersion, eq(schema.fnVersion.id, schema.fn.currentVersionId))
-    .where(and(eq(schema.fn.createdById, owner), eq(schema.fn.slug, slug)))
+    .where(and(eq(schema.organization.slug, org), eq(schema.fn.slug, slug)))
     .limit(1);
 
   const row = rows[0];

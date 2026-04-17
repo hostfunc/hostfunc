@@ -7,16 +7,19 @@ import { signIn } from "@/lib/auth-client";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, CheckCircle2, Hexagon, Loader2, Mail } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
 type AuthStep = "options" | "email";
 
 export default function LoginPage() {
+  const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [pending, setPending] = useState(false);
   const [authStep, setAuthStep] = useState<AuthStep>("options");
+  const callbackURL = params.get("from") || "/dashboard";
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,7 +30,7 @@ export default function LoginPage() {
       await trackClientEvent("auth_magic_link_attempt", { method: "email" });
       await signIn.magicLink({
         email,
-        callbackURL: "/dashboard",
+        callbackURL,
       });
       await trackClientEvent("auth_magic_link_sent", { method: "email" });
       setSent(true);
@@ -46,7 +49,7 @@ export default function LoginPage() {
       await trackClientEvent("auth_social_attempt", { provider });
       await signIn.social({
         provider,
-        callbackURL: "/dashboard",
+        callbackURL,
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unable to continue with social login";
@@ -95,10 +98,12 @@ export default function LoginPage() {
             </div>
             <h1 className="mt-6 font-display text-5xl leading-[1.04] tracking-tight text-[var(--color-bone)]">
               Welcome back.
-              <span className="block italic text-[var(--color-amber)]">Build at function speed.</span>
+              <span className="block italic text-[var(--color-amber)]">
+                Build at function speed.
+              </span>
             </h1>
             <p className="mt-5 max-w-md text-base leading-relaxed text-[var(--color-bone-muted)]">
-              Sign in with GitHub, Google, or magic link. 
+              Sign in with GitHub, Google, or magic link.
             </p>
             <div className="mt-8 grid gap-3 text-xs uppercase tracking-wider text-[var(--color-bone-faint)]">
               <p>OAuth + magic links</p>
@@ -115,7 +120,9 @@ export default function LoginPage() {
           >
             <div className="overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/90 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:p-10">
               <div className="mb-8 text-center">
-                <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-amber)]">Authentication</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-amber)]">
+                  Authentication
+                </p>
                 <h2 className="mt-3 font-display text-3xl leading-tight text-[var(--color-bone)]">
                   Access your workspace
                 </h2>
@@ -174,7 +181,10 @@ export default function LoginPage() {
                       transition={{ duration: 0.22, ease: "easeOut" }}
                     >
                       <div className="space-y-2">
-                        <label htmlFor="email" className="text-xs uppercase tracking-[0.2em] text-[var(--color-bone-faint)]">
+                        <label
+                          htmlFor="email"
+                          className="text-xs uppercase tracking-[0.2em] text-[var(--color-bone-faint)]"
+                        >
                           Email
                         </label>
                         <div className="relative flex items-center">
@@ -235,10 +245,13 @@ export default function LoginPage() {
                     <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/12 ring-1 ring-emerald-500/30">
                       <CheckCircle2 className="h-8 w-8 text-emerald-400" />
                     </div>
-                    <h2 className="text-xl font-semibold text-[var(--color-bone)]">Check your email</h2>
+                    <h2 className="text-xl font-semibold text-[var(--color-bone)]">
+                      Check your email
+                    </h2>
                     <p className="mt-2 text-sm text-[var(--color-bone-muted)]">
-                      We sent a magic link to <span className="font-semibold text-[var(--color-bone)]">{email}</span>.
-                      Click the link to securely sign in.
+                      We sent a magic link to{" "}
+                      <span className="font-semibold text-[var(--color-bone)]">{email}</span>. Click
+                      the link to securely sign in.
                     </p>
                     <div className="mt-7 w-full border-t border-[var(--color-border)] pt-5">
                       <p className="text-[11px] text-[var(--color-bone-faint)]">
@@ -266,11 +279,17 @@ export default function LoginPage() {
 
               <p className="pt-6 text-center text-[11px] text-[var(--color-bone-faint)]">
                 By continuing, you agree to our{" "}
-                <Link href="#" className="underline underline-offset-4 transition-colors hover:text-[var(--color-bone)]">
+                <Link
+                  href="#"
+                  className="underline underline-offset-4 transition-colors hover:text-[var(--color-bone)]"
+                >
                   Terms of Service
                 </Link>{" "}
                 and{" "}
-                <Link href="#" className="underline underline-offset-4 transition-colors hover:text-[var(--color-bone)]">
+                <Link
+                  href="#"
+                  className="underline underline-offset-4 transition-colors hover:text-[var(--color-bone)]"
+                >
                   Privacy Policy
                 </Link>
                 .

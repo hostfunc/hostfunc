@@ -64,7 +64,7 @@ export default function DocsPage({ params }: { params: { slug?: string[] } }) {
           </div>
         </section>
 
-        <section>
+        {/* <section>
           <h2 className="mb-6 text-2xl font-bold tracking-tight text-[var(--color-bone)]">Key capabilities</h2>
           <div className="grid gap-4">
             {content.highlights.map((item) => (
@@ -77,7 +77,7 @@ export default function DocsPage({ params }: { params: { slug?: string[] } }) {
               </div>
             ))}
           </div>
-        </section>
+        </section> */}
       </div>
 
       {/* Footer Navigation */}

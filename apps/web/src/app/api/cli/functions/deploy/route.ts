@@ -22,7 +22,6 @@ export async function POST(req: NextRequest) {
     .select({
       id: schema.fn.id,
       slug: schema.fn.slug,
-      owner: schema.fn.createdById,
       currentVersionId: schema.fn.currentVersionId,
     })
     .from(schema.fn)
@@ -30,6 +29,13 @@ export async function POST(req: NextRequest) {
     .limit(1);
   const fnRow = fnRows[0];
   if (!fnRow) return Response.json({ error: "not_found" }, { status: 404 });
+  const orgRows = await db
+    .select({ slug: schema.organization.slug })
+    .from(schema.organization)
+    .where(eq(schema.organization.id, actor.orgId))
+    .limit(1);
+  const orgSlug = orgRows[0]?.slug;
+  if (!orgSlug) return Response.json({ error: "org_not_found" }, { status: 404 });
   await getFunctionPackagesForOrg(actor.orgId, body.fnId);
   const orgPlan = await getOrgPlan(actor.orgId);
   const maxActiveFunctions = orgPlan?.limits.maxFunctions ?? 3;
@@ -112,10 +118,13 @@ export async function POST(req: NextRequest) {
     return Response.json({
       ok: true,
       versionId,
-      runUrl: `${env.HOSTFUNC_RUNTIME_URL}/run/${fnRow.owner}/${fnRow.slug}`,
+      runUrl: `${env.HOSTFUNC_RUNTIME_URL}/run/${orgSlug}/${fnRow.slug}`,
     });
   } catch (error) {
-    await db.update(schema.fnVersion).set({ status: "failed" }).where(eq(schema.fnVersion.id, versionId));
+    await db
+      .update(schema.fnVersion)
+      .set({ status: "failed" })
+      .where(eq(schema.fnVersion.id, versionId));
     await trackServerEvent({
       event: "cli_deploy_failed",
       distinctId: actor.userId,

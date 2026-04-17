@@ -1,6 +1,6 @@
 "use server";
 
-import { requireActiveOrg } from "@/lib/session";
+import { requireOrgPermission } from "@/lib/session";
 import {
   deleteTriggerForFunction,
   listTriggersForFunction,
@@ -48,13 +48,13 @@ const mcpSchema = z.object({
 });
 
 export async function loadTriggers(fnId: string) {
-  const { orgId } = await requireActiveOrg();
+  const { orgId } = await requireOrgPermission("view_workspace");
   await assertOrgOwnsFunction(orgId, fnId);
   return listTriggersForFunction(orgId, fnId);
 }
 
 export async function saveHttpTrigger(input: z.infer<typeof httpSchema>) {
-  const { orgId } = await requireActiveOrg();
+  const { orgId } = await requireOrgPermission("manage_triggers");
   const parsed = httpSchema.parse(input);
   await assertOrgOwnsFunction(orgId, parsed.fnId);
   await upsertTriggerForFunction({
@@ -68,7 +68,7 @@ export async function saveHttpTrigger(input: z.infer<typeof httpSchema>) {
 }
 
 export async function saveCronTrigger(input: z.infer<typeof cronSchema>) {
-  const { orgId } = await requireActiveOrg();
+  const { orgId } = await requireOrgPermission("manage_triggers");
   const parsed = cronSchema.parse(input);
   await assertOrgOwnsFunction(orgId, parsed.fnId);
   await upsertTriggerForFunction({
@@ -82,7 +82,7 @@ export async function saveCronTrigger(input: z.infer<typeof cronSchema>) {
 }
 
 export async function saveEmailTrigger(input: z.infer<typeof emailSchema>) {
-  const { orgId } = await requireActiveOrg();
+  const { orgId } = await requireOrgPermission("manage_triggers");
   const parsed = emailSchema.parse(input);
   await assertOrgOwnsFunction(orgId, parsed.fnId);
   await upsertTriggerForFunction({
@@ -96,7 +96,7 @@ export async function saveEmailTrigger(input: z.infer<typeof emailSchema>) {
 }
 
 export async function saveMcpTrigger(input: z.infer<typeof mcpSchema>) {
-  const { orgId } = await requireActiveOrg();
+  const { orgId } = await requireOrgPermission("manage_triggers");
   const parsed = mcpSchema.parse(input);
   await assertOrgOwnsFunction(orgId, parsed.fnId);
   await upsertTriggerForFunction({
@@ -109,15 +109,19 @@ export async function saveMcpTrigger(input: z.infer<typeof mcpSchema>) {
   revalidatePath(`/dashboard/${parsed.fnId}/settings/triggers`);
 }
 
-export async function setTriggerEnabled(fnId: string, kind: "http" | "cron" | "email" | "mcp", enabled: boolean) {
-  const { orgId } = await requireActiveOrg();
+export async function setTriggerEnabled(
+  fnId: string,
+  kind: "http" | "cron" | "email" | "mcp",
+  enabled: boolean,
+) {
+  const { orgId } = await requireOrgPermission("manage_triggers");
   await assertOrgOwnsFunction(orgId, fnId);
   await toggleTriggerForFunction({ orgId, fnId, kind, enabled });
   revalidatePath(`/dashboard/${fnId}/settings/triggers`);
 }
 
 export async function removeTrigger(fnId: string, kind: "cron" | "email" | "mcp") {
-  const { orgId } = await requireActiveOrg();
+  const { orgId } = await requireOrgPermission("manage_triggers");
   await assertOrgOwnsFunction(orgId, fnId);
   await deleteTriggerForFunction(orgId, fnId, kind);
   revalidatePath(`/dashboard/${fnId}/settings/triggers`);

@@ -2,6 +2,12 @@ import { db, schema, sql } from "@hostfunc/db";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "./auth";
+import {
+  type OrgPermission,
+  type OrgRole,
+  hasOrgPermission,
+  normalizeOrgRole,
+} from "./permissions";
 
 function compatWhere<T>(value: T): T {
   return value;
@@ -52,4 +58,44 @@ export async function requireActiveOrg() {
   }
 
   return { session, orgId };
+}
+
+export async function getActiveMembership() {
+  const { session, orgId } = await requireActiveOrg();
+  const rows = await db
+    .select({
+      id: schema.member.id,
+      role: schema.member.role,
+    })
+    .from(schema.member)
+    .where(
+      compatWhere(
+        sql`${schema.member.organizationId} = ${orgId} and ${schema.member.userId} = ${session.user.id}`,
+      ) as never,
+    )
+    .limit(1);
+  const row = rows[0];
+  if (!row) throw new Error("active_membership_not_found");
+  return {
+    session,
+    orgId,
+    memberId: row.id,
+    role: normalizeOrgRole(row.role),
+  };
+}
+
+export async function requireOrgRole(allowedRoles: OrgRole[]) {
+  const membership = await getActiveMembership();
+  if (!allowedRoles.includes(membership.role)) {
+    throw new Error("forbidden");
+  }
+  return membership;
+}
+
+export async function requireOrgPermission(permission: OrgPermission) {
+  const membership = await getActiveMembership();
+  if (!hasOrgPermission(membership.role, permission)) {
+    throw new Error("forbidden");
+  }
+  return membership;
 }

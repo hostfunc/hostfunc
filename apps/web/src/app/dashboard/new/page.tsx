@@ -3,11 +3,12 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TEMPLATES } from "@/lib/templates";
+import { FUNCTION_TEMPLATES, TEMPLATES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { Activity, ArrowRight, CheckCircle2, Clock, Code, Terminal, Zap } from "lucide-react";
-import { useActionState, useState } from "react";
+import { Activity, ArrowRight, CheckCircle2, Code, Globe, Monitor, Sparkles, Terminal, Wrench } from "lucide-react";
+import { useActionState, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createFunctionAction } from "./actions";
 
 // Make Monaco optional or load via standard lazy loading to prevent quick layout disruption
@@ -15,32 +16,31 @@ import { createFunctionAction } from "./actions";
 // but since Monaco is provided, we can use it, or fallback to a custom block. We'll use a custom block to make it look
 // glowing and beautiful without monaco loading flashes.
 
-const TEMPLATE_OPTIONS = [
-  {
-    id: "hello-world",
-    title: "Hello World",
-    description: "A basic API endpoint resolving a simple JSON response.",
-    icon: Terminal,
-    color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  },
-  {
-    id: "webhook",
-    title: "Webhook Handler",
-    description: "Receive and validate HTTP callbacks from Stripe or GitHub.",
-    icon: Zap,
-    color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  },
-  {
-    id: "cron",
-    title: "Scheduled Cron",
-    description: "Run periodic tasks based on interval timers.",
-    icon: Clock,
-    color: "bg-violet-500/10 text-violet-500 border-violet-500/20",
-  },
-];
-
 export default function NewFunctionPage() {
+  const searchParams = useSearchParams();
+  const requestedTemplateId = searchParams.get("template");
+  const availableIds = useMemo(
+    () => new Set(FUNCTION_TEMPLATES.map((template) => template.id)),
+    [],
+  );
   const [selectedTemplate, setSelectedTemplate] = useState("hello-world");
+  const templateOptions = useMemo(
+    () =>
+      FUNCTION_TEMPLATES.map((template) => ({
+        id: template.id,
+        title: template.name,
+        description: template.description,
+        icon: resolveTemplateIcon(template.category),
+        color: template.accentClass,
+      })),
+    [],
+  );
+
+  useEffect(() => {
+    if (!requestedTemplateId) return;
+    if (!availableIds.has(requestedTemplateId)) return;
+    setSelectedTemplate(requestedTemplateId);
+  }, [requestedTemplateId, availableIds]);
 
   // React 19 standard hook for async Server Actions in client components
   // biome-ignore lint/suspicious/noExplicitAny: Standard form action
@@ -109,7 +109,7 @@ export default function NewFunctionPage() {
                 Starter Template
               </Label>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
-                {TEMPLATE_OPTIONS.map((tmpl) => {
+                {templateOptions.map((tmpl) => {
                   const isActive = selectedTemplate === tmpl.id;
                   const Icon = tmpl.icon;
 
@@ -200,90 +200,137 @@ export default function NewFunctionPage() {
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-primary/5 via-transparent to-transparent opacity-50 transition-opacity group-hover:opacity-100" />
 
         <div className="pt-14 p-6 overflow-auto w-full flex">
-          <div className="text-gray-600 text-xs font-mono text-right select-none pr-4 space-y-1">
-            {(TEMPLATES[selectedTemplate] || "").split("\\n").map((_: string, i: number) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: line numbers are order-dependent
-              <div key={i}>{i + 1}</div>
-            ))}
-          </div>
-          <AnimatePresence mode="wait">
-            <motion.pre
-              key={selectedTemplate}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: 0.2 }}
-              className="text-sm font-mono leading-relaxed"
-            >
-              <code>
-                {(TEMPLATES[selectedTemplate] || "").split("\\n").map((line: string, i: number) => {
-                  // biome-ignore lint/suspicious/noArrayIndexKey: line numbers are order-dependent
-                  // biome-ignore lint/security/noDangerouslySetInnerHtml: intentional syntax highlighter
-                  if (line.trim().startsWith("//")) {
-                    return (
-                      <div
-                        key={i}
-                        dangerouslySetInnerHTML={{
-                          __html: `<span class="text-[#8b949e]">${line}</span>`,
-                        }}
-                        className="h-5"
-                      />
-                    );
-                  }
-
-                  // A very basic glowing syntax highlight simulation
-                  let content = line;
-
-                  // Extract strings to prevent inner replacements
-                  content = content.replace(/"(.*?)"/g, "§DBL§$1§DBL§");
-                  content = content.replace(/'(.*?)'/g, "§SGL§$1§SGL§");
-                  content = content.replace(/`(.*?)`/g, "§TICK§$1§TICK§");
-
-                  // Keywords
-                  content = content.replace(
-                    /\b(import|from|export|async|function|return|if|const)\b/g,
-                    '<span class="text-[#ff7b72]">$1</span>',
-                  );
-
-                  // Functions
-                  content = content.replace(
-                    /\b(main|json|log)\( /g,
-                    '<span class="text-[#d2a8ff]">$1</span>(',
-                  ); // removed the space on purpose
-                  content = content.replace(
-                    /\b(main|json|log)\(/g,
-                    '<span class="text-[#d2a8ff]">$1</span>(',
-                  );
-
-                  // Restore strings
-                  content = content.replace(
-                    /§DBL§(.*?)§DBL§/g,
-                    '<span class="text-[#a5d6ff]">"$1"</span>',
-                  );
-                  content = content.replace(
-                    /§SGL§(.*?)§SGL§/g,
-                    "<span class=\"text-[#a5d6ff]\">'$1'</span>",
-                  );
-                  content = content.replace(
-                    /§TICK§(.*?)§TICK§/g,
-                    '<span class="text-[#a5d6ff]">`$1`</span>',
-                  );
-
-                  // biome-ignore lint/suspicious/noArrayIndexKey: line numbers are order-dependent
-                  // biome-ignore lint/security/noDangerouslySetInnerHtml: intentional syntax highlighter
-                  return (
-                    <div
-                      key={i}
-                      dangerouslySetInnerHTML={{ __html: content || " " }}
-                      className="h-5"
-                    />
-                  );
-                })}
-              </code>
-            </motion.pre>
-          </AnimatePresence>
+          {(() => {
+            const previewCode = TEMPLATES[selectedTemplate] || "";
+            const lines = previewCode.split("\n");
+            const language = inferPreviewLanguage(previewCode);
+            return (
+              <>
+                <div className="space-y-1 pr-4 text-right font-mono text-xs text-gray-600 select-none">
+                  {lines.map((line, lineIdx) => (
+                    <div key={`line-num-${lineIdx}-${line.length}`}>{lineIdx + 1}</div>
+                  ))}
+                </div>
+                <AnimatePresence mode="wait">
+                  <motion.pre
+                    key={selectedTemplate}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.2 }}
+                    className="min-w-0 text-sm font-mono leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                  >
+                    <code>
+                      {lines.map((line, lineIdx) => (
+                        <div
+                          key={`line-code-${lineIdx}-${line}`}
+                          className="min-h-5 whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                        >
+                          {tokenizePreviewLine(line, language).map((token, tokenIdx) => (
+                            <span
+                              key={`token-${lineIdx}-${tokenIdx}-${token.value}`}
+                              style={getPreviewTokenStyle(token.className)}
+                            >
+                              {token.value}
+                            </span>
+                          ))}
+                          {line.length === 0 ? " " : null}
+                        </div>
+                      ))}
+                    </code>
+                  </motion.pre>
+                </AnimatePresence>
+              </>
+            );
+          })()}
         </div>
       </div>
     </div>
   );
+}
+
+function resolveTemplateIcon(category: string) {
+  if (category === "ai") return Sparkles;
+  if (category === "integrations") return Globe;
+  if (category === "notifications") return Monitor;
+  if (category === "data") return Terminal;
+  return Wrench;
+}
+
+function inferPreviewLanguage(code: string): "typescript" | "json" | "bash" {
+  const trimmed = code.trim();
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) return "json";
+  if (trimmed.startsWith("#") || trimmed.startsWith("curl ")) return "bash";
+  return "typescript";
+}
+
+function tokenizePreviewLine(
+  line: string,
+  language: "typescript" | "json" | "bash",
+): Array<{ value: string; className?: string }> {
+  const patterns: Record<typeof language, RegExp> = {
+    typescript:
+      /(\/\/.*$|"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|`(?:\\.|[^`])*`|\b(?:import|export|default|async|await|function|return|const|let|var|if|else|try|catch|throw|new|class|interface|type|extends|implements|from|as|true|false|null|undefined)\b|\b(?:number|string|boolean|unknown|void|Record|Promise|Date)\b|\b\d+(?:\.\d+)?\b|\b[A-Za-z_$][A-Za-z0-9_$]*\s*(?=\())/g,
+    bash: /(#.*$|"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?|--?[A-Za-z0-9-]+|\b(?:npm|pnpm|npx|hostfunc|curl|node|export|cat|echo|cd|ls|pwd|git|docker)\b|\|\||&&|[|><])/g,
+    json:
+      /("(?:\\.|[^"])*"\s*:|"(?:\\.|[^"])*"|\b(?:true|false|null)\b|\b-?\d+(?:\.\d+)?\b|[{}\[\],:])/g,
+  };
+  const regex = patterns[language];
+  const result: Array<{ value: string; className?: string }> = [];
+  let lastIndex = 0;
+
+  for (const match of line.matchAll(regex)) {
+    const matched = match[0];
+    const start = match.index ?? 0;
+    if (start > lastIndex) result.push({ value: line.slice(lastIndex, start) });
+    result.push({ value: matched, className: getPreviewTokenClass(language, matched) });
+    lastIndex = start + matched.length;
+  }
+
+  if (lastIndex < line.length) result.push({ value: line.slice(lastIndex) });
+  if (result.length === 0) result.push({ value: line });
+  return result;
+}
+
+function getPreviewTokenClass(language: "typescript" | "bash" | "json", token: string): string {
+  if (language === "typescript") {
+    if (token.startsWith("//")) return "token comment";
+    if (token.startsWith('"') || token.startsWith("'") || token.startsWith("`")) return "token string";
+    if (/^[A-Za-z_$][A-Za-z0-9_$]*\s*(?=\()/.test(token)) return "token function";
+    if (/^(number|string|boolean|unknown|void|Record|Promise|Date)$/.test(token)) return "token type";
+    if (/^\d/.test(token)) return "token number";
+    if (/^(true|false|null|undefined)$/.test(token)) return "token keyword";
+    if (/^[@${}.:[\],()]+$/.test(token)) return "token punctuation";
+    return "token keyword";
+  }
+  if (language === "bash") {
+    if (token.startsWith("#")) return "token comment";
+    if (token.startsWith('"') || token.startsWith("'")) return "token string";
+    if (token.startsWith("$")) return "token variable";
+    if (/^\|\||&&|[|><]$/.test(token)) return "token operator";
+    if (token.startsWith("-")) return "token attr-name";
+    return "token function";
+  }
+  if (token.endsWith(":")) return "token property";
+  if (token.startsWith('"')) return "token string";
+  if (/^(true|false|null)$/.test(token)) return "token keyword";
+  if (/^-?\d/.test(token)) return "token number";
+  return "token punctuation";
+}
+
+function getPreviewTokenStyle(className?: string): { color?: string } | undefined {
+  if (!className) return undefined;
+  if (className.includes("comment")) return { color: "var(--color-syntax-comment)" };
+  if (className.includes("keyword")) return { color: "var(--color-syntax-keyword)" };
+  if (className.includes("string")) return { color: "var(--color-syntax-string)" };
+  if (className.includes("number")) return { color: "var(--color-syntax-number)" };
+  if (className.includes("function")) return { color: "var(--color-syntax-function)" };
+  if (className.includes("type")) return { color: "var(--color-syntax-type)" };
+  if (className.includes("property")) return { color: "var(--color-syntax-property)" };
+  if (className.includes("variable")) return { color: "var(--color-amber-hover)" };
+  if (className.includes("attr-name")) return { color: "var(--color-cyan)" };
+  if (className.includes("operator") || className.includes("punctuation")) {
+    return { color: "var(--color-bone-faint)" };
+  }
+  return undefined;
 }

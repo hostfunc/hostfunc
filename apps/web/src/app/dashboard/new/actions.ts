@@ -1,12 +1,12 @@
 "use server";
 
-import { requireActiveOrg } from "@/lib/session";
+import { requireOrgPermission } from "@/lib/session";
 import { createFunction } from "@/server/functions";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { TEMPLATES } from "@/lib/templates";
+import { TEMPLATES, TEMPLATE_IDS } from "@/lib/templates";
 
 const createSchema = z.object({
   slug: z
@@ -15,12 +15,15 @@ const createSchema = z.object({
     .max(64)
     .regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers, and hyphens"),
   description: z.string().max(280).optional().default(""),
-  templateId: z.string().default("hello-world"),
+  templateId: z
+    .string()
+    .default("hello-world")
+    .refine((templateId) => TEMPLATE_IDS.includes(templateId), "Unknown template"),
 });
 
 // biome-ignore lint/suspicious/noExplicitAny: Standard internal state type
 export async function createFunctionAction(_prevState: any, formData: FormData) {
-  const { session, orgId } = await requireActiveOrg();
+  const { session, orgId } = await requireOrgPermission("create_function");
 
   const parsed = createSchema.safeParse({
     slug: formData.get("slug"),

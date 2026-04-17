@@ -108,7 +108,10 @@ export default function TemplatesPage() {
 
       <section className="relative py-20">
         <div className="mx-auto max-w-7xl px-6">
-          <TemplatesShowcase templates={marketingContent.templates} primaryHref={primaryHref} />
+          <TemplatesShowcase
+            templates={marketingContent.templates}
+            primaryCreateHref={primaryHref}
+          />
         </div>
       </section>
 

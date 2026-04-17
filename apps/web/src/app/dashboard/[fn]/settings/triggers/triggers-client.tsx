@@ -42,16 +42,21 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
   const [mcpDescription, setMcpDescription] = useState(byKind.mcp?.config.mcp?.description ?? "");
 
   return (
-    <div className="space-y-5">
-      <section className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-4">
-        <h4 className="font-medium">HTTP trigger</h4>
+    <div className="space-y-6">
+      <section className="space-y-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-6 shadow-xl">
+        <h4 className="font-semibold text-[var(--color-bone)]">HTTP trigger</h4>
         <p className="text-sm text-[var(--color-bone-muted)]">
           Public runtime URL is always available. Set requireAuth for future edge auth enforcement.
         </p>
         <div className="flex gap-2">
-          <Input value={requireAuth} onChange={(e) => setRequireAuth(e.target.value)} />
+          <Input
+            value={requireAuth}
+            onChange={(e) => setRequireAuth(e.target.value)}
+            className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)] focus-visible:ring-[var(--color-amber)]"
+          />
           <Button
             disabled={pending}
+            className="h-11 rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
             onClick={() =>
               startTransition(() => saveHttpTrigger({ fnId, requireAuth: requireAuth === "true" }))
             }
@@ -61,15 +66,16 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
         </div>
       </section>
 
-      <section className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-4">
-        <h4 className="font-medium">Cron trigger</h4>
+      <section className="space-y-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-6 shadow-xl">
+        <h4 className="font-semibold text-[var(--color-bone)]">Cron trigger</h4>
         <div className="flex gap-2">
-          <Input value={cronSchedule} onChange={(e) => setCronSchedule(e.target.value)} placeholder="schedule" />
-          <Input value={cronTimezone} onChange={(e) => setCronTimezone(e.target.value)} placeholder="timezone" />
+          <Input value={cronSchedule} onChange={(e) => setCronSchedule(e.target.value)} placeholder="schedule" className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)] focus-visible:ring-[var(--color-amber)]" />
+          <Input value={cronTimezone} onChange={(e) => setCronTimezone(e.target.value)} placeholder="timezone" className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)] focus-visible:ring-[var(--color-amber)]" />
         </div>
         <div className="flex gap-2">
           <Button
             disabled={pending}
+            className="h-11 rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
             onClick={() =>
               startTransition(() =>
                 saveCronTrigger({
@@ -88,13 +94,14 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
               <Button
                 variant="outline"
                 disabled={pending}
+                className="h-11 rounded-full border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
                 onClick={() =>
                   startTransition(() => setTriggerEnabled(fnId, "cron", !byKind.cron?.enabled))
                 }
               >
                 {byKind.cron.enabled ? "Disable" : "Enable"}
               </Button>
-              <Button variant="outline" disabled={pending} onClick={() => startTransition(() => removeTrigger(fnId, "cron"))}>
+              <Button variant="outline" disabled={pending} className="h-11 rounded-full border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]" onClick={() => startTransition(() => removeTrigger(fnId, "cron"))}>
                 Remove
               </Button>
             </>
@@ -102,17 +109,19 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
         </div>
       </section>
 
-      <section className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-4">
-        <h4 className="font-medium">Email trigger</h4>
-        <Input value={emailAddress} onChange={(e) => setEmailAddress(e.target.value)} placeholder="inbound address" />
+      <section className="space-y-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-6 shadow-xl">
+        <h4 className="font-semibold text-[var(--color-bone)]">Email trigger</h4>
+        <Input value={emailAddress} onChange={(e) => setEmailAddress(e.target.value)} placeholder="inbound address" className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)] focus-visible:ring-[var(--color-amber)]" />
         <Input
           value={emailAllowlist}
           onChange={(e) => setEmailAllowlist(e.target.value)}
           placeholder="allowlist emails comma-separated"
+          className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)] focus-visible:ring-[var(--color-amber)]"
         />
         <div className="flex gap-2">
           <Button
             disabled={pending}
+            className="h-11 rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
             onClick={() =>
               startTransition(() =>
                 saveEmailTrigger({
@@ -134,13 +143,14 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
               <Button
                 variant="outline"
                 disabled={pending}
+                className="h-11 rounded-full border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
                 onClick={() =>
                   startTransition(() => setTriggerEnabled(fnId, "email", !byKind.email?.enabled))
                 }
               >
                 {byKind.email.enabled ? "Disable" : "Enable"}
               </Button>
-              <Button variant="outline" disabled={pending} onClick={() => startTransition(() => removeTrigger(fnId, "email"))}>
+              <Button variant="outline" disabled={pending} className="h-11 rounded-full border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]" onClick={() => startTransition(() => removeTrigger(fnId, "email"))}>
                 Remove
               </Button>
             </>
@@ -148,13 +158,14 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
         </div>
       </section>
 
-      <section className="space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/65 p-4">
-        <h4 className="font-medium">MCP trigger metadata</h4>
-        <Input value={mcpToolName} onChange={(e) => setMcpToolName(e.target.value)} placeholder="tool name" />
-        <Input value={mcpDescription} onChange={(e) => setMcpDescription(e.target.value)} placeholder="description" />
+      <section className="space-y-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-6 shadow-xl">
+        <h4 className="font-semibold text-[var(--color-bone)]">MCP trigger metadata</h4>
+        <Input value={mcpToolName} onChange={(e) => setMcpToolName(e.target.value)} placeholder="tool name" className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)] focus-visible:ring-[var(--color-amber)]" />
+        <Input value={mcpDescription} onChange={(e) => setMcpDescription(e.target.value)} placeholder="description" className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)] focus-visible:ring-[var(--color-amber)]" />
         <div className="flex gap-2">
           <Button
             disabled={pending}
+            className="h-11 rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
             onClick={() =>
               startTransition(() =>
                 saveMcpTrigger({
@@ -173,13 +184,14 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
               <Button
                 variant="outline"
                 disabled={pending}
+                className="h-11 rounded-full border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
                 onClick={() =>
                   startTransition(() => setTriggerEnabled(fnId, "mcp", !byKind.mcp?.enabled))
                 }
               >
                 {byKind.mcp.enabled ? "Disable" : "Enable"}
               </Button>
-              <Button variant="outline" disabled={pending} onClick={() => startTransition(() => removeTrigger(fnId, "mcp"))}>
+              <Button variant="outline" disabled={pending} className="h-11 rounded-full border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]" onClick={() => startTransition(() => removeTrigger(fnId, "mcp"))}>
                 Remove
               </Button>
             </>

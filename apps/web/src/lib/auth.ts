@@ -1,3 +1,4 @@
+import { sendTransactionalEmail } from "@/server/email";
 import { db, genId, schema, sql } from "@hostfunc/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -37,19 +38,40 @@ export const auth = betterAuth({
   plugins: [
     magicLink({
       sendMagicLink: async ({ email, url }) => {
-        if (env.RESEND_API_KEY) {
-          console.log(`[email] would send magic link to ${email}`);
-        } else {
-          console.log("\n────────────────────────────────────────");
-          console.log(`🔗 Magic link for ${email}:`);
-          console.log(url);
-          console.log("────────────────────────────────────────\n");
-        }
+        await sendTransactionalEmail({
+          to: email,
+          subject: "Your hostfunc sign-in link",
+          html: `
+            <p>Sign in to hostfunc by clicking the link below:</p>
+            <p><a href="${url}">Sign in to hostfunc</a></p>
+            <p>If you did not request this, you can ignore this email.</p>
+          `,
+          text: `Sign in to hostfunc: ${url}\n\nIf you did not request this, you can ignore this email.`,
+        });
       },
     }),
     organization({
       allowUserToCreateOrganization: true,
       organizationLimit: 1,
+      sendInvitationEmail: async (data) => {
+        const inviteLink = `${env.BETTER_AUTH_URL}/join?invitationId=${encodeURIComponent(data.id)}`;
+        const inviterName = data.inviter.user.name || data.inviter.user.email || "A teammate";
+        const orgName = data.organization.name || "your workspace";
+        await sendTransactionalEmail({
+          to: data.email,
+          subject: `Invitation to join ${orgName} on hostfunc`,
+          html: `
+            <p>${inviterName} invited you to join <strong>${orgName}</strong> on hostfunc.</p>
+            <p><a href="${inviteLink}">Accept invitation</a></p>
+            <p>If you were not expecting this invitation, you can ignore this email.</p>
+          `,
+          text: [
+            `${inviterName} invited you to join ${orgName} on hostfunc.`,
+            `Accept invitation: ${inviteLink}`,
+            "If you were not expecting this invitation, you can ignore this email.",
+          ].join("\n"),
+        });
+      },
     }),
   ],
   databaseHooks: {

@@ -3,8 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { organization, useActiveOrganization, useSession } from "@/lib/auth-client";
+import { hasOrgPermission } from "@/lib/permissions";
 import { useState } from "react";
 import { toast } from "sonner";
+import { resendInvitationEmail } from "./actions";
 
 import {
   Dialog,
@@ -106,14 +108,22 @@ function InviteMemberDialog() {
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
     if (!org?.id) return;
+    const normalizedEmail = email.trim().toLowerCase();
+    const hasPendingInvite = (org.invitations ?? []).some(
+      (invite) => invite.status === "pending" && invite.email.toLowerCase() === normalizedEmail,
+    );
+    if (hasPendingInvite) {
+      toast.error("A pending invitation already exists for this email.");
+      return;
+    }
     setPending(true);
     try {
       await organization.inviteMember({
-        email,
+        email: normalizedEmail,
         role,
         organizationId: org.id,
       });
-      toast.success(`Invitation sent to ${email}`);
+      toast.success(`Invitation sent to ${normalizedEmail}`);
       setEmail("");
       setRole("member");
       setOpen(false);
@@ -139,7 +149,9 @@ function InviteMemberDialog() {
               <UserPlus className="w-5 h-5 text-indigo-400" />
             </div>
             <div>
-              <DialogTitle className="text-lg text-[var(--color-bone)]">Invite Team Member</DialogTitle>
+              <DialogTitle className="text-lg text-[var(--color-bone)]">
+                Invite Team Member
+              </DialogTitle>
               <DialogDescription className="mt-0.5 text-sm text-[var(--color-bone-muted)]">
                 Send a magic link invitation to a new member of your organization.
               </DialogDescription>
@@ -343,13 +355,19 @@ export default function MembersOrgSettingsPage() {
   const members = org?.members ?? [];
   const invitations = org?.invitations?.filter((i) => i.status === "pending") ?? [];
 
-  const currentUserIsOwner = members.find((m) => m.userId === session?.user.id)?.role === "owner";
+  const currentUserRole = members.find((m) => m.userId === session?.user.id)?.role;
+  const canManageMembers = hasOrgPermission(currentUserRole, "manage_members");
 
   async function handleResendInvite(invitationId: string, email: string) {
     setResendingId(invitationId);
-    await new Promise((r) => setTimeout(r, 1000)); // simulate resend
-    toast.success(`Invite resent to ${email}`);
-    setResendingId(null);
+    try {
+      await resendInvitationEmail(invitationId);
+      toast.success(`Invite resent to ${email}`);
+    } catch {
+      toast.error("Failed to resend invitation");
+    } finally {
+      setResendingId(null);
+    }
   }
 
   async function handleCancelInvite(invitationId: string) {
@@ -371,11 +389,11 @@ export default function MembersOrgSettingsPage() {
             Team Members <Users className="h-6 w-6 text-[var(--color-amber)]" />
           </h3>
           <p className="mt-2 max-w-xl leading-relaxed text-[var(--color-bone-muted)]">
-            Manage who has access to this organization. Owners can invite new members, change roles,
-            and revoke access.
+            Manage who has access to this organization. Owners and admins can invite new members,
+            change roles, and revoke access.
           </p>
         </div>
-        {currentUserIsOwner && <InviteMemberDialog />}
+        {canManageMembers && <InviteMemberDialog />}
       </div>
 
       {/* Active Members */}
@@ -423,14 +441,14 @@ export default function MembersOrgSettingsPage() {
 
                   <div className="flex items-center gap-3 ml-4 shrink-0">
                     <RoleBadge role={member.role} />
-                    {currentUserIsOwner && (
+                    {canManageMembers && (
                       <MemberActions
                         memberId={member.id}
                         memberEmail={member.user?.email ?? ""}
                         currentRole={member.role}
                         isOwner={isOwner}
                         isSelf={isSelf}
-                        orgId={org!.id}
+                        orgId={org?.id ?? ""}
                         onUpdate={() => refetch()}
                       />
                     )}
@@ -443,7 +461,7 @@ export default function MembersOrgSettingsPage() {
       </section>
 
       {/* Pending Invitations */}
-      {invitations.length > 0 && (
+      {canManageMembers && invitations.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-4">
             <h4 className="text-lg font-semibold text-[var(--color-bone)]">Pending Invitations</h4>
@@ -466,7 +484,9 @@ export default function MembersOrgSettingsPage() {
                     <Mail className="w-4 h-4 text-muted-foreground" />
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[var(--color-bone)]">{invite.email}</p>
+                    <p className="truncate text-sm font-semibold text-[var(--color-bone)]">
+                      {invite.email}
+                    </p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <Clock className="w-3 h-3 text-muted-foreground" />
                       <p className="text-xs text-[var(--color-bone-faint)]">Invite pending</p>

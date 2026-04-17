@@ -1,8 +1,8 @@
 "use server";
 
 import { env } from "@/lib/env";
+import { requireOrgPermission, requireSession } from "@/lib/session";
 import { stripe } from "@/lib/stripe";
-import { requireActiveOrg, requireSession } from "@/lib/session";
 import { trackServerEvent } from "@/server/analytics";
 import { getEffectivePlan } from "@/server/plans";
 import { db, schema } from "@hostfunc/db";
@@ -11,7 +11,7 @@ import { redirect } from "next/navigation";
 
 export async function createCheckoutSession() {
   const { user } = await requireSession();
-  const { orgId } = await requireActiveOrg();
+  const { orgId } = await requireOrgPermission("manage_billing");
   const currentPlan = await getEffectivePlan(orgId);
   const paidPlans = await db
     .select({
@@ -93,7 +93,7 @@ export async function createCheckoutSession() {
 }
 
 export async function openBillingPortal() {
-  const { orgId } = await requireActiveOrg();
+  const { orgId } = await requireOrgPermission("manage_billing");
   const sub = await db.query.subscription.findFirst({
     where: eq(schema.subscription.orgId, orgId),
   });
