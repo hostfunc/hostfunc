@@ -1,6 +1,6 @@
 {
   "name": "@hostfunc/db",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Database schema and client for hostfunc",
   "license": "AGPL-3.0-only",
   "type": "module",
@@ -16,7 +16,11 @@
       "import": "./dist/schema/index.js"
     }
   },
-  "files": ["dist", "migrations", "drizzle.config.ts"],
+  "files": [
+    "dist",
+    "migrations",
+    "drizzle.config.ts"
+  ],
   "scripts": {
     "build": "tsc -b",
     "dev": "tsc -b --watch --preserveWatchOutput",

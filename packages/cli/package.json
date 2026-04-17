@@ -1,6 +1,6 @@
 {
   "name": "@hostfunc/cli",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": false,
   "description": "Hostfunc CLI for deploying and running tiny composable TypeScript functions.",
   "license": "AGPL-3.0-only",
@@ -13,12 +13,21 @@
     "url": "git+https://github.com/hostfunc/hostfunc.git",
     "directory": "packages/cli"
   },
-  "keywords": ["hostfunc", "serverless", "functions", "cli"],
+  "keywords": [
+    "hostfunc",
+    "serverless",
+    "functions",
+    "cli"
+  ],
   "type": "module",
   "bin": {
     "hostfunc": "./dist/bin.js"
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "publishConfig": {
     "access": "public",
     "provenance": true
