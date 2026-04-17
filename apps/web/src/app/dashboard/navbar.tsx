@@ -96,7 +96,16 @@ export function DashboardNavbar({
         await switchActiveOrganization(organizationId);
         window.location.assign(nextPath);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to switch workspace");
+        const message = error instanceof Error ? error.message : "Failed to switch workspace";
+        if (
+          message.toLowerCase().includes("forbidden") ||
+          message.toLowerCase().includes("access") ||
+          message.toLowerCase().includes("active_membership_not_found")
+        ) {
+          toast.error("Access changed for that workspace. Use the recovery options on the next screen.");
+          return;
+        }
+        toast.error(message);
       }
     });
   };

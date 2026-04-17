@@ -1,6 +1,6 @@
 import { requireActiveOrg } from "@/lib/session";
 import { db, schema } from "@hostfunc/db";
-import { and, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { RadioTower } from "lucide-react";
 import { loadTriggers } from "./actions";
 import { TriggersClient } from "./triggers-client";
@@ -13,14 +13,24 @@ export default async function TriggersFunctionSettingsPage({
   const { fn } = await params;
   const { orgId } = await requireActiveOrg();
   const rows = await db
-    .select({ id: schema.fn.id, slug: schema.fn.slug, createdById: schema.fn.createdById })
+    .select({
+      id: schema.fn.id,
+      slug: schema.fn.slug,
+      orgSlug: schema.organization.slug,
+    })
     .from(schema.fn)
+    .innerJoin(schema.organization, eq(schema.organization.id, schema.fn.orgId))
     .where(and(eq(schema.fn.orgId, orgId), eq(schema.fn.id, fn)))
     .limit(1);
   const fnRow = rows[0];
   if (!fnRow) {
     return <div className="text-sm text-[var(--color-bone-muted)]">Function not found.</div>;
   }
+  const [tokenRow] = await db
+    .select({ n: count() })
+    .from(schema.apiToken)
+    .where(eq(schema.apiToken.orgId, orgId));
+  const hasApiTokens = Number(tokenRow?.n ?? 0) > 0;
   const triggers = await loadTriggers(fnRow.id);
 
   return (
@@ -38,11 +48,17 @@ export default async function TriggersFunctionSettingsPage({
           </p>
           <div className="mt-3 inline-flex items-center rounded-md border border-[var(--color-border)] bg-black/20 px-3 py-1.5 text-xs text-[var(--color-bone-faint)]">
             Runtime path:{" "}
-            <span className="ml-2 font-mono text-[var(--color-bone)]">{`/run/${fnRow.createdById}/${fnRow.slug}`}</span>
+            <span className="ml-2 font-mono text-[var(--color-bone)]">{`/run/${fnRow.orgSlug}/${fnRow.slug}`}</span>
           </div>
         </div>
       </div>
-      <TriggersClient fnId={fnRow.id} triggers={triggers} />
+      <TriggersClient
+        fnId={fnRow.id}
+        triggers={triggers}
+        orgSlug={fnRow.orgSlug}
+        fnSlug={fnRow.slug}
+        hasApiTokens={hasApiTokens}
+      />
     </div>
   );
 }

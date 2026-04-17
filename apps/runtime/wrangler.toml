@@ -5,6 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENV = "dev"
+RUNTIME_INVOKE_TOKEN = "dev-runtime-invoke-token"
 
 [[kv_namespaces]]
 binding = "FN_INDEX"

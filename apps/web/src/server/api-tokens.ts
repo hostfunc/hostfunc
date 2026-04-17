@@ -1,8 +1,11 @@
 import "server-only";
 
+import { decryptSecret, encryptSecret } from "@/lib/crypto";
 import { generateApiToken, hashApiToken, verifyApiToken } from "@/lib/api-tokens";
 import { db, genId, schema } from "@hostfunc/db";
 import { and, eq } from "drizzle-orm";
+
+const WORKSPACE_SDK_TOKEN_NAME = "Workspace SDK Runtime";
 
 export async function listApiTokens(orgId: string, userId: string) {
   return db
@@ -86,4 +89,75 @@ export async function authenticateApiToken(token: string): Promise<{
     };
   }
   return null;
+}
+
+export async function ensureWorkspaceSdkApiKey(input: { orgId: string; userId: string }): Promise<string> {
+  const existing = await getWorkspaceSdkApiKey(input.orgId);
+  if (existing) return existing;
+
+  const created = await createApiToken({
+    orgId: input.orgId,
+    userId: input.userId,
+    name: WORKSPACE_SDK_TOKEN_NAME,
+  });
+  await persistWorkspaceSdkApiKey(input.orgId, created.token);
+  return created.token;
+}
+
+export async function getWorkspaceSdkApiKey(orgId: string): Promise<string | null> {
+  const org = await db.query.organization.findFirst({
+    where: eq(schema.organization.id, orgId),
+    columns: { metadata: true },
+  });
+  if (!org?.metadata) return null;
+
+  try {
+    const parsed = JSON.parse(org.metadata) as {
+      integrations?: { encrypted?: Record<string, string> };
+    };
+    const encrypted = parsed.integrations?.encrypted?.sdkApiKey;
+    if (!encrypted) return null;
+    const value = decryptSecret(encrypted);
+    if (!value) return null;
+    const actor = await authenticateApiToken(value);
+    if (!actor || actor.orgId !== orgId) return null;
+    return value;
+  } catch {
+    return null;
+  }
+}
+
+async function persistWorkspaceSdkApiKey(orgId: string, token: string): Promise<void> {
+  const org = await db.query.organization.findFirst({
+    where: eq(schema.organization.id, orgId),
+    columns: { metadata: true },
+  });
+  const encrypted = encryptSecret(token);
+
+  let parsed: {
+    integrations?: {
+      config?: unknown;
+      encrypted?: Record<string, string>;
+    };
+  } = {};
+  if (org?.metadata) {
+    try {
+      parsed = JSON.parse(org.metadata) as typeof parsed;
+    } catch {
+      parsed = {};
+    }
+  }
+
+  const next = {
+    ...parsed,
+    integrations: {
+      ...(parsed.integrations ?? {}),
+      encrypted: {
+        ...(parsed.integrations?.encrypted ?? {}),
+        sdkApiKey: encrypted,
+      },
+    },
+  };
+
+  await db.update(schema.organization).set({ metadata: JSON.stringify(next) }).where(eq(schema.organization.id, orgId));
 }

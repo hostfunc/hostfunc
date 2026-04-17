@@ -33,10 +33,15 @@ export async function GET(req: NextRequest) {
       orgId: schema.fn.orgId,
       visibility: schema.fn.visibility,
       versionId: schema.fnVersion.id,
+      httpTriggerConfig: schema.trigger.config,
     })
     .from(schema.fn)
     .innerJoin(schema.organization, eq(schema.organization.id, schema.fn.orgId))
     .leftJoin(schema.fnVersion, eq(schema.fnVersion.id, schema.fn.currentVersionId))
+    .leftJoin(
+      schema.trigger,
+      and(eq(schema.trigger.fnId, schema.fn.id), eq(schema.trigger.kind, "http")),
+    )
     .where(and(eq(schema.organization.slug, org), eq(schema.fn.slug, slug)))
     .limit(1);
 
@@ -45,6 +50,9 @@ export async function GET(req: NextRequest) {
     return Response.json({ ok: false, error: "not_deployed" }, { status: 404 });
   }
 
+  const httpCfg = row.httpTriggerConfig as { http?: { requireAuth?: boolean } } | null | undefined;
+  const httpRequireAuth = httpCfg?.http?.requireAuth ?? true;
+
   return Response.json({
     ok: true,
     fnId: row.fnId,
@@ -52,6 +60,7 @@ export async function GET(req: NextRequest) {
     versionId: row.versionId,
     scriptName: scriptNameFor(row.fnId, row.versionId),
     visibility: row.visibility,
+    httpRequireAuth,
   });
 }
 

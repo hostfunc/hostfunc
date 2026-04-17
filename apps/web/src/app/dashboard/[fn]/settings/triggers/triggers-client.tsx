@@ -1,10 +1,12 @@
 "use client";
 
+import { CopyButton } from "@/app/dashboard/functions/copy-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { TriggerConfig } from "@hostfunc/db";
 import { CheckCircle2, Loader2, TriangleAlert } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   removeTrigger,
@@ -48,7 +50,61 @@ function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
-export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: TriggerRow[] }) {
+function httpTriggerCurlExample(orgSlug: string, fnSlug: string): string {
+  return `curl -sS -X POST \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  "$HOSTFUNC_RUNTIME_URL/run/${orgSlug}/${fnSlug}" \\
+  -d '{}'`;
+}
+
+function HttpTriggerCurlHighlighted({ orgSlug, fnSlug }: { orgSlug: string; fnSlug: string }) {
+  const cmd = "text-sky-400";
+  const flag = "text-emerald-300/90";
+  const stringLit = "text-amber-200/90";
+  const urlVar = "text-violet-300/85";
+  const slug = "text-cyan-200/85";
+  const punct = "text-[var(--color-bone-faint)]";
+
+  return (
+    <code className="block whitespace-pre-wrap break-all font-mono text-xs leading-relaxed text-[var(--color-bone)]">
+      <span className={cmd}>curl</span> <span className={flag}>-sS</span>{" "}
+      <span className={flag}>-X</span> <span className={cmd}>POST</span>{" "}
+      <span className={punct}>\\</span>
+      {"\n  "}
+      <span className={flag}>-H</span>{" "}
+      <span className={stringLit}>&quot;Authorization: Bearer YOUR_TOKEN&quot;</span>{" "}
+      <span className={punct}>\\</span>
+      {"\n  "}
+      <span className={flag}>-H</span>{" "}
+      <span className={stringLit}>&quot;Content-Type: application/json&quot;</span>{" "}
+      <span className={punct}>\\</span>
+      {"\n  "}
+      <span className={stringLit}>&quot;</span>
+      <span className={urlVar}>$HOSTFUNC_RUNTIME_URL/run/</span>
+      <span className={slug}>{orgSlug}</span>
+      <span className={urlVar}>/</span>
+      <span className={slug}>{fnSlug}</span>
+      <span className={stringLit}>&quot;</span> <span className={punct}>\\</span>
+      {"\n  "}
+      <span className={flag}>-d</span> <span className={stringLit}>&apos;{"{}"}&apos;</span>
+    </code>
+  );
+}
+
+export function TriggersClient({
+  fnId,
+  triggers,
+  orgSlug,
+  fnSlug,
+  hasApiTokens,
+}: {
+  fnId: string;
+  triggers: TriggerRow[];
+  orgSlug: string;
+  fnSlug: string;
+  hasApiTokens: boolean;
+}) {
   const byKind = useMemo(
     () => ({
       http: triggers.find((t) => t.kind === "http"),
@@ -67,10 +123,13 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
     mcp: null,
   });
 
-  const [requireAuth, setRequireAuth] = useState(byKind.http?.config.http?.requireAuth ? "true" : "false");
-  const [cronSchedule, setCronSchedule] = useState(byKind.cron?.config.cron?.schedule ?? "*/5 * * * *");
+  const [requireAuth, setRequireAuth] = useState(
+    byKind.http?.config.http?.requireAuth === false ? "false" : "true",
+  );
+  const [cronSchedule, setCronSchedule] = useState(
+    byKind.cron?.config.cron?.schedule ?? "*/5 * * * *",
+  );
   const [cronTimezone, setCronTimezone] = useState(byKind.cron?.config.cron?.timezone ?? "UTC");
-  const [emailAddress, setEmailAddress] = useState(byKind.email?.config.email?.address ?? "");
   const [emailAllowlist, setEmailAllowlist] = useState(
     (byKind.email?.config.email?.allowlist ?? []).join(", "),
   );
@@ -78,13 +137,14 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
   const [mcpDescription, setMcpDescription] = useState(byKind.mcp?.config.mcp?.description ?? "");
 
   const cronIsValid = isValidCronSchedule(cronSchedule);
-  const emailIsValid = emailAddress.length === 0 ? false : isValidEmail(emailAddress);
   const allowlistValues = emailAllowlist
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
   const invalidAllowlistEmails = allowlistValues.filter((value) => !isValidEmail(value));
   const mcpToolNameValid = mcpToolName.trim().length > 0;
+
+  const httpCurlText = useMemo(() => httpTriggerCurlExample(orgSlug, fnSlug), [orgSlug, fnSlug]);
 
   async function runAction(kind: TriggerKind, action: () => Promise<void>, successMessage: string) {
     setSavingKind(kind);
@@ -141,8 +201,30 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
           {renderStatus(true, true)}
         </div>
         <p className="text-sm text-[var(--color-bone-muted)]">
-          Configure whether incoming HTTP requests should require auth when edge auth is enabled.
+          When enabled, callers must send{" "}
+          <code className="rounded bg-black/30 px-1 font-mono text-xs">
+            Authorization: Bearer &lt;workspace API token&gt;
+          </code>
+          . Nested <code className="font-mono">executeFunction</code> calls use parent execution
+          headers instead.
         </p>
+        {requireAuth === "true" && !hasApiTokens ? (
+          <p className="text-sm text-amber-200/90">
+            <Link href="/dashboard/settings/tokens" className="underline hover:text-amber-100">
+              Create a workspace API token
+            </Link>{" "}
+            to authenticate HTTP calls to this function.
+          </p>
+        ) : null}
+        <div className="rounded-lg border border-[var(--color-border)] bg-black/25 p-3 text-xs text-[var(--color-bone-muted)]">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <p className="font-medium text-[var(--color-bone-faint)]">Example</p>
+            <CopyButton value={httpCurlText} idleLabel="Copy" title="Copy curl example" />
+          </div>
+          <pre className="m-0 overflow-x-auto rounded-md border border-white/[0.06] bg-black/35 p-3">
+            <HttpTriggerCurlHighlighted orgSlug={orgSlug} fnSlug={fnSlug} />
+          </pre>
+        </div>
         <div className="flex flex-wrap items-center gap-3">
           <label className="text-sm text-[var(--color-bone-muted)]" htmlFor="require-auth-select">
             Require auth
@@ -226,7 +308,9 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
           />
         </div>
         {!cronIsValid ? (
-          <p className="text-xs text-red-300">Cron schedule must include 5 space-separated fields.</p>
+          <p className="text-xs text-red-300">
+            Cron schedule must include 5 space-separated fields.
+          </p>
         ) : null}
         <div className="flex gap-2">
           <Button
@@ -300,17 +384,22 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
           {renderStatus(Boolean(byKind.email), byKind.email?.enabled ?? false)}
         </div>
         <p className="text-sm text-[var(--color-bone-muted)]">
-          Configure an inbound mailbox and optional allowlist for senders.
+          Hostfunc assigns a unique inbound address. Incoming mail invokes your exported{" "}
+          <code className="font-mono">email(data)</code> handler; the message is passed on{" "}
+          <code className="font-mono">data.email</code> (see{" "}
+          <Link href="/docs/triggers" className="underline hover:text-[var(--color-bone)]">
+            Triggers
+          </Link>
+          ).
         </p>
-        <Input
-          value={emailAddress}
-          onChange={(e) => setEmailAddress(e.target.value)}
-          placeholder="inbound address (e.g. alerts@yourdomain.com)"
-          className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)] focus-visible:ring-[var(--color-amber)]"
-        />
-        {emailAddress.length > 0 && !emailIsValid ? (
-          <p className="text-xs text-red-300">Please enter a valid inbound email address.</p>
-        ) : null}
+        <div className="grid gap-1">
+          <span className="text-xs font-medium text-[var(--color-bone-muted)]">
+            Inbound address
+          </span>
+          <div className="min-h-11 rounded-md border border-[var(--color-border)] bg-[var(--color-ink)]/70 px-3 py-2 font-mono text-sm text-[var(--color-bone)]">
+            {byKind.email?.config.email?.address ?? "Not generated yet — save to create one."}
+          </div>
+        </div>
         <Input
           value={emailAllowlist}
           onChange={(e) => setEmailAllowlist(e.target.value)}
@@ -323,12 +412,13 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
           </p>
         ) : allowlistValues.length > 0 ? (
           <p className="text-xs text-[var(--color-bone-faint)]">
-            Parsed {allowlistValues.length} allowlist {allowlistValues.length === 1 ? "entry" : "entries"}.
+            Parsed {allowlistValues.length} allowlist{" "}
+            {allowlistValues.length === 1 ? "entry" : "entries"}.
           </p>
         ) : null}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
-            disabled={savingKind === "email" || !emailIsValid || invalidAllowlistEmails.length > 0}
+            disabled={savingKind === "email" || invalidAllowlistEmails.length > 0}
             className="h-11 rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
             onClick={() =>
               void runAction(
@@ -336,7 +426,6 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
                 () =>
                   saveEmailTrigger({
                     fnId,
-                    address: emailAddress,
                     allowlist: allowlistValues,
                     enabled: byKind.email?.enabled ?? true,
                   }),
@@ -345,8 +434,30 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
             }
           >
             {savingKind === "email" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {savingKind === "email" ? "Saving..." : "Save Email"}
+            {savingKind === "email" ? "Saving..." : "Save email settings"}
           </Button>
+          {byKind.email?.config.email?.address ? (
+            <Button
+              variant="outline"
+              disabled={savingKind === "email" || invalidAllowlistEmails.length > 0}
+              className="h-11 rounded-full border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
+              onClick={() =>
+                void runAction(
+                  "email",
+                  () =>
+                    saveEmailTrigger({
+                      fnId,
+                      allowlist: allowlistValues,
+                      enabled: byKind.email?.enabled ?? true,
+                      regenerateAddress: true,
+                    }),
+                  "Inbound address regenerated.",
+                )
+              }
+            >
+              Regenerate address
+            </Button>
+          ) : null}
           {byKind.email ? (
             <>
               <Button
@@ -368,7 +479,11 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
                 disabled={savingKind === "email"}
                 className="h-11 rounded-full border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
                 onClick={() =>
-                  void runAction("email", () => removeTrigger(fnId, "email"), "Email trigger removed.")
+                  void runAction(
+                    "email",
+                    () => removeTrigger(fnId, "email"),
+                    "Email trigger removed.",
+                  )
                 }
               >
                 Remove
@@ -406,9 +521,7 @@ export function TriggersClient({ fnId, triggers }: { fnId: string; triggers: Tri
           placeholder="tool name (required)"
           className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)] focus-visible:ring-[var(--color-amber)]"
         />
-        {!mcpToolNameValid ? (
-          <p className="text-xs text-red-300">Tool name is required.</p>
-        ) : null}
+        {!mcpToolNameValid ? <p className="text-xs text-red-300">Tool name is required.</p> : null}
         <Input
           value={mcpDescription}
           onChange={(e) => setMcpDescription(e.target.value)}

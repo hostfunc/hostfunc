@@ -3,13 +3,13 @@ import "server-only";
 import { env } from "@/lib/env";
 import { db, schema } from "@hostfunc/db";
 import {
+  type ToolName,
   executionsGetInputSchema,
   executionsListInputSchema,
   executionsLogsInputSchema,
   functionsExecuteInputSchema,
   functionsGetInputSchema,
   functionsListInputSchema,
-  type ToolName,
   toolInputSchemas,
 } from "@hostfunc/mcp-tools";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
@@ -43,7 +43,10 @@ async function handleFunctionsList(orgId: string, input: { query?: string | unde
   const where = input.query
     ? and(
         eq(schema.fn.orgId, orgId),
-        or(ilike(schema.fn.slug, `%${input.query}%`), ilike(schema.fn.description, `%${input.query}%`)),
+        or(
+          ilike(schema.fn.slug, `%${input.query}%`),
+          ilike(schema.fn.description, `%${input.query}%`),
+        ),
       )
     : eq(schema.fn.orgId, orgId);
   return db
@@ -93,8 +96,14 @@ async function handleFunctionsExecute(input: {
   }
   const res = await fetch(`${env.HOSTFUNC_RUNTIME_URL}/run/${orgSlug}/${input.slug}`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(input.payload ?? {}),
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${env.RUNTIME_INVOKE_TOKEN}`,
+    },
+    body: JSON.stringify({
+      ...(input.payload ?? {}),
+      hostfuncTriggerKind: "mcp",
+    }),
   });
   const contentType = res.headers.get("content-type") ?? "";
   const body = contentType.includes("application/json") ? await res.json() : await res.text();

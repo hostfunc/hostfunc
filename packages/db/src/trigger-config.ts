@@ -4,7 +4,7 @@ export const triggerKindSchema = z.enum(["http", "cron", "email", "mcp"]);
 export type TriggerKind = z.infer<typeof triggerKindSchema>;
 
 export const httpTriggerConfigSchema = z.object({
-  requireAuth: z.boolean().default(false),
+  requireAuth: z.boolean().default(true),
 });
 
 export const cronTriggerConfigSchema = z.object({

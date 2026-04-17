@@ -4,6 +4,7 @@ interface Env {
   ENV: string;
   LOOKUP_API_URL?: string;
   LOOKUP_API_TOKEN?: string;
+  RUNTIME_INVOKE_TOKEN?: string;
   WORKERS_SUBDOMAIN?: string;
   RUNTIME_PUBLIC_URL?: string;
   FN_INDEX?: KVNamespace;
@@ -17,6 +18,8 @@ interface FnLookup {
   versionId: string;
   scriptName: string;
   visibility: "public" | "private";
+  /** When absent (stale KV), treat as true. */
+  httpRequireAuth?: boolean;
 }
 
 interface FnLookupError {
@@ -43,6 +46,102 @@ interface CallChainFrame {
 const DEFAULT_WALL_MS = 10_000;
 const DEFAULT_MAX_CALL_DEPTH = 3;
 const LOOKUP_CACHE_TTL_SECONDS = 60;
+
+const METHODS_WITH_BODY = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const INTERNAL_TRIGGER_KINDS = new Set(["http", "cron", "email", "mcp"]);
+
+type ExecutionTriggerKind = "http" | "cron" | "email" | "mcp" | "fn_call";
+
+type ParsedRunBody = Record<string, unknown> | null;
+
+function parseJsonBody(raw: string): ParsedRunBody {
+  const t = raw.trim();
+  if (!t) return null;
+  try {
+    const v = JSON.parse(t) as unknown;
+    return v !== null && typeof v === "object" && !Array.isArray(v)
+      ? (v as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function stripHostfuncKeys(obj: Record<string, unknown> | null): Record<string, unknown> {
+  if (!obj) return {};
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (k === "hostfuncTriggerKind" || k.startsWith("hostfunc")) continue;
+    out[k] = v;
+  }
+  return out;
+}
+
+function isInternalInvoke(authHeader: string | null, env: Env): boolean {
+  const token = env.RUNTIME_INVOKE_TOKEN;
+  if (!token || !authHeader) return false;
+  return authHeader === `Bearer ${token}`;
+}
+
+function normalizeLookup(lookup: FnLookup | FnLookupError): FnLookup | FnLookupError {
+  if (!lookup.ok) return lookup;
+  if (lookup.httpRequireAuth === undefined) {
+    return { ...lookup, httpRequireAuth: true };
+  }
+  return lookup;
+}
+
+async function enforcePublicHttpAuth(
+  env: Env,
+  lookup: FnLookup,
+  req: Request,
+): Promise<Response | null> {
+  const requireAuth = lookup.httpRequireAuth !== false;
+  if (!requireAuth) return null;
+  if (!env.LOOKUP_API_URL || !env.LOOKUP_API_TOKEN) {
+    return json({ error: "lookup_not_configured" }, 502);
+  }
+
+  const auth = req.headers.get("authorization");
+  const parent = req.headers.get("x-hostfunc-parent-exec");
+
+  if (parent) {
+    const res = await fetch(`${env.LOOKUP_API_URL}/api/internal/exec/verify-parent`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${env.LOOKUP_API_TOKEN}`,
+      },
+      body: JSON.stringify({ parentExecutionId: parent, childFnId: lookup.fnId }),
+    });
+    if (!res.ok) {
+      return json(
+        { error: "unauthorized", message: "Invalid or missing parent execution for nested call." },
+        401,
+      );
+    }
+    return null;
+  }
+
+  const res = await fetch(`${env.LOOKUP_API_URL}/api/internal/run/validate-api-token`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${env.LOOKUP_API_TOKEN}`,
+    },
+    body: JSON.stringify({ fnId: lookup.fnId, bearerToken: auth ?? "" }),
+  });
+  if (!res.ok) {
+    return json(
+      {
+        error: "unauthorized",
+        message: "A workspace API token is required (Authorization: Bearer <token>).",
+      },
+      401,
+    );
+  }
+  return null;
+}
 
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -73,6 +172,52 @@ export default {
       return json({ error: "lookup_failed", message: String(e) }, 502);
     }
     if (!lookup.ok) return json({ error: lookup.error }, 404);
+    lookup = normalizeLookup(lookup) as FnLookup;
+
+    let rawBody = "";
+    if (METHODS_WITH_BODY.has(req.method)) {
+      rawBody = await req.text();
+    }
+    const parsedBody = parseJsonBody(rawBody);
+    const authHeader = req.headers.get("authorization");
+
+    let executionTriggerKind: ExecutionTriggerKind = "http";
+    let upstreamBody: unknown = stripHostfuncKeys(parsedBody);
+    let invocationKind: "http" | "email" = "http";
+
+    if (isInternalInvoke(authHeader, env)) {
+      const kindRaw = parsedBody?.hostfuncTriggerKind;
+      if (typeof kindRaw !== "string" || !INTERNAL_TRIGGER_KINDS.has(kindRaw)) {
+        return json(
+          {
+            error: "invalid_body",
+            message: "Internal invoke requires hostfuncTriggerKind: cron | email | mcp | http.",
+          },
+          400,
+        );
+      }
+      executionTriggerKind = kindRaw as ExecutionTriggerKind;
+      if (executionTriggerKind === "email") {
+        const email = parsedBody?.email;
+        if (!email || typeof email !== "object" || Array.isArray(email)) {
+          return json(
+            { error: "invalid_body", message: "Email invoke requires an object payload.email." },
+            400,
+          );
+        }
+        upstreamBody = { email };
+        invocationKind = "email";
+      } else {
+        upstreamBody = stripHostfuncKeys(parsedBody);
+        invocationKind = "http";
+      }
+    } else {
+      const denied = await enforcePublicHttpAuth(env, lookup, req);
+      if (denied) return denied;
+      executionTriggerKind = "http";
+      upstreamBody = stripHostfuncKeys(parsedBody);
+      invocationKind = "http";
+    }
 
     const callChain = parseCallChain(req.headers.get("x-hostfunc-call-chain"));
     const execId = crypto.randomUUID();
@@ -117,14 +262,7 @@ export default {
       orgId: lookup.orgId,
       parentExecutionId: req.headers.get("x-hostfunc-parent-exec"),
       callDepth: callChain.length,
-      triggerKind:
-        (req.headers.get("x-hostfunc-trigger-kind") as
-          | "http"
-          | "cron"
-          | "email"
-          | "mcp"
-          | "fn_call"
-          | null) ?? "http",
+      triggerKind: executionTriggerKind,
     }).catch((error) => {
       console.error(
         "[dispatch] start execution record failed",
@@ -145,16 +283,24 @@ export default {
 
     const runtimeUrl = resolveRuntimeUrl(req.url, env.RUNTIME_PUBLIC_URL);
 
-    const upstreamReq = new Request(req, {
-      headers: withHostfuncHeaders(req.headers, lookup, {
-        execId,
-        execToken: registration.token,
-        controlPlane: env.LOOKUP_API_URL ?? "",
-        runtimeUrl,
-        callChain,
-        maxCallDepth: registration.maxCallDepth ?? DEFAULT_MAX_CALL_DEPTH,
-      }),
+    const upstreamHeaders = withHostfuncHeaders(req.headers, lookup, {
+      execId,
+      execToken: registration.token,
+      controlPlane: env.LOOKUP_API_URL ?? "",
+      runtimeUrl,
+      callChain,
+      maxCallDepth: registration.maxCallDepth ?? DEFAULT_MAX_CALL_DEPTH,
+      invocationKind,
     });
+
+    const upstreamInit: RequestInit = {
+      method: req.method,
+      headers: upstreamHeaders,
+    };
+    if (METHODS_WITH_BODY.has(req.method)) {
+      upstreamInit.body = JSON.stringify(upstreamBody ?? {});
+    }
+    const upstreamReq = new Request(req.url, upstreamInit);
 
     const start = Date.now();
     try {
@@ -197,9 +343,7 @@ export default {
           executionId: execId,
           status: upstream.ok ? "ok" : "fn_error",
           wallMs: Date.now() - start,
-          errorMessage: upstream.ok
-            ? null
-            : formatChildErrorMessage(childError, upstream.status),
+          errorMessage: upstream.ok ? null : formatChildErrorMessage(childError, upstream.status),
           source: "runtime",
           externalId: `${execId}:runtime:final`,
           logs: [
@@ -270,9 +414,12 @@ function withHostfuncHeaders(
     runtimeUrl: string;
     callChain: CallChainFrame[];
     maxCallDepth: number;
+    invocationKind: "http" | "email";
   },
 ): Headers {
   const headers = new Headers(inbound);
+  headers.delete("x-hostfunc-trigger-kind");
+  headers.delete("x-hostfunc-invocation-kind");
   headers.set("x-hostfunc-exec-id", input.execId);
   headers.set("x-hostfunc-fn-id", lookup.fnId);
   headers.set("x-hostfunc-org-id", lookup.orgId);
@@ -281,6 +428,7 @@ function withHostfuncHeaders(
   headers.set("x-hostfunc-runtime-url", input.runtimeUrl);
   headers.set("x-hostfunc-call-chain", JSON.stringify(input.callChain));
   headers.set("x-hostfunc-max-call-depth", String(input.maxCallDepth));
+  headers.set("x-hostfunc-invocation-kind", input.invocationKind);
   return headers;
 }
 
@@ -452,10 +600,7 @@ interface StructuredChildError {
   docsUrl?: string;
 }
 
-function parseStructuredChildError(
-  text: string,
-  _status: number,
-): StructuredChildError | null {
+function parseStructuredChildError(text: string, _status: number): StructuredChildError | null {
   if (!text) return null;
   try {
     const parsed = JSON.parse(text) as Record<string, unknown>;
@@ -479,10 +624,7 @@ function parseStructuredChildError(
   }
 }
 
-function formatChildErrorMessage(
-  err: StructuredChildError | null,
-  status: number,
-): string {
+function formatChildErrorMessage(err: StructuredChildError | null, status: number): string {
   if (!err) return `Execution returned non-ok response (${status}).`;
   switch (err.error) {
     case "missing_secret":
@@ -535,6 +677,6 @@ function corsHeaders(): Record<string, string> {
     "access-control-allow-origin": "*",
     "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
     "access-control-allow-headers":
-      "content-type,authorization,x-hostfunc-call-chain,x-hostfunc-parent-exec,x-hostfunc-debug",
+      "content-type,authorization,x-hostfunc-call-chain,x-hostfunc-parent-exec,x-hostfunc-debug,x-hostfunc-invocation-kind",
   };
 }

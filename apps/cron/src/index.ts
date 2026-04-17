@@ -4,6 +4,7 @@ interface Env {
   CONTROL_PLANE_URL: string;
   CONTROL_PLANE_TOKEN: string;
   HOSTFUNC_RUNTIME_URL: string;
+  RUNTIME_INVOKE_TOKEN: string;
 }
 
 interface DueTrigger {
@@ -47,9 +48,13 @@ export default {
           method: "POST",
           headers: {
             "content-type": "application/json",
-            "x-hostfunc-trigger-kind": "cron",
+            authorization: `Bearer ${env.RUNTIME_INVOKE_TOKEN}`,
           },
-          body: JSON.stringify({ trigger: "cron", dedupeKey: row.dedupeKey }),
+          body: JSON.stringify({
+            hostfuncTriggerKind: "cron",
+            trigger: "cron",
+            dedupeKey: row.dedupeKey,
+          }),
         });
         const ackInput: {
           dedupeKey: string;

@@ -34,6 +34,8 @@ const schema = z
     .transform((v) => v === "true"),
   HOSTFUNC_RUNTIME_URL: z.string().url(),
   RUNTIME_LOOKUP_TOKEN: z.string().min(1),
+  /** Shared secret for control-plane → runtime /run (cron, email, CLI). Must match runtime worker env. */
+  RUNTIME_INVOKE_TOKEN: z.string().min(1).default("dev-runtime-invoke-token"),
   RUNTIME_INGEST_TOKEN: z.string().min(1).default("dev-ingest-token"),
   TRIGGER_CONTROL_TOKEN: z.string().min(1).default("dev-trigger-token"),
   HOSTFUNC_MAIL_DOMAIN: z.string().default("mail.hostfunc.dev"),

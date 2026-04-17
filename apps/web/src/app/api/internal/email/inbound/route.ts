@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { type NormalizedInboundEmail, toEmailTriggerRuntimeBody } from "@/server/inbound-email";
 import { db, genId, schema } from "@hostfunc/db";
 import { and, eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
@@ -14,6 +15,7 @@ export async function POST(req: NextRequest) {
     from?: string;
     subject?: string;
     text?: string;
+    rawSize?: number;
     headers?: Record<string, string>;
   } | null;
   if (!body?.to || !body.from) return Response.json({ error: "invalid_body" }, { status: 400 });
@@ -45,22 +47,26 @@ export async function POST(req: NextRequest) {
 
   if (!match) return Response.json({ ok: true, matched: false });
 
+  const text = body.text ?? "";
+  const rawSize =
+    typeof body.rawSize === "number" && Number.isFinite(body.rawSize) ? body.rawSize : text.length;
+  const normalized: NormalizedInboundEmail = {
+    to: body.to,
+    from: body.from,
+    subject: body.subject ?? "",
+    textBody: text,
+    rawSize,
+    receivedAt: new Date(),
+  };
+  const runtimeBody = toEmailTriggerRuntimeBody(normalized);
+
   const res = await fetch(`${env.HOSTFUNC_RUNTIME_URL}/run/${match.orgSlug}/${match.slug}`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-hostfunc-trigger-kind": "email",
+      authorization: `Bearer ${env.RUNTIME_INVOKE_TOKEN}`,
     },
-    body: JSON.stringify({
-      trigger: "email",
-      email: {
-        to: body.to,
-        from: body.from,
-        subject: body.subject ?? "",
-        text: body.text ?? "",
-        headers: body.headers ?? {},
-      },
-    }),
+    body: JSON.stringify(runtimeBody),
   });
   const execId = res.headers.get("x-hostfunc-exec-id");
 

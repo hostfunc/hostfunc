@@ -14,6 +14,10 @@ export default async function TokensSettingsPage() {
           <p className="mt-2 max-w-xl leading-relaxed text-[var(--color-bone-muted)]">
             Create and revoke personal API tokens used by CLI and MCP clients.
           </p>
+          <p className="mt-1 max-w-xl text-sm text-[var(--color-bone-faint)]">
+            Monaco editor deploys auto-provision a workspace SDK key. NPM SDK usage still requires
+            `HOSTFUNC_API_KEY`.
+          </p>
         </div>
       </div>
       <TokensClient initialTokens={tokens} />

@@ -38,15 +38,15 @@ export default async function FunctionEditorPage({
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]">
-            <Link href={`/dashboard/${fnId}/executions`}>
-              <Activity className="mr-2 h-4 w-4" />
-              Executions
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]">
             <Link href="/docs/functions">
               <BookOpen className="mr-2 h-4 w-4" />
               Docs
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]">
+            <Link href={`/dashboard/${fnId}/executions`}>
+              <Activity className="mr-2 h-4 w-4" />
+              Executions
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]">

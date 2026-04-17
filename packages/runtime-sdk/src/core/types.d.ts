@@ -24,5 +24,6 @@ export interface RuntimeContext {
     }>;
     maxCallDepth: number;
     debug: boolean;
+    isEnvFallback: boolean;
 }
 //# sourceMappingURL=types.d.ts.map

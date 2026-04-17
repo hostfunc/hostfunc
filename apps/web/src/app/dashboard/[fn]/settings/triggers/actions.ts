@@ -1,5 +1,6 @@
 "use server";
 
+import { env } from "@/lib/env";
 import { requireOrgPermission } from "@/lib/session";
 import {
   deleteTriggerForFunction,
@@ -7,7 +8,7 @@ import {
   toggleTriggerForFunction,
   upsertTriggerForFunction,
 } from "@/server/triggers";
-import { db, schema } from "@hostfunc/db";
+import { db, genId, schema } from "@hostfunc/db";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -35,10 +36,17 @@ const cronSchema = z.object({
 
 const emailSchema = z.object({
   fnId: z.string(),
-  address: z.string().email(),
   allowlist: z.array(z.string().email()).optional(),
   enabled: z.boolean().optional(),
+  /** When true, assign a new platform-generated inbound address. */
+  regenerateAddress: z.boolean().optional(),
 });
+
+function generateInboundEmailAddress(): string {
+  const id = genId("tok");
+  const short = id.replace(/^tok_/, "").toLowerCase().slice(0, 20);
+  return `fn-${short}@${env.HOSTFUNC_MAIL_DOMAIN}`.toLowerCase();
+}
 
 const mcpSchema = z.object({
   fnId: z.string(),
@@ -85,12 +93,24 @@ export async function saveEmailTrigger(input: z.infer<typeof emailSchema>) {
   const { orgId } = await requireOrgPermission("manage_triggers");
   const parsed = emailSchema.parse(input);
   await assertOrgOwnsFunction(orgId, parsed.fnId);
+  const existing = await listTriggersForFunction(orgId, parsed.fnId);
+  const prev = existing.find((t) => t.kind === "email")?.config.email?.address;
+
+  let address: string;
+  if (parsed.regenerateAddress) {
+    address = generateInboundEmailAddress();
+  } else if (prev) {
+    address = prev;
+  } else {
+    address = generateInboundEmailAddress();
+  }
+
   await upsertTriggerForFunction({
     orgId,
     fnId: parsed.fnId,
     kind: "email",
     enabled: parsed.enabled ?? true,
-    config: { email: { address: parsed.address, allowlist: parsed.allowlist ?? [] } },
+    config: { email: { address, allowlist: parsed.allowlist ?? [] } },
   });
   revalidatePath(`/dashboard/${parsed.fnId}/settings/triggers`);
 }

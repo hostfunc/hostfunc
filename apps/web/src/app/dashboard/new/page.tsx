@@ -174,7 +174,7 @@ export default function NewFunctionPage() {
                     <div className="relative flex items-center">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <span className="text-muted-foreground sm:text-sm border-r pr-2 py-1 border-muted">
-                          hostfunc.com/
+                          hostfunc.io/
                         </span>
                       </div>
                       <Input

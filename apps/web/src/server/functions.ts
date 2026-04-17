@@ -19,6 +19,50 @@ function buildDeployedUrl(
   return `${env.HOSTFUNC_RUNTIME_URL}/run/${orgSlug}/${slug}`;
 }
 
+export interface FunctionExplorerItem {
+  id: string;
+  createdById: string;
+  orgSlug: string;
+  slug: string;
+  description: string | null;
+  visibility: "public" | "private";
+  currentVersionId: string | null;
+  packageCount: number;
+  envVarCount: number;
+  executionCount: number;
+  latestExecutionStatus: "ok" | "fn_error" | "limit_exceeded" | "infra_error" | null;
+  updatedAt: Date;
+  deployedUrl: string | null;
+}
+
+export interface FunctionPaginationResult {
+  items: FunctionExplorerItem[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+function encodeFunctionCursor(updatedAt: Date, id: string): string {
+  return Buffer.from(JSON.stringify({ updatedAt: updatedAt.toISOString(), id }), "utf8").toString(
+    "base64url",
+  );
+}
+
+function decodeFunctionCursor(cursor?: string): { updatedAt: Date; id: string } | null {
+  if (!cursor) return null;
+  try {
+    const decoded = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as {
+      updatedAt?: string;
+      id?: string;
+    };
+    if (!decoded.updatedAt || !decoded.id) return null;
+    const updatedAt = new Date(decoded.updatedAt);
+    if (Number.isNaN(updatedAt.getTime())) return null;
+    return { updatedAt, id: decoded.id };
+  } catch {
+    return null;
+  }
+}
+
 function toPackageRecord(
   name: string,
   source: FunctionPackageRecord["source"],
@@ -149,6 +193,81 @@ export async function searchFunctionsForOrg(orgId: string, query?: string, visib
     ...row,
     deployedUrl: buildDeployedUrl(row.orgSlug, row.slug, row.currentVersionId),
   }));
+}
+
+export async function searchFunctionsForOrgPaginated(input: {
+  orgId: string;
+  query?: string;
+  visibility?: string;
+  limit?: number;
+  cursor?: string;
+}): Promise<FunctionPaginationResult> {
+  const limit = Math.min(Math.max(input.limit ?? 10, 1), 50);
+  const conditions = [sql`${schema.fn.orgId} = ${input.orgId}`];
+
+  if (input.query) {
+    const q = `%${input.query}%`;
+    conditions.push(sql`(${schema.fn.slug} ilike ${q} or ${schema.fn.description} ilike ${q})`);
+  }
+
+  if (input.visibility && (input.visibility === "public" || input.visibility === "private")) {
+    conditions.push(sql`${schema.fn.visibility} = ${input.visibility}`);
+  }
+
+  const cursor = decodeFunctionCursor(input.cursor);
+  if (cursor) {
+    conditions.push(
+      sql`(${schema.fn.updatedAt} < ${cursor.updatedAt} or (${schema.fn.updatedAt} = ${cursor.updatedAt} and ${schema.fn.id} < ${cursor.id}))`,
+    );
+  }
+
+  const whereClause = conditions.reduce((acc, condition) => sql`${acc} and ${condition}`);
+  const rows = await db
+    .select({
+      id: schema.fn.id,
+      createdById: schema.fn.createdById,
+      orgSlug: schema.organization.slug,
+      slug: schema.fn.slug,
+      description: schema.fn.description,
+      visibility: schema.fn.visibility,
+      currentVersionId: schema.fn.currentVersionId,
+      packageCount: sql<number>`coalesce(jsonb_array_length(${schema.fn.packages}), 0)`,
+      envVarCount: sql<number>`(
+        select count(*)::int
+        from ${schema.secret}
+        where ${schema.secret.orgId} = ${schema.fn.orgId}
+          and ${schema.secret.fnId} = ${schema.fn.id}
+      )`,
+      executionCount: sql<number>`(
+        select count(*)::int
+        from ${schema.execution}
+        where ${schema.execution.fnId} = ${schema.fn.id}
+      )`,
+      latestExecutionStatus: sql<"ok" | "fn_error" | "limit_exceeded" | "infra_error" | null>`(
+        select ${schema.execution.status}
+        from ${schema.execution}
+        where ${schema.execution.fnId} = ${schema.fn.id}
+        order by ${schema.execution.startedAt} desc
+        limit 1
+      )`,
+      updatedAt: schema.fn.updatedAt,
+    })
+    .from(schema.fn)
+    .innerJoin(schema.organization, sql`${schema.organization.id} = ${schema.fn.orgId}`)
+    .where(compat(whereClause) as never)
+    .orderBy(compat(sql`${schema.fn.updatedAt} desc, ${schema.fn.id} desc`) as never)
+    .limit(limit + 1);
+
+  const hasMore = rows.length > limit;
+  const page = hasMore ? rows.slice(0, limit) : rows;
+  const items = page.map((row) => ({
+    ...row,
+    deployedUrl: buildDeployedUrl(row.orgSlug, row.slug, row.currentVersionId),
+  }));
+  const last = items[items.length - 1];
+  const nextCursor = hasMore && last ? encodeFunctionCursor(last.updatedAt, last.id) : null;
+
+  return { items, nextCursor, hasMore };
 }
 
 export async function getFunctionForOrg(orgId: string, fnId: string) {
@@ -291,7 +410,7 @@ export async function createFunction(input: CreateFunctionInput) {
       fnId,
       orgId: input.orgId,
       kind: "http",
-      config: { http: { requireAuth: false } },
+      config: { http: { requireAuth: true } },
     });
   });
   return fnId;

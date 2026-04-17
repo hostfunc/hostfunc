@@ -28,18 +28,22 @@ export class BundleError extends Error {
 
 const RUNTIME_SHIM = `
 // Injected by hostfunc at deploy time. Provides @hostfunc/fn to user code.
-const __ofn_state = { request: null };
+const __ofn_state = { request: null, env: null };
 
 const __ofn_ctx = () => {
   const req = __ofn_state.request;
   if (!req) throw new Error("hostfunc: no active request");
+  const runtimeEnv = __ofn_state.env;
   const controlPlane = req.headers.get("x-hostfunc-control-plane") || "";
   const runtimeUrl = req.headers.get("x-hostfunc-runtime-url") || controlPlane;
   return {
     execId: req.headers.get("x-hostfunc-exec-id") || "",
     fnId: req.headers.get("x-hostfunc-fn-id") || "",
     orgId: req.headers.get("x-hostfunc-org-id") || "",
-    token: req.headers.get("x-hostfunc-exec-token") || "",
+    token:
+      req.headers.get("x-hostfunc-exec-token") ||
+      (runtimeEnv && runtimeEnv.HOSTFUNC_API_KEY ? runtimeEnv.HOSTFUNC_API_KEY : "") ||
+      "",
     controlPlane,
     runtimeUrl,
     callChain: JSON.parse(req.headers.get("x-hostfunc-call-chain") || "[]"),
@@ -355,21 +359,33 @@ ${userCode}
 export default {
   async fetch(request, env, ctx) {
     __ofn_state.request = request;
+    __ofn_state.env = env;
     const debug = request.headers.get("x-hostfunc-debug") === "1";
     try {
       const payload = request.method === "POST" || request.method === "PUT"
         ? await request.json().catch(() => ({}))
         : Object.fromEntries(new URL(request.url).searchParams);
 
-      if (typeof main !== "function") {
-        return new Response(JSON.stringify({
-          error: "fn_invalid",
-          message: "function must export 'main'"
-        }), { status: 500, headers: { "content-type": "application/json" } });
-      }
-
+      const invocationKind = request.headers.get("x-hostfunc-invocation-kind") === "email" ? "email" : "http";
       const started = Date.now();
-      const result = await main(payload);
+      let result;
+      if (invocationKind === "email") {
+        if (typeof email !== "function") {
+          return new Response(JSON.stringify({
+            error: "fn_invalid",
+            message: "function must export 'email' for email triggers"
+          }), { status: 500, headers: { "content-type": "application/json" } });
+        }
+        result = await email(payload);
+      } else {
+        if (typeof main !== "function") {
+          return new Response(JSON.stringify({
+            error: "fn_invalid",
+            message: "function must export 'main'"
+          }), { status: 500, headers: { "content-type": "application/json" } });
+        }
+        result = await main(payload);
+      }
       const elapsed = Date.now() - started;
 
       return new Response(JSON.stringify(result ?? null), {
@@ -383,6 +399,7 @@ export default {
       return __ofn_error_response(err, debug);
     } finally {
       __ofn_state.request = null;
+      __ofn_state.env = null;
     }
   },
 };
@@ -501,5 +518,11 @@ function normalizeUserCode(code: string): string {
     .replace(/\bexport\s+async\s+function\s+main\b/g, "async function main")
     .replace(/\bexport\s+function\s+main\b/g, "function main")
     .replace(/\bexport\s+const\s+main\b/g, "const main")
-    .replace(/^\s*export\s+default\s+main\s*;?\s*$/gm, "");
+    .replace(/^\s*export\s+default\s+main\s*;?\s*$/gm, "")
+    .replace(/\bexport\s+default\s+async\s+function\s+email\b/g, "async function email")
+    .replace(/\bexport\s+default\s+function\s+email\b/g, "function email")
+    .replace(/\bexport\s+async\s+function\s+email\b/g, "async function email")
+    .replace(/\bexport\s+function\s+email\b/g, "function email")
+    .replace(/\bexport\s+const\s+email\b/g, "const email")
+    .replace(/^\s*export\s+default\s+email\s*;?\s*$/gm, "");
 }

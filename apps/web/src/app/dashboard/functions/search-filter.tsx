@@ -2,14 +2,19 @@
 
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { Loader2, Search } from "lucide-react";
+import { Grid3X3, List, Loader2, Search } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 export function FunctionsSearchFilter({
   initialQuery = "",
   initialVisibility = "",
-}: { initialQuery?: string | undefined; initialVisibility?: string | undefined }) {
+  initialView = "grid",
+}: {
+  initialQuery?: string | undefined;
+  initialVisibility?: string | undefined;
+  initialView?: "grid" | "list";
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -17,6 +22,19 @@ export function FunctionsSearchFilter({
 
   const [query, setQuery] = useState(initialQuery);
   const [visibility, setVisibility] = useState(initialVisibility);
+  const [view, setView] = useState<"grid" | "list">(initialView);
+
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
+
+  useEffect(() => {
+    setVisibility(initialVisibility);
+  }, [initialVisibility]);
+
+  useEffect(() => {
+    setView(initialView);
+  }, [initialView]);
 
   // Debounced search logic
   useEffect(() => {
@@ -34,6 +52,12 @@ export function FunctionsSearchFilter({
         params.delete("visibility");
       }
 
+      if (view === "list") {
+        params.set("view", "list");
+      } else {
+        params.delete("view");
+      }
+
       const newParamsStr = params.toString();
       const currentParamsStr = searchParams.toString();
 
@@ -45,7 +69,7 @@ export function FunctionsSearchFilter({
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query, visibility, router, pathname, searchParams]);
+  }, [query, visibility, view, router, pathname, searchParams]);
 
   return (
     <div className="flex w-full flex-col items-center justify-between gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-2.5 shadow-sm sm:flex-row">
@@ -67,6 +91,34 @@ export function FunctionsSearchFilter({
       </div>
 
       <div className="flex w-full shrink-0 items-center gap-2 overflow-x-auto border-t border-[var(--color-border)] px-2 pt-3 sm:w-auto sm:border-t-0 sm:border-l sm:pt-0 sm:pl-3">
+        <div className="mr-1 flex items-center rounded-full border border-[var(--color-border)] bg-black/20 p-0.5">
+          <button
+            type="button"
+            onClick={() => setView("grid")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
+              view === "grid"
+                ? "bg-[var(--color-amber)]/20 text-[var(--color-bone)]"
+                : "text-[var(--color-bone-faint)] hover:text-[var(--color-bone)]",
+            )}
+          >
+            <Grid3X3 className="h-3.5 w-3.5" />
+            Grid
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("list")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
+              view === "list"
+                ? "bg-[var(--color-amber)]/20 text-[var(--color-bone)]"
+                : "text-[var(--color-bone-faint)] hover:text-[var(--color-bone)]",
+            )}
+          >
+            <List className="h-3.5 w-3.5" />
+            List
+          </button>
+        </div>
         <button
           type="button"
           onClick={() => setVisibility("")}

@@ -40,6 +40,9 @@ export const fn = {
             throw new SdkError("FN_CALL_DEPTH", `loop detected for ${slug}`, { slug, chain: nextChain });
         }
         const base = ctx.runtimeUrl || ctx.controlPlane;
+        if (ctx.isEnvFallback && !ctx.token) {
+            throw new SdkError("INFRA_EXECUTE_FAILED", "HOSTFUNC_API_KEY is required for npm SDK usage. Create one in dashboard settings > tokens.");
+        }
         if (!base) {
             throw new SdkError("FN_EXECUTE_FAILED", "runtime url is not configured", {
                 slug,

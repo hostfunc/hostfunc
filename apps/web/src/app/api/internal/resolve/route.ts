@@ -1,4 +1,5 @@
 import { authenticateCallback } from "@/server/exec-registry";
+import { authenticateApiToken } from "@/server/api-tokens";
 import { db, schema } from "@hostfunc/db";
 import { and, eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
@@ -10,8 +11,11 @@ export async function GET(req: NextRequest) {
   const token = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
   if (!token) return Response.json({ error: "missing_token" }, { status: 401 });
 
-  const verified = await authenticateCallback(token);
-  if (!verified) return Response.json({ error: "invalid_token" }, { status: 401 });
+  const verifiedCallback = await authenticateCallback(token);
+  const verifiedApiToken = verifiedCallback ? null : await authenticateApiToken(token);
+  if (!verifiedCallback && !verifiedApiToken) {
+    return Response.json({ error: "invalid_token" }, { status: 401 });
+  }
 
   const slug = req.nextUrl.searchParams.get("slug");
   if (!slug) return Response.json({ error: "missing_slug" }, { status: 400 });
@@ -35,7 +39,8 @@ export async function GET(req: NextRequest) {
 
   // Caller must be in the same org as the target function. Anything else is
   // cross-org — resolve should not leak the existence of the target.
-  if (row.orgId !== verified.payload.orgId) {
+  const callerOrgId = verifiedCallback?.payload.orgId ?? verifiedApiToken?.orgId ?? null;
+  if (!callerOrgId || row.orgId !== callerOrgId) {
     return Response.json({ fnId: null });
   }
 

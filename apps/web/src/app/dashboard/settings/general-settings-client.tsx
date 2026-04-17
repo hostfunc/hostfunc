@@ -99,7 +99,7 @@ export function GeneralSettingsClient({ initialName, initialSlug }: Props) {
               </Label>
               <div className="flex items-center rounded-md border border-[var(--color-border)] bg-[var(--color-ink)]/70 shadow-sm focus-within:ring-1 focus-within:ring-[var(--color-amber)]">
                 <span className="rounded-l-md border-r border-[var(--color-border)] bg-white/[0.04] px-3 py-2 text-sm text-[var(--color-bone-faint)]">
-                  hostfunc.com/
+                  hostfunc.io/
                 </span>
                 <Input
                   id="orgSlug"

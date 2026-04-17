@@ -74,6 +74,9 @@ export class CloudflareExecutor implements ExecutorBackend {
         bindings: [
           { type: "plain_text", name: "HOSTFUNC_FN_ID", text: input.functionId },
           { type: "plain_text", name: "HOSTFUNC_ORG_ID", text: input.orgId },
+          ...(input.runtimeApiKey
+            ? [{ type: "plain_text" as const, name: "HOSTFUNC_API_KEY", text: input.runtimeApiKey }]
+            : []),
         ],
       });
 

@@ -28,6 +28,8 @@ export default async function IntegrationsSettingsPage() {
           vectorSecondary: current.config.vector.secondary ?? "none",
           hasOpenAiKey: Boolean(current.encrypted.openaiApiKey),
           hasClaudeKey: Boolean(current.encrypted.claudeApiKey),
+          openAiKeyPreview: current.previews.openaiApiKey,
+          claudeKeyPreview: current.previews.claudeApiKey,
           hasVectorServiceUrl: Boolean(current.encrypted.vectorServiceUrl),
           hasVectorDatabaseUrl: Boolean(current.encrypted.vectorDatabaseUrl),
         }}
