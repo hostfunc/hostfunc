@@ -1,6 +1,6 @@
 {
   "name": "@hostfunc/executor-core",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Execution backend interface for hostfunc",
   "license": "AGPL-3.0-only",
   "type": "module",
@@ -16,7 +16,10 @@
       "import": "./test/conformance.ts"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -b",
     "dev": "tsc -b --watch --preserveWatchOutput",
