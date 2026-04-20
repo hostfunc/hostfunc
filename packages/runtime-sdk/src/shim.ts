@@ -1,7 +1,15 @@
 // packages/runtime-sdk/src/shim.ts
 // This file is the contents of the virtual @hostfunc/fn module.
 
-import { HostFuncError } from "@hostfunc/executor-core";
+class HostFuncError extends Error {
+  constructor(
+    public readonly code: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = "HostFuncError";
+  }
+}
 
 declare const __hostfunc_RUNTIME__: {
   controlPlane: string; // "https://api.hostfunc.internal"

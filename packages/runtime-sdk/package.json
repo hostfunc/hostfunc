@@ -38,8 +38,5 @@
     "dev": "tsc -b --watch --preserveWatchOutput",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
-  },
-  "dependencies": {
-    "@hostfunc/executor-core": "workspace:*"
   }
 }

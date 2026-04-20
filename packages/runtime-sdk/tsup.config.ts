@@ -16,5 +16,4 @@ export default defineConfig({
   target: "es2022",
   outDir: "dist",
   minify: false,
-  external: ["@hostfunc/executor-core"],
 });
