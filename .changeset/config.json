@@ -9,8 +9,12 @@
   "updateInternalDependencies": "patch",
   "ignore": [
     "@hostfunc/cron",
+    "@hostfunc/db",
     "@hostfunc/docs",
     "@hostfunc/email",
+    "@hostfunc/executor-cloudflare",
+    "@hostfunc/executor-core",
+    "@hostfunc/mcp-tools",
     "@hostfunc/outbound",
     "@hostfunc/runtime",
     "@hostfunc/tail",
