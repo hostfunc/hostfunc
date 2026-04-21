@@ -3,6 +3,9 @@ name: Release
 # Changesets opens a "Version packages" PR (or publishes when on that PR).
 # Option A (recommended for locked-down orgs): repo secret CHANGESETS_GITHUB_TOKEN — see
 # ops/production-env-matrix.md (section "Changesets release (Option A: PAT)").
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   workflow_dispatch:
   push:
@@ -44,7 +47,12 @@ jobs:
       - name: Create Release PR or Publish
         uses: changesets/action@v1
         with:
-          publish: pnpm changeset publish
+          publish: >
+            if [ -n "$NPM_TOKEN" ]; then
+              pnpm changeset publish;
+            else
+              echo "Skipping npm publish: NPM_TOKEN is not set.";
+            fi
           version: pnpm changeset version
           commit: "chore: version packages"
           title: "chore: version packages"
