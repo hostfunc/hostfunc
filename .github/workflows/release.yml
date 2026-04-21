@@ -47,12 +47,7 @@ jobs:
       - name: Create Release PR or Publish
         uses: changesets/action@v1
         with:
-          publish: >
-            if [ -n "$NPM_TOKEN" ]; then
-              pnpm changeset publish;
-            else
-              echo "Skipping npm publish: NPM_TOKEN is not set.";
-            fi
+          publish: bash .github/scripts/changeset-publish-if-token.sh
           version: pnpm changeset version
           commit: "chore: version packages"
           title: "chore: version packages"
