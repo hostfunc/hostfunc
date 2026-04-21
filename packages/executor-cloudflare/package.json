@@ -1,6 +1,7 @@
 {
   "name": "@hostfunc/executor-cloudflare",
   "version": "0.1.0",
+  "private": true,
   "description": "Cloudflare Workers for Platforms backend for hostfunc",
   "license": "AGPL-3.0-only",
   "type": "module",

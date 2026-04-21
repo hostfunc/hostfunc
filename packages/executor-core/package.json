@@ -1,6 +1,7 @@
 {
   "name": "@hostfunc/executor-core",
   "version": "0.0.1",
+  "private": true,
   "description": "Execution backend interface for hostfunc",
   "license": "AGPL-3.0-only",
   "type": "module",
