@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "pnpm build:deps && next dev",
     "build": "next build",
+    "build:smoke": "next build",
     "build:deps": "pnpm --filter=@hostfunc/db --filter=@hostfunc/executor-core --filter=@hostfunc/executor-cloudflare --filter=@hostfunc/mcp-tools --filter=@hostfunc/sdk build",
     "start": "next start",
     "lint": "biome check .",

@@ -21,7 +21,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { Suspense, useActionState, useEffect, useMemo, useState } from "react";
 import { createFunctionAction } from "./actions";
 
 // Make Monaco optional or load via standard lazy loading to prevent quick layout disruption
@@ -29,7 +29,7 @@ import { createFunctionAction } from "./actions";
 // but since Monaco is provided, we can use it, or fallback to a custom block. We'll use a custom block to make it look
 // glowing and beautiful without monaco loading flashes.
 
-export default function NewFunctionPage() {
+function NewFunctionPageClient() {
   const searchParams = useSearchParams();
   const requestedTemplateId = searchParams.get("template");
   const availableIds = useMemo(
@@ -717,6 +717,20 @@ export default function NewFunctionPage() {
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+export default function NewFunctionPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[360px] items-center justify-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/35 p-8 text-center text-sm text-[var(--color-bone-faint)]">
+          Loading function builder...
+        </div>
+      }
+    >
+      <NewFunctionPageClient />
+    </Suspense>
   );
 }
 
