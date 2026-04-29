@@ -24,6 +24,8 @@ export interface CloudflareConfig {
   /** Where the dispatch worker lives, used by `execute()` for cron/email triggers. */
   runtimeBaseUrl?: string;
   fnIndexKvId?: string;
+  /** KV namespace id for per-function asset blobs (binding name: FN_ASSETS_KV). */
+  assetsKvId?: string;
 }
 
 export class CloudflareExecutor implements ExecutorBackend {
@@ -54,6 +56,7 @@ export class CloudflareExecutor implements ExecutorBackend {
       bundle = await bundleFunction({
         code: input.bundle.code,
         fnId: input.functionId,
+        versionId: input.versionId,
       });
     } catch (e) {
       if (e instanceof BundleError) {
@@ -73,12 +76,35 @@ export class CloudflareExecutor implements ExecutorBackend {
         tags: [`org:${input.orgId}`, `fn:${input.functionId}`],
         bindings: [
           { type: "plain_text", name: "HOSTFUNC_FN_ID", text: input.functionId },
+          { type: "plain_text", name: "HOSTFUNC_VERSION_ID", text: input.versionId },
           { type: "plain_text", name: "HOSTFUNC_ORG_ID", text: input.orgId },
           ...(input.runtimeApiKey
             ? [{ type: "plain_text" as const, name: "HOSTFUNC_API_KEY", text: input.runtimeApiKey }]
             : []),
+          ...(this.cfg.assetsKvId
+            ? [
+                {
+                  type: "kv_namespace" as const,
+                  name: "FN_ASSETS_KV",
+                  namespace_id: this.cfg.assetsKvId,
+                },
+              ]
+            : []),
         ],
       });
+
+      if (this.cfg.assetsKvId && input.assets && input.assets.length > 0) {
+        const keyPrefix = `${input.functionId}@${input.versionId}`;
+        for (const asset of input.assets) {
+          const buf =
+            asset.content instanceof Uint8Array
+              ? asset.content
+              : new Uint8Array(asset.content as Buffer);
+          await this.api.putKvBytes(this.cfg.assetsKvId, `${keyPrefix}/${asset.path}`, buf, {
+            contentType: asset.mime,
+          });
+        }
+      }
 
       const deployResult: DeployResult & {
         sourceMap?: string;

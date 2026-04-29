@@ -3,6 +3,8 @@ main = "src/dispatch.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Top-level config = local dev (`wrangler dev --local`).
+# Deployments must use `wrangler deploy --env staging|production`.
 [vars]
 ENV = "dev"
 RUNTIME_INVOKE_TOKEN = "dev-runtime-invoke-token"
@@ -18,3 +20,71 @@ id = "local-egress-counters"
 [[dispatch_namespaces]]
 binding = "DISPATCHER"
 namespace = "hostfunc-dev"
+
+# ──────────────────────────────────────────────────────────
+# Staging
+# Secrets to set via `wrangler secret put <NAME> --env staging`:
+#   - LOOKUP_API_TOKEN       (matches web RUNTIME_LOOKUP_TOKEN)
+#   - RUNTIME_INVOKE_TOKEN   (matches web RUNTIME_INVOKE_TOKEN, cron worker)
+# ──────────────────────────────────────────────────────────
+[env.staging]
+name = "hostfunc-runtime-staging"
+routes = [
+  { pattern = "staging-run.hostfunc.io/*", zone_name = "hostfunc.io" },
+]
+
+[env.staging.observability.logs]
+enabled = false
+invocation_logs = true
+
+[env.staging.vars]
+ENV = "staging"
+WORKERS_SUBDOMAIN = "staging-run.hostfunc.io"
+LOOKUP_API_URL = "https://staging.hostfunc.io"
+RUNTIME_PUBLIC_URL = "https://staging-run.hostfunc.io"
+
+[[env.staging.kv_namespaces]]
+binding = "FN_INDEX"
+id = "5c711a85eb2744c6b0712693151485e5"
+
+[[env.staging.kv_namespaces]]
+binding = "EGRESS_COUNTERS"
+id = "d31c8394b3fe477f910b3782f5d8f5f0"
+
+[[env.staging.dispatch_namespaces]]
+binding = "DISPATCHER"
+namespace = "hostfunc-staging"
+
+# ──────────────────────────────────────────────────────────
+# Production
+# Secrets to set via `wrangler secret put <NAME> --env production`:
+#   - LOOKUP_API_TOKEN
+#   - RUNTIME_INVOKE_TOKEN
+# ──────────────────────────────────────────────────────────
+[env.production]
+name = "hostfunc-runtime"
+routes = [
+  { pattern = "run.hostfunc.io/*", zone_name = "hostfunc.io" },
+]
+
+[env.production.observability.logs]
+enabled = false
+invocation_logs = true
+
+[env.production.vars]
+ENV = "production"
+WORKERS_SUBDOMAIN = "run.hostfunc.io"
+LOOKUP_API_URL = "https://app.hostfunc.io"
+RUNTIME_PUBLIC_URL = "https://run.hostfunc.io"
+
+[[env.production.kv_namespaces]]
+binding = "FN_INDEX"
+id = "REPLACE_WITH_PROD_FN_INDEX_KV_ID"
+
+[[env.production.kv_namespaces]]
+binding = "EGRESS_COUNTERS"
+id = "REPLACE_WITH_PROD_EGRESS_COUNTERS_KV_ID"
+
+[[env.production.dispatch_namespaces]]
+binding = "DISPATCHER"
+namespace = "hostfunc-prod"

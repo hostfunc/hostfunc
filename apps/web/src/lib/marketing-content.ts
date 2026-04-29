@@ -174,7 +174,7 @@ export const marketingContent: MarketingContent = {
 
   navLinks: [
     { label: "Docs", href: "/docs" },
-    { label: "Templates", href: "/templates" },
+    { label: "Marketplace", href: "/marketplace" },
     { label: "Connectors", href: "/connectors" },
     { label: "GitHub", href: "https://github.com/hostfunc/hostfunc" },
   ],
@@ -229,8 +229,7 @@ export async function main(input: { city: string }) {
     conversation: [
       {
         role: "user",
-        content:
-          "Fetch the top 3 stories from Hacker News and tell me which one mentions AI most.",
+        content: "Fetch the top 3 stories from Hacker News and tell me which one mentions AI most.",
       },
       {
         role: "assistant",
@@ -238,8 +237,7 @@ export async function main(input: { city: string }) {
         tool: {
           name: "create_scratch_function",
           args: { ttlSeconds: 300 },
-          output:
-            '{ "slug": "you/scratch-9k2x", "executionId": "exe_01J…", "wallMs": 412 }',
+          output: '{ "slug": "you/scratch-9k2x", "executionId": "exe_01J…", "wallMs": 412 }',
         },
       },
       {
@@ -422,8 +420,16 @@ export async function main(input: { url: string }) {
     body: "Your dashboard, MCP server, and metadata live in a Next.js control plane. User functions run as isolated V8 scripts inside a Cloudflare Workers for Platforms dispatch namespace. Every fetch from user code passes through an outbound worker that filters SSRF and counts egress. Logs ship via tail worker to Postgres in <2s.",
     stages: [
       { id: "request", label: "Request", detail: "POST /run/you/fn arrives at the edge." },
-      { id: "dispatch", label: "Dispatch", detail: "Lookup cached in KV; signed exec token issued." },
-      { id: "user", label: "User script", detail: "Runs in isolated V8 with per-script CPU + memory caps." },
+      {
+        id: "dispatch",
+        label: "Dispatch",
+        detail: "Lookup cached in KV; signed exec token issued.",
+      },
+      {
+        id: "user",
+        label: "User script",
+        detail: "Runs in isolated V8 with per-script CPU + memory caps.",
+      },
       { id: "outbound", label: "Outbound", detail: "Every fetch SSRF-filtered and byte-counted." },
       { id: "tail", label: "Tail", detail: "Logs and metrics shipped to Postgres in real time." },
     ],
@@ -535,10 +541,13 @@ export async function main(input: { url: string }) {
 
   footerLinks: [
     { label: "Docs", href: "/docs" },
-    { label: "Templates", href: "/templates" },
+    { label: "Release", href: "/release" },
+    { label: "Security", href: "/security" },
+    { label: "Terms", href: "/terms" },
+    { label: "Privacy", href: "/privacy" },
+    { label: "Marketplace", href: "/marketplace" },
     { label: "GitHub", href: "https://github.com/hostfunc/hostfunc" },
     { label: "Discord", href: "https://discord.gg/hostfunc" },
-    { label: "Security", href: "/security" },
     { label: "Changelog", href: "/changelog" },
   ],
 

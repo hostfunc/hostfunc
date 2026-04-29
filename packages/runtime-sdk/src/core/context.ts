@@ -3,6 +3,7 @@ import { SdkError, type RuntimeContext } from "./types";
 const DEFAULT_CONTEXT: RuntimeContext = {
   execId: "",
   fnId: "",
+  versionId: "",
   orgId: "",
   token: "",
   controlPlane: "",
@@ -26,11 +27,13 @@ export function getContext(): RuntimeContext {
   if (!scoped || typeof scoped !== "object") {
     const token = readEnv("HOSTFUNC_API_KEY");
     const fnId = readEnv("HOSTFUNC_FN_ID");
+    const versionId = readEnv("HOSTFUNC_VERSION_ID");
     const controlPlane = readEnv("HOSTFUNC_CONTROL_PLANE_URL");
     const runtimeUrl = readEnv("HOSTFUNC_RUNTIME_URL") || controlPlane;
     return {
       ...DEFAULT_CONTEXT,
       fnId,
+      versionId,
       token,
       controlPlane,
       runtimeUrl,
@@ -40,11 +43,13 @@ export function getContext(): RuntimeContext {
   const candidate = scoped as Partial<RuntimeContext>;
   const envToken = readEnv("HOSTFUNC_API_KEY");
   const envFnId = readEnv("HOSTFUNC_FN_ID");
+  const envVersionId = readEnv("HOSTFUNC_VERSION_ID");
   const envControlPlane = readEnv("HOSTFUNC_CONTROL_PLANE_URL");
   const envRuntimeUrl = readEnv("HOSTFUNC_RUNTIME_URL");
   return {
     execId: candidate.execId ?? "",
     fnId: candidate.fnId ?? envFnId,
+    versionId: candidate.versionId ?? envVersionId,
     orgId: candidate.orgId ?? "",
     token: candidate.token ?? envToken,
     controlPlane: candidate.controlPlane ?? envControlPlane,

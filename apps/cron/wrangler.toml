@@ -11,3 +11,43 @@ CONTROL_PLANE_URL = "http://localhost:3000"
 CONTROL_PLANE_TOKEN = "dev-trigger-token"
 HOSTFUNC_RUNTIME_URL = "http://localhost:8787"
 RUNTIME_INVOKE_TOKEN = "dev-runtime-invoke-token"
+
+# ──────────────────────────────────────────────────────────
+# Staging
+# Secrets via `wrangler secret put <NAME> --env staging`:
+#   - CONTROL_PLANE_TOKEN    (matches web TRIGGER_CONTROL_TOKEN)
+#   - RUNTIME_INVOKE_TOKEN   (matches runtime worker + web RUNTIME_INVOKE_TOKEN)
+# ──────────────────────────────────────────────────────────
+[env.staging]
+name = "hostfunc-cron-staging"
+
+[env.staging.observability.logs]
+enabled = false
+invocation_logs = true
+
+[env.staging.triggers]
+crons = ["* * * * *", "0 0 * * *"]
+
+[env.staging.vars]
+CONTROL_PLANE_URL = "https://staging.hostfunc.io"
+HOSTFUNC_RUNTIME_URL = "https://staging-run.hostfunc.io"
+
+# ──────────────────────────────────────────────────────────
+# Production
+# Secrets via `wrangler secret put <NAME> --env production`:
+#   - CONTROL_PLANE_TOKEN
+#   - RUNTIME_INVOKE_TOKEN
+# ──────────────────────────────────────────────────────────
+[env.production]
+name = "hostfunc-cron"
+
+[env.production.observability.logs]
+enabled = false
+invocation_logs = true
+
+[env.production.triggers]
+crons = ["* * * * *", "0 0 * * *"]
+
+[env.production.vars]
+CONTROL_PLANE_URL = "https://app.hostfunc.io"
+HOSTFUNC_RUNTIME_URL = "https://run.hostfunc.io"

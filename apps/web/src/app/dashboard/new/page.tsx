@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { CustomSelect as UiCustomSelect } from "@/components/ui/custom-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FUNCTION_TEMPLATES, TEMPLATES } from "@/lib/templates";
@@ -12,14 +13,15 @@ import {
   ArrowRight,
   CheckCircle2,
   Code,
+  GitBranch,
   Globe,
   Monitor,
   Sparkles,
   Terminal,
   Wrench,
 } from "lucide-react";
-import { useActionState, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Suspense, useActionState, useEffect, useMemo, useState } from "react";
 import { createFunctionAction } from "./actions";
 
 // Make Monaco optional or load via standard lazy loading to prevent quick layout disruption
@@ -27,7 +29,7 @@ import { createFunctionAction } from "./actions";
 // but since Monaco is provided, we can use it, or fallback to a custom block. We'll use a custom block to make it look
 // glowing and beautiful without monaco loading flashes.
 
-export default function NewFunctionPage() {
+function NewFunctionPageClient() {
   const searchParams = useSearchParams();
   const requestedTemplateId = searchParams.get("template");
   const availableIds = useMemo(
@@ -59,9 +61,9 @@ export default function NewFunctionPage() {
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [templateSearch, setTemplateSearch] = useState("");
-  const [templateCategory, setTemplateCategory] = useState<"all" | (typeof FUNCTION_TEMPLATES)[number]["category"]>(
-    "all",
-  );
+  const [templateCategory, setTemplateCategory] = useState<
+    "all" | (typeof FUNCTION_TEMPLATES)[number]["category"]
+  >("all");
 
   const templateRecord = useMemo(
     () => FUNCTION_TEMPLATES.find((template) => template.id === selectedTemplate),
@@ -69,7 +71,10 @@ export default function NewFunctionPage() {
   );
   const suggestedSlug = useMemo(() => {
     const base = templateRecord?.name ?? "hello-world";
-    return base.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    return base
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
   }, [templateRecord]);
   const slugLooksValid = slug.length === 0 || /^[a-z0-9-]+$/.test(slug);
   const slugLengthValid = slug.length === 0 || (slug.length >= 3 && slug.length <= 64);
@@ -78,6 +83,14 @@ export default function NewFunctionPage() {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const canSubmit = step2Complete;
   const showPreview = currentStep >= 2 && step1Complete;
+  const [githubConnected, setGithubConnected] = useState(false);
+  const [githubRepos, setGithubRepos] = useState<
+    Array<{ repoId: number; fullName: string; defaultBranch: string; ownerAvatarUrl: string }>
+  >([]);
+  const [githubRepoId, setGithubRepoId] = useState<number | "">("");
+  const [githubBranch, setGithubBranch] = useState("");
+  const [githubPathPrefix, setGithubPathPrefix] = useState("");
+  const [githubBranches, setGithubBranches] = useState<string[]>([]);
 
   const templateCategories = useMemo(
     () => ["all", ...new Set(FUNCTION_TEMPLATES.map((template) => template.category))] as const,
@@ -113,12 +126,62 @@ export default function NewFunctionPage() {
     }
   }, [step1Complete, step2Complete, currentStep]);
 
+  useEffect(() => {
+    let canceled = false;
+    void (async () => {
+      const [statusRes, reposRes] = await Promise.all([
+        fetch("/api/integrations/github/status", { method: "GET" }).catch(() => null),
+        fetch("/api/integrations/github/repos", { method: "GET" }).catch(() => null),
+      ]);
+      if (canceled) return;
+      const statusJson = (await statusRes?.json().catch(() => null)) as {
+        connected?: boolean;
+      } | null;
+      setGithubConnected(Boolean(statusJson?.connected));
+      const reposJson = (await reposRes?.json().catch(() => null)) as {
+        repos?: Array<{
+          repoId: number;
+          fullName: string;
+          defaultBranch: string;
+          ownerAvatarUrl: string;
+        }>;
+      } | null;
+      setGithubRepos(reposJson?.repos ?? []);
+    })();
+    return () => {
+      canceled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (githubRepoId === "") {
+      setGithubBranches([]);
+      return;
+    }
+    let canceled = false;
+    void (async () => {
+      const response = await fetch(`/api/integrations/github/branches?repoId=${githubRepoId}`);
+      const json = (await response.json().catch(() => null)) as { branches?: string[] } | null;
+      if (canceled) return;
+      const branches = json?.branches ?? [];
+      setGithubBranches(branches);
+      if (!githubBranch && branches.length > 0) {
+        setGithubBranch(branches[0] ?? "");
+      }
+    })();
+    return () => {
+      canceled = true;
+    };
+  }, [githubRepoId, githubBranch]);
+
   return (
     <div className="flex flex-col gap-8 lg:flex-row lg:items-center">
       {/* Left Column: Form Configuration */}
       <div className="flex flex-1 flex-col pt-4 lg:max-w-xl">
         <div>
-          <h1 className="mb-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">Create new function</h1>
+          <h1 className="mb-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
+            Create new function
+          </h1>
           <p className="mb-4 text-[var(--color-bone-muted)]">
             Deploy scalable serverless logic in a guided three-step flow.
           </p>
@@ -134,7 +197,9 @@ export default function NewFunctionPage() {
                   "rounded-full border px-3 py-1.5 text-center",
                   idx + 1 === currentStep
                     ? "border-[var(--color-amber)]/50 bg-[var(--color-amber)]/10 text-[var(--color-amber)]"
-                    : (idx === 0 && step1Complete) || (idx === 1 && step2Complete) || (idx === 2 && step2Complete)
+                    : (idx === 0 && step1Complete) ||
+                        (idx === 1 && step2Complete) ||
+                        (idx === 2 && step2Complete)
                       ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
                       : "border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone-faint)]",
                 )}
@@ -149,6 +214,13 @@ export default function NewFunctionPage() {
           <input type="hidden" name="templateId" value={selectedTemplate} />
           <input type="hidden" name="slug" value={slug} />
           <input type="hidden" name="description" value={description} />
+          <input
+            type="hidden"
+            name="githubRepoId"
+            value={githubRepoId === "" ? "" : githubRepoId}
+          />
+          <input type="hidden" name="githubBranch" value={githubBranch} />
+          <input type="hidden" name="githubPathPrefix" value={githubPathPrefix} />
 
           <div className="space-y-6">
             <AnimatePresence mode="wait" initial={false}>
@@ -197,7 +269,9 @@ export default function NewFunctionPage() {
                       </p>
                     ) : null}
                     {!slugLengthValid ? (
-                      <p className="text-xs text-red-300">Slug must be between 3 and 64 characters.</p>
+                      <p className="text-xs text-red-300">
+                        Slug must be between 3 and 64 characters.
+                      </p>
                     ) : null}
                     {slug.length === 0 ? (
                       <p className="text-xs text-[var(--color-bone-faint)]">
@@ -268,7 +342,9 @@ export default function NewFunctionPage() {
                     />
                     <select
                       value={templateCategory}
-                      onChange={(event) => setTemplateCategory(event.target.value as typeof templateCategory)}
+                      onChange={(event) =>
+                        setTemplateCategory(event.target.value as typeof templateCategory)
+                      }
                       className="h-10 rounded-md border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/50 px-3 text-sm text-[var(--color-bone)]"
                     >
                       {templateCategories.map((category) => (
@@ -282,7 +358,9 @@ export default function NewFunctionPage() {
                     {filteredTemplateOptions.map((tmpl) => {
                       const isActive = selectedTemplate === tmpl.id;
                       const Icon = tmpl.icon;
-                      const category = FUNCTION_TEMPLATES.find((template) => template.id === tmpl.id)?.category;
+                      const category = FUNCTION_TEMPLATES.find(
+                        (template) => template.id === tmpl.id,
+                      )?.category;
 
                       return (
                         <button
@@ -315,10 +393,14 @@ export default function NewFunctionPage() {
                               >
                                 <Icon className="w-4 h-4" />
                               </div>
-                              {isActive ? <CheckCircle2 className="h-4 w-4 text-[var(--color-amber)]" /> : null}
+                              {isActive ? (
+                                <CheckCircle2 className="h-4 w-4 text-[var(--color-amber)]" />
+                              ) : null}
                             </div>
                             <div>
-                              <h3 className="text-sm font-medium text-[var(--color-bone)]">{tmpl.title}</h3>
+                              <h3 className="text-sm font-medium text-[var(--color-bone)]">
+                                {tmpl.title}
+                              </h3>
                               <p className="mt-1 text-[10px] uppercase tracking-wide text-[var(--color-bone-faint)]">
                                 {category ?? "template"}
                               </p>
@@ -374,10 +456,126 @@ export default function NewFunctionPage() {
                 <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.02] px-4 py-3 text-xs text-[var(--color-bone-faint)]">
                   <p className="font-medium text-[var(--color-bone)]">Step 3 - Review</p>
                   <p className="mt-1">
-                    Creating <span className="font-mono text-[var(--color-bone)]">{slug || "(slug required)"}</span>{" "}
-                    with <span className="text-[var(--color-bone)]">{templateRecord?.name ?? "Hello world"}</span>{" "}
+                    Creating{" "}
+                    <span className="font-mono text-[var(--color-bone)]">
+                      {slug || "(slug required)"}
+                    </span>{" "}
+                    with{" "}
+                    <span className="text-[var(--color-bone)]">
+                      {templateRecord?.name ?? "Hello world"}
+                    </span>{" "}
                     starter.
                   </p>
+                  <p className="mt-2 rounded-lg border border-[var(--color-amber)]/25 bg-[var(--color-amber)]/10 px-3 py-2 text-[var(--color-amber)]">
+                    New functions are public marketplace-ready by default. Private workspace-only
+                    functions are available on Pro and Team plans from function settings.
+                  </p>
+                </div>
+                <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.02] px-4 py-3">
+                  <p className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-[var(--color-bone-faint)]">
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/70 bg-white">
+                      <img
+                        src="/Github%20logo.svg"
+                        alt=""
+                        aria-hidden="true"
+                        className="h-3.5 w-3.5 object-contain"
+                      />
+                    </span>
+                    Optional GitHub link
+                  </p>
+                  {!githubConnected ? (
+                    <p className="mt-2 text-xs text-amber-200">
+                      GitHub not connected. You can still create this function and link a repo
+                      later.
+                    </p>
+                  ) : githubRepos.length === 0 ? (
+                    <p className="mt-2 text-xs text-amber-200">
+                      No repositories selected in workspace integrations yet. Select repos to link
+                      here.
+                    </p>
+                  ) : (
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      <UiCustomSelect
+                        value={githubRepoId === "" ? "" : String(githubRepoId)}
+                        onChange={(nextValue) =>
+                          setGithubRepoId(nextValue ? Number(nextValue) : "")
+                        }
+                        options={[
+                          { value: "", label: "No repository link" },
+                          ...githubRepos.map((repo) => ({
+                            value: String(repo.repoId),
+                            label: repo.fullName,
+                            icon: (
+                              <img
+                                src={repo.ownerAvatarUrl}
+                                alt=""
+                                aria-hidden="true"
+                                className="h-4 w-4 rounded-full object-cover"
+                                onError={(event) => {
+                                  event.currentTarget.src = "/Github%20logo.svg";
+                                  event.currentTarget.classList.remove("rounded-full");
+                                }}
+                              />
+                            ),
+                          })),
+                        ]}
+                        triggerClassName="flex h-10 w-full items-center justify-between rounded-md border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/50 px-3 text-left text-[var(--color-bone)] transition hover:border-[var(--color-amber)]/40 disabled:cursor-not-allowed disabled:opacity-60"
+                        renderValue={(option) => (
+                          <span className="inline-flex items-center gap-2">
+                            {option?.icon ?? null}
+                            <span className="truncate">
+                              {option?.label ?? "No repository link"}
+                            </span>
+                          </span>
+                        )}
+                        renderOption={(option) => (
+                          <span className="inline-flex items-center gap-2">
+                            {option.icon ?? null}
+                            <span className="truncate">{option.label}</span>
+                          </span>
+                        )}
+                      />
+                      <UiCustomSelect
+                        value={githubBranch}
+                        onChange={(nextValue) => setGithubBranch(nextValue)}
+                        disabled={githubRepoId === ""}
+                        options={[
+                          {
+                            value: "",
+                            label:
+                              githubRepoId === "" ? "Select repository first" : "Select branch",
+                          },
+                          ...githubBranches.map((branch) => ({
+                            value: branch,
+                            label: branch,
+                            icon: <GitBranch className="h-3.5 w-3.5" />,
+                          })),
+                        ]}
+                        triggerClassName="flex h-10 w-full items-center justify-between rounded-md border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/50 px-3 text-left text-[var(--color-bone)] transition hover:border-[var(--color-amber)]/40 disabled:cursor-not-allowed disabled:opacity-60"
+                        renderValue={(option) => (
+                          <span className="inline-flex items-center gap-2">
+                            {option?.icon ?? null}
+                            <span className="truncate">
+                              {option?.label ??
+                                (githubRepoId === "" ? "Select repository first" : "Select branch")}
+                            </span>
+                          </span>
+                        )}
+                        renderOption={(option) => (
+                          <span className="inline-flex items-center gap-2">
+                            {option.icon ?? null}
+                            <span className="truncate">{option.label}</span>
+                          </span>
+                        )}
+                      />
+                      <Input
+                        value={githubPathPrefix}
+                        onChange={(event) => setGithubPathPrefix(event.target.value)}
+                        placeholder="Path prefix (optional)"
+                        className="h-10 border-[var(--color-border)] bg-[var(--color-ink-elevated)]/50 text-[var(--color-bone)] md:col-span-2"
+                      />
+                    </div>
+                  )}
                 </div>
                 {state?.error?.form ? (
                   <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
@@ -507,15 +705,32 @@ export default function NewFunctionPage() {
               className="flex h-full w-full flex-col items-center justify-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/35 p-8 text-center"
             >
               <Code className="mb-3 h-7 w-7 text-[var(--color-amber)]" />
-              <p className="text-sm font-medium text-[var(--color-bone)]">Live template preview locked</p>
+              <p className="text-sm font-medium text-[var(--color-bone)]">
+                Live template preview locked
+              </p>
               <p className="mt-2 max-w-sm text-xs text-[var(--color-bone-faint)]">
-                  Complete Step 1 with a valid slug, then continue to Step 2 to unlock the preview window.
+                Complete Step 1 with a valid slug, then continue to Step 2 to unlock the preview
+                window.
               </p>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+export default function NewFunctionPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[360px] items-center justify-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/35 p-8 text-center text-sm text-[var(--color-bone-faint)]">
+          Loading function builder...
+        </div>
+      }
+    >
+      <NewFunctionPageClient />
+    </Suspense>
   );
 }
 
@@ -542,8 +757,7 @@ function tokenizePreviewLine(
     typescript:
       /(\/\/.*$|"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|`(?:\\.|[^`])*`|\b(?:import|export|default|async|await|function|return|const|let|var|if|else|try|catch|throw|new|class|interface|type|extends|implements|from|as|true|false|null|undefined)\b|\b(?:number|string|boolean|unknown|void|Record|Promise|Date)\b|\b\d+(?:\.\d+)?\b|\b[A-Za-z_$][A-Za-z0-9_$]*\s*(?=\())/g,
     bash: /(#.*$|"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?|--?[A-Za-z0-9-]+|\b(?:npm|pnpm|npx|hostfunc|curl|node|export|cat|echo|cd|ls|pwd|git|docker)\b|\|\||&&|[|><])/g,
-    json:
-      /("(?:\\.|[^"])*"\s*:|"(?:\\.|[^"])*"|\b(?:true|false|null)\b|\b-?\d+(?:\.\d+)?\b|[{}\[\],:])/g,
+    json: /("(?:\\.|[^"])*"\s*:|"(?:\\.|[^"])*"|\b(?:true|false|null)\b|\b-?\d+(?:\.\d+)?\b|[{}\[\],:])/g,
   };
   const regex = patterns[language];
   const result: Array<{ value: string; className?: string }> = [];
@@ -565,9 +779,11 @@ function tokenizePreviewLine(
 function getPreviewTokenClass(language: "typescript" | "bash" | "json", token: string): string {
   if (language === "typescript") {
     if (token.startsWith("//")) return "token comment";
-    if (token.startsWith('"') || token.startsWith("'") || token.startsWith("`")) return "token string";
+    if (token.startsWith('"') || token.startsWith("'") || token.startsWith("`"))
+      return "token string";
     if (/^[A-Za-z_$][A-Za-z0-9_$]*\s*(?=\()/.test(token)) return "token function";
-    if (/^(number|string|boolean|unknown|void|Record|Promise|Date)$/.test(token)) return "token type";
+    if (/^(number|string|boolean|unknown|void|Record|Promise|Date)$/.test(token))
+      return "token type";
     if (/^\d/.test(token)) return "token number";
     if (/^(true|false|null|undefined)$/.test(token)) return "token keyword";
     if (/^[@${}.:[\],()]+$/.test(token)) return "token punctuation";

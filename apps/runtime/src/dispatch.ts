@@ -422,6 +422,7 @@ function withHostfuncHeaders(
   headers.delete("x-hostfunc-invocation-kind");
   headers.set("x-hostfunc-exec-id", input.execId);
   headers.set("x-hostfunc-fn-id", lookup.fnId);
+  headers.set("x-hostfunc-version-id", lookup.versionId);
   headers.set("x-hostfunc-org-id", lookup.orgId);
   headers.set("x-hostfunc-exec-token", input.execToken);
   headers.set("x-hostfunc-control-plane", input.controlPlane);

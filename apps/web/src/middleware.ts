@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-const PROTECTED = ["/dashboard", "/settings", "/billing"];
+const PROTECTED = ["/dashboard", "/settings", "/billing", "/onboarding"];
 const SESSION_COOKIE_NAMES = ["better-auth.session_token", "__Secure-better-auth.session_token"];
 
 export async function middleware(req: NextRequest) {
@@ -20,5 +20,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/settings/:path*", "/billing/:path*"],
+  matcher: ["/dashboard/:path*", "/settings/:path*", "/billing/:path*", "/onboarding/:path*"],
 };

@@ -8,12 +8,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, CheckCircle2, Hexagon, Loader2, Mail } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { toast } from "sonner";
 
 type AuthStep = "options" | "email";
 
-export default function LoginPage() {
+function LoginPageClient() {
   const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -311,5 +311,19 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="relative flex min-h-screen items-center justify-center bg-[var(--color-ink)] text-[var(--color-bone-muted)]">
+          Loading login...
+        </main>
+      }
+    >
+      <LoginPageClient />
+    </Suspense>
   );
 }

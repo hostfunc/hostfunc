@@ -2,6 +2,7 @@
 
 import { requireOrgPermission } from "@/lib/session";
 import { createFunction } from "@/server/functions";
+import { saveFunctionGithubBinding } from "@/server/github-integrations";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -19,6 +20,9 @@ const createSchema = z.object({
     .string()
     .default("hello-world")
     .refine((templateId) => TEMPLATE_IDS.includes(templateId), "Unknown template"),
+  githubRepoId: z.coerce.number().int().positive().optional(),
+  githubBranch: z.string().trim().max(200).optional().default(""),
+  githubPathPrefix: z.string().trim().max(500).optional().default(""),
 });
 
 // biome-ignore lint/suspicious/noExplicitAny: Standard internal state type
@@ -29,6 +33,9 @@ export async function createFunctionAction(_prevState: any, formData: FormData) 
     slug: formData.get("slug"),
     description: formData.get("description") ?? "",
     templateId: formData.get("templateId") ?? "hello-world",
+    githubRepoId: formData.get("githubRepoId") || undefined,
+    githubBranch: formData.get("githubBranch") ?? "",
+    githubPathPrefix: formData.get("githubPathPrefix") ?? "",
   });
 
   if (!parsed.success) {
@@ -44,6 +51,17 @@ export async function createFunctionAction(_prevState: any, formData: FormData) 
     description: parsed.data.description,
     starterCode: code,
   });
+
+  if (parsed.data.githubRepoId && parsed.data.githubBranch) {
+    await saveFunctionGithubBinding({
+      orgId,
+      fnId,
+      userId: session.user.id,
+      repoId: parsed.data.githubRepoId,
+      branch: parsed.data.githubBranch,
+      pathPrefix: parsed.data.githubPathPrefix || null,
+    });
+  }
 
   revalidatePath("/dashboard");
   redirect(`/dashboard/${fnId}`);

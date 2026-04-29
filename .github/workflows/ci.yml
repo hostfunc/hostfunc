@@ -59,6 +59,43 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
 
+  web-build:
+    name: Web Build (Prerender Guard)
+    runs-on: ubuntu-latest
+    # Provide non-secret CI placeholders so env validation passes and we can
+    # catch real prerender issues (e.g. missing Suspense boundaries) pre-merge.
+    env:
+      NODE_ENV: production
+      DATABASE_URL: https://example.com
+      BETTER_AUTH_SECRET: 01234567890123456789012345678901
+      BETTER_AUTH_URL: https://staging.hostfunc.io
+      GOOGLE_CLIENT_ID: ci-google-client-id
+      GOOGLE_CLIENT_SECRET: ci-google-client-secret
+      GITHUB_CLIENT_ID: ci-github-client-id
+      GITHUB_CLIENT_SECRET: ci-github-client-secret
+      EMAIL_FROM: ci@hostfunc.dev
+      REDIS_URL: redis://127.0.0.1:6379
+      SECRETS_MASTER_KEY: QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=
+      EXEC_TOKEN_SECRET: QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI=
+      HOSTFUNC_RUNTIME_URL: https://staging-run.hostfunc.io
+      RUNTIME_LOOKUP_TOKEN: ci-runtime-lookup-token
+      RUNTIME_INVOKE_TOKEN: ci-runtime-invoke-token
+      RUNTIME_INGEST_TOKEN: ci-runtime-ingest-token
+      TRIGGER_CONTROL_TOKEN: ci-trigger-control-token
+      HOSTFUNC_EXECUTOR: local
+      NEXT_PUBLIC_BETTER_AUTH_URL: https://staging.hostfunc.io
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @hostfunc/web build
+
   cli-pack-smoke:
     name: CLI Pack Smoke
     runs-on: ubuntu-latest

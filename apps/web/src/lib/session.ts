@@ -1,4 +1,6 @@
+import { getGithubOnboardingSkipState } from "@/server/github-integrations";
 import { db, schema, sql } from "@hostfunc/db";
+import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "./auth";
@@ -13,8 +15,25 @@ function compatWhere<T>(value: T): T {
   return value;
 }
 
+function isMissingGithubInstallationRelation(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message.toLowerCase().includes("github_installation") &&
+    error.message.toLowerCase().includes("does not exist")
+  );
+}
+
 export async function getSession() {
   return auth.api.getSession({ headers: await headers() });
+}
+
+export async function getOptionalSession() {
+  try {
+    return await getSession();
+  } catch (error) {
+    console.warn("Optional session lookup failed", error);
+    return null;
+  }
 }
 
 export async function requireSession() {
@@ -98,4 +117,34 @@ export async function requireOrgPermission(permission: OrgPermission) {
     throw new Error("forbidden");
   }
   return membership;
+}
+
+export async function getGithubConsentState() {
+  const { session, orgId } = await requireActiveOrg();
+  const githubAccount = await db.query.account.findFirst({
+    where: and(eq(schema.account.userId, session.user.id), eq(schema.account.providerId, "github")),
+    columns: { id: true },
+  });
+  let installation: { id: string } | null | undefined = null;
+  try {
+    installation = await db.query.githubInstallation.findFirst({
+      where: and(
+        eq(schema.githubInstallation.orgId, orgId),
+        eq(schema.githubInstallation.status, "active"),
+      ),
+      columns: { id: true },
+    });
+  } catch (error) {
+    if (!isMissingGithubInstallationRelation(error)) throw error;
+  }
+  return {
+    session,
+    orgId,
+    isGithubAuthUser: Boolean(githubAccount),
+    hasGithubInstallationForActiveOrg: Boolean(installation),
+    hasSkippedGithubOnboarding: await getGithubOnboardingSkipState({
+      orgId,
+      userId: session.user.id,
+    }),
+  };
 }

@@ -17,6 +17,9 @@ coverage/
 .env.local
 .env.*.local
 !.env.example
+!.env.production.example
+.env.staging.workers
+.env.production.workers
 
 # editor
 .vscode/*
@@ -41,4 +44,5 @@ tmp-pack/
 # local runtime/dev artifacts
 apps/runtime/.wrangler/
 apps/runtime/.dev.vars
+apps/*/.wrangler/
 dev/

@@ -31,6 +31,7 @@ import {
   LogOut,
   Plus,
   Settings,
+  Store,
   User,
   Zap,
 } from "lucide-react";
@@ -49,6 +50,7 @@ function getWorkspaceSwitchTarget(pathname: string | null): string {
   if (
     pathname === "/dashboard" ||
     pathname === "/dashboard/functions" ||
+    pathname.startsWith("/dashboard/marketplace") ||
     pathname.startsWith("/dashboard/settings")
   ) {
     return pathname;
@@ -102,7 +104,9 @@ export function DashboardNavbar({
           message.toLowerCase().includes("access") ||
           message.toLowerCase().includes("active_membership_not_found")
         ) {
-          toast.error("Access changed for that workspace. Use the recovery options on the next screen.");
+          toast.error(
+            "Access changed for that workspace. Use the recovery options on the next screen.",
+          );
           return;
         }
         toast.error(message);
@@ -138,6 +142,7 @@ export function DashboardNavbar({
   const navLinks = [
     { name: "Overview", href: "/dashboard", icon: Activity, exact: true },
     { name: "Functions", href: "/dashboard/functions", icon: Layers },
+    { name: "Marketplace", href: "/dashboard/marketplace", icon: Store },
   ];
 
   return (

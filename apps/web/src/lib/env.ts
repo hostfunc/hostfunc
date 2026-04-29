@@ -10,6 +10,17 @@ const schema = z
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GITHUB_CLIENT_ID: z.string().optional(),
   GITHUB_CLIENT_SECRET: z.string().optional(),
+  GITHUB_INTEGRATIONS_CLIENT_ID: z.string().optional(),
+  GITHUB_INTEGRATIONS_CLIENT_SECRET: z.string().optional(),
+  GITHUB_INTEGRATIONS_REDIRECT_URI: z.string().url().optional(),
+  GITHUB_OAUTH_SCOPES: z.string().optional(),
+  GITHUB_OAUTH_REDIRECT_URI: z.string().url().optional(),
+  GITHUB_APP_ID: z.string().optional(),
+  GITHUB_APP_SLUG: z.string().optional(),
+  GITHUB_APP_CLIENT_ID: z.string().optional(),
+  GITHUB_APP_CLIENT_SECRET: z.string().optional(),
+  GITHUB_APP_PRIVATE_KEY: z.string().optional(),
+  GITHUB_APP_WEBHOOK_SECRET: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().email(),
   REDIS_URL: z.string().url().default("redis://127.0.0.1:6379"),
@@ -28,6 +39,7 @@ const schema = z
   CF_DISPATCH_NAMESPACE: z.string().default("hostfunc-dev"),
   CF_FN_INDEX_KV_ID: z.string().optional(),
   CF_EGRESS_COUNTERS_KV_ID: z.string().optional(),
+  CF_FN_ASSETS_KV_ID: z.string().optional(),
   HOSTFUNC_USE_WFP: z
     .enum(["true", "false"])
     .default("false")
@@ -77,6 +89,23 @@ const schema = z
           code: z.ZodIssueCode.custom,
           path: [item.key],
           message: "is required in production for social login",
+        });
+      }
+    }
+
+    // Refuse to boot if any internal service token still equals its dev default.
+    // These tokens authenticate runtime/cron/email/tail workers against the control plane.
+    const devTokenDefaults: Array<{ key: keyof typeof value; bad: string }> = [
+      { key: "RUNTIME_INVOKE_TOKEN", bad: "dev-runtime-invoke-token" },
+      { key: "RUNTIME_INGEST_TOKEN", bad: "dev-ingest-token" },
+      { key: "TRIGGER_CONTROL_TOKEN", bad: "dev-trigger-token" },
+    ];
+    for (const item of devTokenDefaults) {
+      if (value[item.key] === item.bad) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [item.key as string],
+          message: `must be rotated from the dev default in production (generate via 'openssl rand -hex 32')`,
         });
       }
     }

@@ -1,8 +1,18 @@
+import { ActivityHeatmap } from "@/components/dashboard/charts/activity-heatmap";
+import { ExecutionsAreaChart } from "@/components/dashboard/charts/executions-area-chart";
+import { HourlyMiniBar } from "@/components/dashboard/charts/hourly-mini-bar";
+import { LatencyBandChart } from "@/components/dashboard/charts/latency-band-chart";
+import { MetricCard } from "@/components/dashboard/charts/metric-card";
+import { RangeSwitcher } from "@/components/dashboard/charts/range-switcher";
+import { StatusRadialChart } from "@/components/dashboard/charts/status-radial-chart";
+import { TopFunctionsBar } from "@/components/dashboard/charts/top-functions-bar";
+import { TriggerDonutChart } from "@/components/dashboard/charts/trigger-donut-chart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireActiveOrg } from "@/lib/session";
-import { getDashboardStats, getRecentExecutions } from "@/server/executions";
+import { type OverviewRange, getDashboardOverview } from "@/server/dashboard-overview";
+import { getRecentExecutions } from "@/server/executions";
 import { listFunctionsForOrg } from "@/server/functions";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -10,347 +20,530 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
-  Clock,
   ExternalLink,
+  Gauge,
   Layers,
-  Package,
+  PieChart,
   Save,
   Settings,
+  Sparkles,
+  Timer,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { CopyButton } from "./functions/copy-button";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
-  const { orgId } = await requireActiveOrg();
+const RANGE_LABELS: Record<OverviewRange, string> = {
+  "24h": "Last 24 hours",
+  "7d": "Last 7 days",
+  "30d": "Last 30 days",
+};
 
-  // Parallel fetch to optimize server rendering
-  const [functions, stats, recentExecutions] = await Promise.all([
+function isOverviewRange(value: unknown): value is OverviewRange {
+  return value === "24h" || value === "7d" || value === "30d";
+}
+
+function formatMs(value: number): string {
+  if (value <= 0) return "0 ms";
+  if (value >= 1000) return `${(value / 1000).toFixed(2)} s`;
+  return `${Math.round(value)} ms`;
+}
+
+function formatPercent(value: number): string {
+  if (!Number.isFinite(value)) return "0%";
+  const pct = value * 100;
+  if (pct === 0) return "0%";
+  if (pct < 1) return `${pct.toFixed(2)}%`;
+  return `${pct.toFixed(1)}%`;
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { orgId } = await requireActiveOrg();
+  const params = (await searchParams) ?? {};
+  const rawRange = typeof params.range === "string" ? params.range : undefined;
+  const range: OverviewRange = isOverviewRange(rawRange) ? rawRange : "7d";
+
+  const [functions, overview, recentExecutions] = await Promise.all([
     listFunctionsForOrg(orgId),
-    getDashboardStats(orgId),
+    getDashboardOverview(orgId, range),
     getRecentExecutions(orgId, 5),
   ]);
-  const recentFunctions = functions.slice(0, 6);
 
+  const recentFunctions = functions.slice(0, 6);
   const hasFunctions = recentFunctions.length > 0;
+  const hasActivity = overview.metrics.totalExecutions > 0;
+
+  const seriesTotals = overview.series.map((point) => point.total);
+  const seriesP95 = overview.series.map((point) => point.p95WallMs);
+  const seriesErrorRate = overview.series.map((point) =>
+    point.total > 0 ? (point.errors / point.total) * 100 : 0,
+  );
+  const seriesActivityPulse = overview.series.map((point) => (point.total > 0 ? point.total : 0));
+
+  const prevErrorRate =
+    overview.metrics.prevTotalExecutions > 0
+      ? overview.metrics.prevTotalErrors / overview.metrics.prevTotalExecutions
+      : 0;
 
   return (
     <div className="animate-in space-y-8 fade-in duration-500">
-      {/* High-Level Metrics */}
-      <div>
-        <h1 className="mb-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
-          Dashboard Overview
-        </h1>
-        <p className="mb-6 max-w-2xl text-sm text-[var(--color-bone-muted)]">
-          Monitor your function fleet, recent activity, and performance from one control surface.
-        </p>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Functions</CardTitle>
-              <Layers className="h-4 w-4 text-[var(--color-bone-faint)]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalFunctions}</div>
-              <p className="mt-1 text-xs text-[var(--color-bone-faint)]">Active deployments</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Executions (All Time)</CardTitle>
-              <Activity className="h-4 w-4 text-[var(--color-bone-faint)]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalExecutions.toLocaleString()}</div>
-              <p className="mt-1 text-xs text-[var(--color-bone-faint)]">
-                Total requests processed
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Failures</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-red-500/70" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalFailures.toLocaleString()}</div>
-              <p className="mt-1 text-xs text-[var(--color-bone-faint)]">
-                {stats.totalExecutions > 0
-                  ? `${((stats.totalFailures / stats.totalExecutions) * 100).toFixed(2)}% error rate`
-                  : "0% error rate"}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Compute Time</CardTitle>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-[var(--color-bone-faint)]" />
-                <Link
-                  href="/dashboard/settings/billing"
-                  className="inline-flex items-center text-amber-400 transition hover:text-amber-300"
-                  title="Review usage and limits"
-                  aria-label="Review usage and limits in billing"
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                </Link>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats.totalWallMs > 1000
-                  ? `${(stats.totalWallMs / 1000).toFixed(1)}s`
-                  : `${stats.totalWallMs}ms`}
-              </div>
-              <p className="mt-1 text-xs text-[var(--color-bone-faint)]">
-                Total wall time consumed
-              </p>
-            </CardContent>
-          </Card>
+      <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-[var(--color-amber)]">
+            <Sparkles className="size-3.5" />
+            Overview
+          </div>
+          <h1 className="mt-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
+            Dashboard Overview
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm text-[var(--color-bone-muted)]">
+            {RANGE_LABELS[range]} · live signals across your function fleet, latency profile, and
+            error trends.
+          </p>
         </div>
+        <RangeSwitcher current={range} />
       </div>
 
-      {hasFunctions ? (
-        <div className="space-y-6">
-          {/* Your Functions Grid */}
-          <div>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold tracking-tight">Your Functions</h2>
-              <Link
-                href="/dashboard/functions"
-                className="text-sm font-medium text-[var(--color-amber)] hover:underline"
-              >
-                View all
-              </Link>
-            </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          label="Executions"
+          icon={<Zap className="size-4" />}
+          value={overview.metrics.totalExecutions.toLocaleString()}
+          hint={`vs prev ${overview.metrics.prevTotalExecutions.toLocaleString()}`}
+          current={overview.metrics.totalExecutions}
+          previous={overview.metrics.prevTotalExecutions}
+          data={seriesTotals}
+          spark="area"
+          tone="amber"
+        />
+        <MetricCard
+          label="Error rate"
+          icon={<AlertTriangle className="size-4" />}
+          value={formatPercent(overview.metrics.errorRate)}
+          hint={`prev ${formatPercent(prevErrorRate)}`}
+          current={overview.metrics.errorRate}
+          previous={prevErrorRate}
+          lowerIsBetter
+          data={seriesErrorRate}
+          spark="line"
+          tone="error"
+        />
+        <MetricCard
+          label="p95 latency"
+          icon={<Timer className="size-4" />}
+          value={formatMs(overview.metrics.p95WallMs)}
+          hint={`prev ${formatMs(overview.metrics.prevP95WallMs)}`}
+          current={overview.metrics.p95WallMs}
+          previous={overview.metrics.prevP95WallMs}
+          lowerIsBetter
+          data={seriesP95}
+          spark="bar"
+          tone="cool"
+        />
+        <MetricCard
+          label="Active functions"
+          icon={<Activity className="size-4" />}
+          value={overview.metrics.activeFunctions.toLocaleString()}
+          hint={`prev ${overview.metrics.prevActiveFunctions.toLocaleString()}`}
+          current={overview.metrics.activeFunctions}
+          previous={overview.metrics.prevActiveFunctions}
+          data={seriesActivityPulse}
+          spark="dots"
+          tone="ok"
+        />
+      </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {recentFunctions.map((fn) => (
-                <div
-                  key={fn.id}
-                  className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)] text-[var(--color-bone)] shadow-sm transition-all duration-300 hover:border-[var(--color-amber)]/40 hover:shadow-lg"
-                >
-                  <div className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--color-amber)]/30 bg-[var(--color-amber)]/10">
-                          <Activity className="h-4 w-4 text-[var(--color-amber)]" />
-                        </div>
-                        <div className="overflow-hidden">
-                          <h3 className="font-mono text-sm font-semibold truncate" title={fn.slug}>
-                            {fn.slug}
-                          </h3>
-                          <p className="whitespace-nowrap text-[10px] text-[var(--color-bone-faint)]">
-                            Deployed {formatDistanceToNow(fn.updatedAt, { addSuffix: true })}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge
-                        variant={fn.visibility === "public" ? "default" : "secondary"}
-                        className="capitalize shadow-sm shrink-0 ml-2 text-[10px]"
-                      >
-                        {fn.visibility}
-                      </Badge>
-                    </div>
-                    <div className="mb-3 flex flex-wrap items-center gap-2">
-                      <Badge
-                        variant="secondary"
-                        className="border-[var(--color-border)] bg-white/[0.04] text-[10px] font-medium text-[var(--color-bone)]"
-                      >
-                        {fn.currentVersionId ? "Deployed" : "Saved"}
-                      </Badge>
-                      {fn.envVarCount > 0 ? (
-                        <Badge
-                          variant="secondary"
-                          className="border-emerald-400/30 bg-emerald-500/10 text-[10px] font-medium text-emerald-300"
-                        >
-                          <CheckCircle2 className="mr-1 h-3 w-3" />
-                          Env set ({fn.envVarCount})
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="secondary"
-                          className="border-[var(--color-border)] bg-white/[0.02] text-[10px] font-medium text-[var(--color-bone-faint)]"
-                        >
-                          <Save className="mr-1 h-3 w-3" />
-                          No env vars
-                        </Badge>
-                      )}
-                      <Badge
-                        variant="secondary"
-                        className="border-[var(--color-border)] bg-white/[0.02] text-[10px] font-medium text-[var(--color-bone-faint)]"
-                      >
-                        <Package className="mr-1 h-3 w-3" />
-                        npm ({fn.packageCount})
-                      </Badge>
-                      <Badge
-                        variant="secondary"
-                        className="border-[var(--color-border)] bg-white/[0.02] text-[10px] font-medium text-[var(--color-bone-faint)]"
-                      >
-                        <Activity className="mr-1 h-3 w-3" />
-                        exec ({fn.executionCount})
-                      </Badge>
-                      {fn.latestExecutionStatus ? (
-                        <Badge
-                          variant="secondary"
-                          className={
-                            fn.latestExecutionStatus === "ok"
-                              ? "border-emerald-400/30 bg-emerald-500/10 text-[10px] font-medium text-emerald-300"
-                              : "border-red-400/30 bg-red-500/10 text-[10px] font-medium text-red-300"
-                          }
-                        >
-                          Last {fn.latestExecutionStatus === "ok" ? "200" : "500"}
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <p className="mt-1 h-10 line-clamp-2 text-sm text-[var(--color-bone-muted)]">
-                      {fn.description?.trim() || "No description provided."}
-                    </p>
-                  </div>
-
-                  {/* Hover Actions Bar */}
-                  <div className="flex items-center justify-between border-t border-[var(--color-border)] bg-white/[0.02] p-2.5 transition-colors group-hover:bg-white/[0.04]">
-                    <div className="flex items-center">
-                      <CopyButton
-                        value={fn.deployedUrl ?? ""}
-                        disabled={!fn.deployedUrl}
-                        title={
-                          fn.deployedUrl ? "Copy deployed endpoint" : "Host the function first"
-                        }
-                      />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        asChild
-                        className="h-7 border-[var(--color-border)] bg-transparent px-2 text-[11px] shadow-sm"
-                      >
-                        <Link href={`/dashboard/${fn.id}/settings`}>
-                          <Settings className="h-3 w-3 mr-1" />
-                          Settings
-                        </Link>
-                      </Button>
-                      <Button size="sm" asChild className="h-7 px-2 text-[11px] shadow-sm">
-                        <Link href={`/dashboard/${fn.id}`}>
-                          Open
-                          <ExternalLink className="h-3 w-3 ml-1" />
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
+      {hasActivity ? (
+        <>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div>
+                  <CardTitle>Execution trend</CardTitle>
+                  <CardDescription className="text-[var(--color-bone-muted)]">
+                    Successful runs vs errors per {overview.bucketKind}.
+                  </CardDescription>
                 </div>
-              ))}
-            </div>
+                <Gauge className="size-4 text-[var(--color-bone-faint)]" />
+              </CardHeader>
+              <CardContent>
+                <ExecutionsAreaChart data={overview.series} bucketKind={overview.bucketKind} />
+              </CardContent>
+            </Card>
+
+            <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div>
+                  <CardTitle>Latency band</CardTitle>
+                  <CardDescription className="text-[var(--color-bone-muted)]">
+                    p50 → p95 wall time across the window.
+                  </CardDescription>
+                </div>
+                <Timer className="size-4 text-[var(--color-bone-faint)]" />
+              </CardHeader>
+              <CardContent>
+                <LatencyBandChart data={overview.series} bucketKind={overview.bucketKind} />
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Recent Executions Table */}
-          <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription className="text-[var(--color-bone-muted)]">
-                Latest executions across all your functions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {recentExecutions.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="border-b border-[var(--color-border)] bg-white/[0.03] text-xs uppercase text-[var(--color-bone-faint)]">
-                      <tr>
-                        <th className="px-4 py-3 rounded-tl-md">Function</th>
-                        <th className="px-4 py-3">Status</th>
-                        <th className="px-4 py-3">Trigger</th>
-                        <th className="px-4 py-3">Duration</th>
-                        <th className="px-4 py-3 rounded-tr-md text-right">Time</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[var(--color-border)]">
-                      {recentExecutions.map((exec) => (
-                        <tr key={exec.id} className="transition-colors hover:bg-white/[0.03]">
-                          <td className="px-4 py-3 font-mono font-medium">
-                            <Link
-                              href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
-                              className="block"
-                            >
-                              {exec.fnSlug ?? exec.fnId}
-                            </Link>
-                          </td>
-                          <td className="px-4 py-3">
-                            <Link
-                              href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
-                              className="block"
-                            >
-                              <Badge
-                                variant={exec.status === "ok" ? "default" : "destructive"}
-                                className={
-                                  exec.status === "ok"
-                                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
-                                    : ""
-                                }
-                              >
-                                {exec.status}
-                              </Badge>
-                            </Link>
-                          </td>
-                          <td className="px-4 py-3 text-xs uppercase tracking-wider text-[var(--color-bone-faint)]">
-                            <Link
-                              href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
-                              className="block"
-                            >
-                              <span className="inline-flex items-center rounded-full border border-sky-400/30 bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium tracking-wide text-sky-200">
-                                {exec.triggerKind}
-                              </span>
-                            </Link>
-                          </td>
-                          <td className="px-4 py-3 font-mono text-xs">
-                            <Link
-                              href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
-                              className="block"
-                            >
-                              {exec.wallMs}ms
-                            </Link>
-                          </td>
-                          <td className="whitespace-nowrap px-4 py-3 text-right text-[var(--color-bone-faint)]">
-                            <Link
-                              href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
-                              className="inline-flex items-center gap-1"
-                            >
-                              {formatDistanceToNow(exec.startedAt, { addSuffix: true })}
-                              <ArrowRight className="h-3.5 w-3.5 text-[var(--color-bone-faint)]" />
-                            </Link>
-                          </td>
-                        </tr>
+          <div className="grid gap-6 lg:grid-cols-3">
+            <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
+              <CardHeader className="pb-3">
+                <CardTitle>Trigger mix</CardTitle>
+                <CardDescription className="text-[var(--color-bone-muted)]">
+                  How requests are entering your functions.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pb-8">
+                {overview.triggerBreakdown.length > 0 ? (
+                  <TriggerDonutChart data={overview.triggerBreakdown} />
+                ) : (
+                  <div className="flex h-44 items-center justify-center text-sm text-[var(--color-bone-muted)]">
+                    No trigger activity yet.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
+              <CardHeader className="pb-3">
+                <CardTitle>Status mix</CardTitle>
+                <CardDescription className="text-[var(--color-bone-muted)]">
+                  Outcomes broken down by execution status.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pb-8">
+                <StatusRadialChart data={overview.statusMix} />
+              </CardContent>
+            </Card>
+
+            <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div>
+                  <CardTitle>
+                    {range === "24h" ? "Hourly executions" : "Activity heatmap"}
+                  </CardTitle>
+                  <CardDescription className="text-[var(--color-bone-muted)]">
+                    {range === "24h" ? "Volume by hour of day." : "Volume by day of week × hour."}
+                  </CardDescription>
+                </div>
+                <PieChart className="size-4 text-[var(--color-bone-faint)]" />
+              </CardHeader>
+              <CardContent>
+                {range === "24h" ? (
+                  <HourlyMiniBar data={overview.series} />
+                ) : (
+                  <ActivityHeatmap data={overview.heatmap} />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
+              <CardHeader className="pb-3">
+                <CardTitle>Top functions</CardTitle>
+                <CardDescription className="text-[var(--color-bone-muted)]">
+                  Most-invoked functions in this window.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {overview.topFunctions.length > 0 ? (
+                  <>
+                    <TopFunctionsBar data={overview.topFunctions} />
+                    <ul className="mt-3 space-y-1.5">
+                      {overview.topFunctions.map((fn) => (
+                        <li key={fn.fnId}>
+                          <Link
+                            href={`/dashboard/${fn.fnId}`}
+                            className="flex items-center justify-between rounded-md px-2 py-1 text-xs text-[var(--color-bone-muted)] transition-colors hover:bg-white/[0.04] hover:text-[var(--color-bone)]"
+                          >
+                            <span className="truncate font-mono">{fn.fnSlug}</span>
+                            <span className="ml-3 flex items-center gap-3 text-[var(--color-bone-faint)]">
+                              <span>{fn.total.toLocaleString()} runs</span>
+                              <span>{formatMs(fn.p95WallMs)} p95</span>
+                              <ArrowRight className="size-3" />
+                            </span>
+                          </Link>
+                        </li>
                       ))}
-                    </tbody>
-                  </table>
+                    </ul>
+                  </>
+                ) : (
+                  <div className="flex h-48 items-center justify-center text-sm text-[var(--color-bone-muted)]">
+                    No function activity yet.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 text-[var(--color-bone)]">
+              <CardHeader>
+                <CardTitle>Recent activity</CardTitle>
+                <CardDescription className="text-[var(--color-bone-muted)]">
+                  Latest executions across all your functions.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {recentExecutions.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="border-b border-[var(--color-border)] bg-white/[0.03] text-xs uppercase text-[var(--color-bone-faint)]">
+                        <tr>
+                          <th className="rounded-tl-md px-4 py-3">Function</th>
+                          <th className="px-4 py-3">Status</th>
+                          <th className="hidden px-4 py-3 sm:table-cell">Trigger</th>
+                          <th className="px-4 py-3">Duration</th>
+                          <th className="rounded-tr-md px-4 py-3 text-right">Time</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[var(--color-border)]">
+                        {recentExecutions.map((exec) => (
+                          <tr key={exec.id} className="transition-colors hover:bg-white/[0.03]">
+                            <td className="px-4 py-3 font-mono font-medium">
+                              <Link
+                                href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
+                                className="block truncate"
+                                title={exec.fnSlug ?? exec.fnId}
+                              >
+                                {exec.fnSlug ?? exec.fnId}
+                              </Link>
+                            </td>
+                            <td className="px-4 py-3">
+                              <Link
+                                href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
+                                className="block"
+                              >
+                                <Badge
+                                  variant={exec.status === "ok" ? "default" : "destructive"}
+                                  className={
+                                    exec.status === "ok"
+                                      ? "bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                                      : exec.status === "fn_error"
+                                        ? "bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                                        : ""
+                                  }
+                                >
+                                  {exec.status === "fn_error" ? "error" : exec.status}
+                                </Badge>
+                              </Link>
+                            </td>
+                            <td className="hidden px-4 py-3 text-xs uppercase tracking-wider text-[var(--color-bone-faint)] sm:table-cell">
+                              <Link
+                                href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
+                                className="block"
+                              >
+                                <span className="inline-flex items-center rounded-full border border-sky-400/30 bg-sky-500/10 px-2 py-0.5 font-medium text-[10px] text-sky-200 tracking-wide">
+                                  {exec.triggerKind}
+                                </span>
+                              </Link>
+                            </td>
+                            <td className="px-4 py-3 font-mono text-xs">
+                              <Link
+                                href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
+                                className="block"
+                              >
+                                {exec.wallMs}ms
+                              </Link>
+                            </td>
+                            <td className="whitespace-nowrap px-4 py-3 text-right text-[var(--color-bone-faint)]">
+                              <Link
+                                href={`/dashboard/${exec.fnId}/executions/${exec.id}`}
+                                className="inline-flex items-center gap-1"
+                              >
+                                {formatDistanceToNow(exec.startedAt, { addSuffix: true })}
+                                <ArrowRight className="size-3.5 text-[var(--color-bone-faint)]" />
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8 text-center text-[var(--color-bone-muted)]">
+                    <Activity className="mb-3 size-8 opacity-20" />
+                    <p>No executions in this window yet.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      ) : (
+        <Card className="border-dashed border-[var(--color-border)] bg-[var(--color-ink-elevated)]/55 text-[var(--color-bone)]">
+          <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-[var(--color-amber)]/10">
+              <Activity className="size-6 text-[var(--color-amber)]" />
+            </div>
+            <div>
+              <h2 className="font-display text-2xl text-[var(--color-bone)]">
+                No activity in {RANGE_LABELS[range].toLowerCase()}
+              </h2>
+              <p className="mt-2 max-w-md text-sm text-[var(--color-bone-muted)]">
+                Switch the range or trigger a function to start seeing live charts here.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <RangeSwitcher current={range} />
+              <Button
+                asChild
+                className="rounded-full bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+              >
+                <Link href="/dashboard/new">Deploy a function</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {hasFunctions ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-xl tracking-tight">Your Functions</h2>
+            <Link
+              href="/dashboard/functions"
+              className="font-medium text-[var(--color-amber)] text-sm hover:underline"
+            >
+              View all
+            </Link>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {recentFunctions.map((fn) => (
+              <div
+                key={fn.id}
+                className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)] text-[var(--color-bone)] shadow-sm transition-all duration-300 hover:border-[var(--color-amber)]/40 hover:shadow-lg"
+              >
+                <div className="p-4">
+                  <div className="mb-3 flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded border border-[var(--color-amber)]/30 bg-[var(--color-amber)]/10">
+                        <Activity className="size-4 text-[var(--color-amber)]" />
+                      </div>
+                      <div className="overflow-hidden">
+                        <h3 className="truncate font-mono font-semibold text-sm" title={fn.slug}>
+                          {fn.slug}
+                        </h3>
+                        <p className="whitespace-nowrap text-[10px] text-[var(--color-bone-faint)]">
+                          Deployed {formatDistanceToNow(fn.updatedAt, { addSuffix: true })}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge
+                      variant={fn.visibility === "public" ? "default" : "secondary"}
+                      className="ml-2 shrink-0 text-[10px] capitalize shadow-sm"
+                    >
+                      {fn.visibility}
+                    </Badge>
+                  </div>
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <Badge
+                      variant="secondary"
+                      className="border-[var(--color-border)] bg-white/[0.04] font-medium text-[10px] text-[var(--color-bone)]"
+                    >
+                      {fn.currentVersionId ? "Deployed" : "Saved"}
+                    </Badge>
+                    {fn.envVarCount > 0 ? (
+                      <Badge
+                        variant="secondary"
+                        className="border-emerald-400/30 bg-emerald-500/10 font-medium text-[10px] text-emerald-300"
+                      >
+                        <CheckCircle2 className="mr-1 size-3" />
+                        Env set ({fn.envVarCount})
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="secondary"
+                        className="border-[var(--color-border)] bg-white/[0.02] font-medium text-[10px] text-[var(--color-bone-faint)]"
+                      >
+                        <Save className="mr-1 size-3" />
+                        No env vars
+                      </Badge>
+                    )}
+                    <Badge
+                      variant="secondary"
+                      className="border-[var(--color-border)] bg-white/[0.02] font-medium text-[10px] text-[var(--color-bone-faint)]"
+                    >
+                      <img
+                        src="/npm-logo.svg"
+                        alt=""
+                        aria-hidden="true"
+                        className="mr-1 size-3 object-contain"
+                      />
+                      npm ({fn.packageCount})
+                    </Badge>
+                    <Badge
+                      variant="secondary"
+                      className={
+                        fn.latestExecutionStatus === "ok"
+                          ? "border border-emerald-500/80 bg-transparent font-medium text-[10px] text-white"
+                          : fn.latestExecutionStatus
+                            ? "border border-red-500/80 bg-transparent font-medium text-[10px] text-white"
+                            : "border-[var(--color-border)] bg-white/[0.02] font-medium text-[10px] text-[var(--color-bone-faint)]"
+                      }
+                    >
+                      <Activity className="mr-1 size-3" />
+                      exec ({fn.executionCount})
+                    </Badge>
+                  </div>
+                  <p className="mt-1 line-clamp-2 h-10 text-sm text-[var(--color-bone-muted)]">
+                    {fn.description?.trim() || "No description provided."}
+                  </p>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center text-[var(--color-bone-muted)]">
-                  <Activity className="h-8 w-8 mb-3 opacity-20" />
-                  <p>No successful or failed executions recorded yet.</p>
+
+                <div className="flex items-center justify-between border-[var(--color-border)] border-t bg-white/[0.02] p-2.5 transition-colors group-hover:bg-white/[0.04]">
+                  <div className="flex items-center">
+                    <CopyButton
+                      value={fn.deployedUrl ?? ""}
+                      disabled={!fn.deployedUrl}
+                      title={fn.deployedUrl ? "Copy deployed endpoint" : "Host the function first"}
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                      className="h-7 border-[var(--color-border)] bg-transparent px-2 text-[11px] shadow-sm"
+                    >
+                      <Link href={`/dashboard/${fn.id}/settings`}>
+                        <Settings className="mr-1 size-3" />
+                        Settings
+                      </Link>
+                    </Button>
+                    <Button size="sm" asChild className="h-7 px-2 text-[11px] shadow-sm">
+                      <Link href={`/dashboard/${fn.id}`}>
+                        Open
+                        <ExternalLink className="ml-1 size-3" />
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
-        <div className="mt-6 grid place-items-center rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-ink-elevated)]/60 py-24 text-center">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-amber)]/10">
-            <Layers className="h-6 w-6 text-[var(--color-amber)]" />
+        <div className="mt-6 grid place-items-center rounded-xl border border-[var(--color-border)] border-dashed bg-[var(--color-ink-elevated)]/60 py-24 text-center">
+          <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-[var(--color-amber)]/10">
+            <Layers className="size-6 text-[var(--color-amber)]" />
           </div>
-          <h2 className="text-2xl font-semibold text-[var(--color-bone)]">No functions yet</h2>
+          <h2 className="font-semibold text-2xl text-[var(--color-bone)]">No functions yet</h2>
           <p className="mt-2 max-w-sm text-[var(--color-bone-muted)]">
             Create your first function to start processing events, running crons, and exploring the
             dashboard.
           </p>
           <Link
             href="/dashboard/new"
-            className="mt-6 inline-flex items-center rounded-full bg-[var(--color-amber)] px-5 py-2 text-sm font-medium text-[var(--color-ink)] shadow transition-colors hover:bg-[var(--color-amber-hover)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-amber)]"
+            className="mt-6 inline-flex items-center rounded-full bg-[var(--color-amber)] px-5 py-2 font-medium text-[var(--color-ink)] text-sm shadow transition-colors hover:bg-[var(--color-amber-hover)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-amber)]"
           >
             Deploy New Function
           </Link>

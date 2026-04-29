@@ -14,6 +14,7 @@ export interface ExecuteFunctionOptions {
 export interface RuntimeContext {
     execId: string;
     fnId: string;
+    versionId: string;
     orgId: string;
     token: string;
     controlPlane: string;

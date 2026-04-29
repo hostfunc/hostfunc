@@ -6,3 +6,34 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 CONTROL_PLANE_URL = "http://localhost:3000"
 CONTROL_PLANE_TOKEN = "dev-trigger-token"
+
+# ──────────────────────────────────────────────────────────
+# Staging
+# Secrets via `wrangler secret put CONTROL_PLANE_TOKEN --env staging`
+# (matches web TRIGGER_CONTROL_TOKEN).
+# After deploy: bind under Cloudflare Email Routing for staging-mail.hostfunc.io.
+# ──────────────────────────────────────────────────────────
+[env.staging]
+name = "hostfunc-email-staging"
+
+[env.staging.observability.logs]
+enabled = false
+invocation_logs = true
+
+[env.staging.vars]
+CONTROL_PLANE_URL = "https://staging.hostfunc.io"
+
+# ──────────────────────────────────────────────────────────
+# Production
+# Secrets via `wrangler secret put CONTROL_PLANE_TOKEN --env production`.
+# After deploy: bind under Email Routing for mail.hostfunc.io.
+# ──────────────────────────────────────────────────────────
+[env.production]
+name = "hostfunc-email"
+
+[env.production.observability.logs]
+enabled = false
+invocation_logs = true
+
+[env.production.vars]
+CONTROL_PLANE_URL = "https://app.hostfunc.io"

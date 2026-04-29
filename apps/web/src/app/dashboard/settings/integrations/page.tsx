@@ -1,10 +1,20 @@
 import { requireOrgPermission } from "@/lib/session";
+import {
+  getGithubInstallationStatus,
+  getGithubSelectedRepoIdsForOrg,
+  listGithubReposForOrg,
+} from "@/server/github-integrations";
 import { getWorkspaceIntegrations } from "@/server/integrations";
 import { IntegrationsClient } from "./integrations-client";
 
 export default async function IntegrationsSettingsPage() {
   const { orgId } = await requireOrgPermission("manage_workspace_settings");
-  const current = await getWorkspaceIntegrations(orgId);
+  const [current, github, githubRepos, githubSelectedRepoIds] = await Promise.all([
+    getWorkspaceIntegrations(orgId),
+    getGithubInstallationStatus(orgId),
+    listGithubReposForOrg(orgId),
+    getGithubSelectedRepoIdsForOrg(orgId),
+  ]);
 
   return (
     <div className="animate-in space-y-10 fade-in duration-500 pb-10">
@@ -32,6 +42,15 @@ export default async function IntegrationsSettingsPage() {
           claudeKeyPreview: current.previews.claudeApiKey,
           hasVectorServiceUrl: Boolean(current.encrypted.vectorServiceUrl),
           hasVectorDatabaseUrl: Boolean(current.encrypted.vectorDatabaseUrl),
+          github,
+          githubRepos: githubRepos.map((repo) => ({
+            repoId: repo.repoId,
+            fullName: repo.fullName,
+            defaultBranch: repo.defaultBranch,
+            private: repo.isPrivate,
+            archived: repo.isArchived,
+          })),
+          githubSelectedRepoIds,
         }}
       />
     </div>

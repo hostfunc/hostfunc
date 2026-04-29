@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DEFAULT_FUNCTION_SDK, type FunctionPackageRecord } from "@/lib/function-packages";
-import { Loader2, PackageCheck, Plus, RefreshCcw, Search, Trash2 } from "lucide-react";
+import { Loader2, Plus, RefreshCcw, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -147,7 +147,7 @@ export function PackagesClient({
       <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 shadow-xl">
         <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
           <div className="flex items-center gap-2 text-sm font-medium">
-            <PackageCheck className="h-4 w-4 text-primary" />
+            <img src="/npm-logo.svg" alt="" aria-hidden="true" className="h-4 w-4 object-contain" />
             Function Packages
           </div>
           <span className="text-xs text-[var(--color-bone-faint)]">

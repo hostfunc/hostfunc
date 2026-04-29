@@ -90,8 +90,8 @@ The workflow passes `CHANGESETS_GITHUB_TOKEN` to Changesets before falling back 
 
 | Variable | Purpose | Owner |
 |---|---|---|
-| `INGEST_API_URL` | Ingest endpoint base URL | Runtime |
-| `INGEST_API_TOKEN` | Ingest auth token | Runtime |
+| `INGEST_URL` | Ingest endpoint URL (`/api/internal/ingest` on the control plane) | Runtime |
+| `INGEST_TOKEN` | Ingest auth token (must equal web `RUNTIME_INGEST_TOKEN`) | Runtime |
 
 ## Rotation Cadence
 

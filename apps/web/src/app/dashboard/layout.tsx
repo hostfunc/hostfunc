@@ -1,4 +1,4 @@
-import { requireActiveOrg, requireSession } from "@/lib/session";
+import { getGithubConsentState, requireActiveOrg, requireSession } from "@/lib/session";
 import { getSetupState } from "@/server/setup-state";
 import { db, schema } from "@hostfunc/db";
 import { eq } from "drizzle-orm";
@@ -12,6 +12,14 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     redirect("/setup");
   }
   const [{ orgId }, baseSession] = await Promise.all([requireActiveOrg(), requireSession()]);
+  const githubConsent = await getGithubConsentState();
+  if (
+    githubConsent.isGithubAuthUser &&
+    !githubConsent.hasGithubInstallationForActiveOrg &&
+    !githubConsent.hasSkippedGithubOnboarding
+  ) {
+    redirect("/onboarding/github");
+  }
   const memberships = await db
     .select({
       organizationId: schema.organization.id,

@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { organization, useSession } from "@/lib/auth-client";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
-export default function JoinPage() {
+function JoinPageClient() {
   const router = useRouter();
   const params = useSearchParams();
   const invitationId = params.get("invitationId");
@@ -80,5 +80,20 @@ export default function JoinPage() {
         </Button>
       ) : null}
     </main>
+  );
+}
+
+export default function JoinPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="mx-auto max-w-xl py-24 text-center">
+          <h1 className="text-2xl font-semibold">Preparing invitation...</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Loading invitation details.</p>
+        </main>
+      }
+    >
+      <JoinPageClient />
+    </Suspense>
   );
 }

@@ -6,3 +6,36 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 INGEST_URL = "http://localhost:3000/api/internal/ingest"
 INGEST_TOKEN = "dev-ingest-token"
+
+# ──────────────────────────────────────────────────────────
+# Staging
+# Secrets via `wrangler secret put INGEST_TOKEN --env staging`
+# (matches web RUNTIME_INGEST_TOKEN).
+# Attach as a tail consumer to hostfunc-runtime-staging via:
+#   wrangler tail-consumer add hostfunc-runtime-staging hostfunc-tail-staging
+# ──────────────────────────────────────────────────────────
+[env.staging]
+name = "hostfunc-tail-staging"
+
+[env.staging.observability.logs]
+enabled = false
+invocation_logs = true
+
+[env.staging.vars]
+INGEST_URL = "https://staging.hostfunc.io/api/internal/ingest"
+
+# ──────────────────────────────────────────────────────────
+# Production
+# Secrets via `wrangler secret put INGEST_TOKEN --env production`.
+# Attach as tail consumer of hostfunc-runtime via:
+#   wrangler tail-consumer add hostfunc-runtime hostfunc-tail
+# ──────────────────────────────────────────────────────────
+[env.production]
+name = "hostfunc-tail"
+
+[env.production.observability.logs]
+enabled = false
+invocation_logs = true
+
+[env.production.vars]
+INGEST_URL = "https://app.hostfunc.io/api/internal/ingest"

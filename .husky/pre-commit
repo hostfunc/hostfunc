@@ -1,1 +1,18 @@
+#!/usr/bin/env sh
+
+# Block secret leaks before they ever reach the remote.
+# CI runs the same scan via .github/workflows/secret-scan.yml — this hook
+# is the local-machine first line of defense.
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --redact --no-banner || {
+    echo ""
+    echo "gitleaks found a secret in your staged changes."
+    echo "If this is a false positive, add an allowlist rule to .gitleaks.toml."
+    exit 1
+  }
+else
+  echo "warn: gitleaks not installed; skipping local secret scan."
+  echo "      install:  brew install gitleaks   (CI will still scan in PR)"
+fi
+
 pnpm test

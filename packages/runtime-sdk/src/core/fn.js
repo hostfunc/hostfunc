@@ -1,3 +1,4 @@
+import { assets } from "./assets";
 import { getContext } from "./context";
 import { SdkError } from "./types";
 const DEFAULT_EXECUTE_TIMEOUT_MS = 30_000;
@@ -106,6 +107,7 @@ export const fn = {
             return text;
         }
     },
+    assets,
     log(level, message, fields) {
         const logger = globalThis.__hostfunc_log;
         if (typeof logger === "function") {

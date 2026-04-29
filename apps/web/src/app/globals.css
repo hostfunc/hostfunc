@@ -191,4 +191,121 @@
   .docs-code .token.punctuation {
     color: var(--color-bone-faint);
   }
+
+  .markdown-readme {
+    color: var(--color-bone);
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
+  .markdown-readme > * + * {
+    margin-top: 1rem;
+  }
+  .markdown-readme h1,
+  .markdown-readme h2,
+  .markdown-readme h3,
+  .markdown-readme h4 {
+    color: var(--color-bone);
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: 1.25;
+    margin-top: 1.6em;
+  }
+  .markdown-readme h1 {
+    font-size: 1.75rem;
+  }
+  .markdown-readme h2 {
+    font-size: 1.4rem;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0.35em;
+  }
+  .markdown-readme h3 {
+    font-size: 1.15rem;
+  }
+  .markdown-readme h4 {
+    font-size: 1rem;
+  }
+  .markdown-readme p {
+    color: var(--color-bone-muted);
+  }
+  .markdown-readme strong {
+    color: var(--color-bone);
+  }
+  .markdown-readme a {
+    color: var(--color-amber);
+    text-decoration: underline;
+    text-decoration-color: rgba(232, 163, 23, 0.45);
+    text-underline-offset: 3px;
+  }
+  .markdown-readme a:hover {
+    color: var(--color-amber-hover);
+    text-decoration-color: var(--color-amber-hover);
+  }
+  .markdown-readme ul,
+  .markdown-readme ol {
+    color: var(--color-bone-muted);
+    padding-left: 1.5rem;
+  }
+  .markdown-readme ul {
+    list-style: disc;
+  }
+  .markdown-readme ol {
+    list-style: decimal;
+  }
+  .markdown-readme li + li {
+    margin-top: 0.35rem;
+  }
+  .markdown-readme code {
+    background: rgba(232, 163, 23, 0.12);
+    color: var(--color-amber);
+    font-family: var(--font-mono);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    font-size: 0.85em;
+  }
+  .markdown-readme pre {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+  .markdown-readme pre code {
+    background: transparent;
+    color: var(--color-bone);
+    padding: 0;
+    border-radius: 0;
+    font-size: inherit;
+  }
+  .markdown-readme blockquote {
+    border-left: 3px solid var(--color-amber);
+    padding-left: 1rem;
+    color: var(--color-bone-muted);
+    font-style: italic;
+  }
+  .markdown-readme img {
+    max-width: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--color-border);
+  }
+  .markdown-readme table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .markdown-readme th,
+  .markdown-readme td {
+    border: 1px solid var(--color-border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+  .markdown-readme th {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--color-bone);
+  }
+  .markdown-readme hr {
+    border: none;
+    border-top: 1px solid var(--color-border);
+  }
 }

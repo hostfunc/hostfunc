@@ -1,9 +1,11 @@
+import { assets } from "./core/assets";
 import { fn } from "./core/fn";
 import { secret } from "./core/secret";
+export type { AssetsApi } from "./core/assets";
 export type { FnApi } from "./core/fn";
 export type { SecretApi } from "./core/secret";
 export type { ExecuteFunctionOptions, JsonObject, JsonPrimitive, JsonValue, RuntimeContext, } from "./core/types";
 export { SdkError } from "./core/types";
 export default fn;
-export { fn, secret };
+export { fn, secret, assets };
 //# sourceMappingURL=index.d.ts.map
