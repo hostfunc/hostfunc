@@ -43,6 +43,41 @@
       "when": 1777000000000,
       "tag": "0005_function_packages",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777100000000,
+      "tag": "0006_github_app",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777200000000,
+      "tag": "0007_github_repo_avatar",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1777300000000,
+      "tag": "0008_fn_ai_context",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1777400000000,
+      "tag": "0009_function_marketplace",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1777500000000,
+      "tag": "0010_function_assets",
+      "breakpoints": true
     }
   ]
 }

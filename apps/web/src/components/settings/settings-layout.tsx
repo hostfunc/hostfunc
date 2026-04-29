@@ -11,6 +11,7 @@ import {
   KeyRound,
   type LucideIcon,
   Settings,
+  Sparkles,
   Users,
   Zap,
 } from "lucide-react";
@@ -28,6 +29,7 @@ const SETTINGS_ICONS = {
   zap: Zap,
   activity: Activity,
   gitBranch: GitBranch,
+  sparkles: Sparkles,
 } as const satisfies Record<string, LucideIcon>;
 
 export interface SettingsNavItem {

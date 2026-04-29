@@ -1,3 +1,4 @@
+import { assets, type AssetsApi } from "./assets";
 import { getContext } from "./context";
 import { type ExecuteFunctionOptions, SdkError, type JsonObject, type JsonValue } from "./types";
 
@@ -10,6 +11,7 @@ export interface FnApi {
     options?: ExecuteFunctionOptions,
   ): Promise<T>;
   log(level: "debug" | "info" | "warn" | "error", message: string, fields?: JsonObject): void;
+  assets: AssetsApi;
 }
 
 async function resolveSlug(
@@ -134,6 +136,8 @@ export const fn: FnApi = {
       return text as T;
     }
   },
+
+  assets,
 
   log(level: "debug" | "info" | "warn" | "error", message: string, fields?: JsonObject): void {
     const logger = (globalThis as Record<string, unknown>).__hostfunc_log as

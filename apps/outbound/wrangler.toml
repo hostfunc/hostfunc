@@ -9,3 +9,38 @@ ALLOW_HOSTS = "api.resend.com,api.stripe.com,discord.com,discordapp.com"
 [[kv_namespaces]]
 binding = "EGRESS_COUNTERS"
 id = "local-egress-counters"
+
+# ──────────────────────────────────────────────────────────
+# Staging
+# Shares EGRESS_COUNTERS KV with hostfunc-runtime-staging.
+# ──────────────────────────────────────────────────────────
+[env.staging]
+name = "hostfunc-outbound-staging"
+
+[env.staging.observability.logs]
+enabled = false
+invocation_logs = true
+
+[env.staging.vars]
+ALLOW_HOSTS = "api.resend.com,api.stripe.com,discord.com,discordapp.com,api.openai.com,api.anthropic.com,api.github.com"
+
+[[env.staging.kv_namespaces]]
+binding = "EGRESS_COUNTERS"
+id = "d31c8394b3fe477f910b3782f5d8f5f0"
+
+# ──────────────────────────────────────────────────────────
+# Production
+# ──────────────────────────────────────────────────────────
+[env.production]
+name = "hostfunc-outbound"
+
+[env.production.observability.logs]
+enabled = false
+invocation_logs = true
+
+[env.production.vars]
+ALLOW_HOSTS = "api.resend.com,api.stripe.com,discord.com,discordapp.com,api.openai.com,api.anthropic.com,api.github.com"
+
+[[env.production.kv_namespaces]]
+binding = "EGRESS_COUNTERS"
+id = "REPLACE_WITH_PROD_EGRESS_COUNTERS_KV_ID"

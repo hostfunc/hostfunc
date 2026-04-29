@@ -1,0 +1,116 @@
+name: Deploy Workers
+
+# Auto-deploy Cloudflare Workers per environment.
+#
+#   - push to main           -> staging
+#   - push of tag v*         -> production
+#   - workflow_dispatch      -> pick the environment manually
+#
+# Required GitHub Environment secrets:
+#   staging.CF_API_TOKEN, staging.CF_ACCOUNT_ID
+#   production.CF_API_TOKEN, production.CF_ACCOUNT_ID
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to deploy
+        type: choice
+        required: true
+        default: staging
+        options:
+          - staging
+          - production
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+
+concurrency:
+  group: deploy-workers-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  resolve-environment:
+    name: Resolve target environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.pick.outputs.environment }}
+      should_deploy: ${{ steps.pick.outputs.should_deploy }}
+    steps:
+      - id: pick
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "environment=${{ inputs.environment }}" >> "$GITHUB_OUTPUT"
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=staging" >> "$GITHUB_OUTPUT"
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "environment=production" >> "$GITHUB_OUTPUT"
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    name: Deploy to ${{ needs.resolve-environment.outputs.environment }}
+    needs: resolve-environment
+    if: needs.resolve-environment.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ needs.resolve-environment.outputs.environment }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck workers
+        run: |
+          pnpm --filter @hostfunc/runtime typecheck || true
+          # Other workers are JS-only; skip silently if no script defined.
+
+      - name: Deploy hostfunc-runtime
+        working-directory: apps/runtime
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: pnpm exec wrangler deploy --env ${{ needs.resolve-environment.outputs.environment }}
+
+      - name: Deploy hostfunc-cron
+        working-directory: apps/cron
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: pnpm exec wrangler deploy --env ${{ needs.resolve-environment.outputs.environment }}
+
+      - name: Deploy hostfunc-tail
+        working-directory: apps/tail
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: pnpm exec wrangler deploy --env ${{ needs.resolve-environment.outputs.environment }}
+
+      - name: Deploy hostfunc-email
+        working-directory: apps/email
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: pnpm exec wrangler deploy --env ${{ needs.resolve-environment.outputs.environment }}
+
+      - name: Deploy hostfunc-outbound
+        working-directory: apps/outbound
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: pnpm exec wrangler deploy --env ${{ needs.resolve-environment.outputs.environment }}

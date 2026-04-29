@@ -10,10 +10,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { requireActiveOrg } from "@/lib/session";
-import { getFunctionForOrg } from "@/server/functions";
-import { FileCode2, Globe, ShieldCheck } from "lucide-react";
+import {
+  MARKETPLACE_CATEGORIES,
+  getFunctionForOrg,
+  getFunctionMarketplaceProfileForOrg,
+} from "@/server/functions";
+import { getEffectivePlan } from "@/server/plans";
+import { FileCode2, Globe, ShieldCheck, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { updateFunctionDescriptionAction } from "../actions";
+import {
+  updateFunctionDescriptionAction,
+  updateFunctionMarketplaceProfileAction,
+  updateFunctionVisibilityAction,
+} from "../actions";
 
 export default async function GeneralFunctionSettingsPage({
   params,
@@ -24,6 +34,12 @@ export default async function GeneralFunctionSettingsPage({
   const { fn: fnId } = await params;
   const fn = await getFunctionForOrg(orgId, fnId);
   if (!fn) notFound();
+  const [plan, profile] = await Promise.all([
+    getEffectivePlan(orgId),
+    getFunctionMarketplaceProfileForOrg(orgId, fnId),
+  ]);
+  const canUsePrivateFunctions = plan.planSlug !== "free";
+  const privateLocked = fn.visibility !== "private" && !canUsePrivateFunctions;
 
   return (
     <div className="animate-in space-y-10 fade-in duration-500 pb-10">
@@ -46,49 +62,136 @@ export default async function GeneralFunctionSettingsPage({
               Function Visibility
             </SettingsCardTitle>
             <SettingsCardDescription>
-              Public HTTP access controls are coming soon. Your current visibility setting is shown
-              below.
+              Public functions appear in the marketplace by default. Private functions are available
+              on Pro and Team plans.
             </SettingsCardDescription>
           </SettingsCardHeader>
-          <SettingsCardContent>
-            <div className="flex flex-wrap gap-3">
-              {(["private", "public"] as const).map((visibility) => {
-                const active = fn.visibility === visibility;
-                return (
-                  <button
-                    key={visibility}
-                    type="button"
-                    disabled
-                    className={`min-w-[140px] rounded-xl border px-4 py-3 text-left transition ${
-                      active
-                        ? "border-[var(--color-amber)]/50 bg-[var(--color-amber)]/10 text-[var(--color-bone)]"
-                        : "border-[var(--color-border)] bg-[var(--color-ink)]/60 text-[var(--color-bone-faint)]"
-                    } disabled:cursor-not-allowed disabled:opacity-100`}
-                  >
-                    <div className="text-sm font-semibold capitalize">{visibility}</div>
-                    <div className="mt-1 text-xs text-[var(--color-bone-faint)]">
-                      {visibility === "public"
-                        ? "Expose endpoint publicly"
-                        : "Restrict to private usage"}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </SettingsCardContent>
-          <SettingsCardFooter className="justify-between gap-3">
-            <p className="text-sm text-[var(--color-bone-muted)]">
-              Public function access is coming soon.
-            </p>
-            <Button
-              type="button"
-              disabled
-              title="Visibility controls are coming soon"
-              className="rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
-            >
-              Save Visibility
-            </Button>
-          </SettingsCardFooter>
+          <form action={updateFunctionVisibilityAction}>
+            <SettingsCardContent>
+              <input type="hidden" name="fnId" value={fn.id} />
+              <input type="hidden" name="visibility" value={fn.visibility} />
+              <div className="flex flex-wrap gap-3">
+                {(["private", "public"] as const).map((visibility) => {
+                  const active = fn.visibility === visibility;
+                  const disabled = visibility === "private" && privateLocked;
+                  return (
+                    <button
+                      key={visibility}
+                      type="submit"
+                      name="visibility"
+                      value={visibility}
+                      disabled={disabled || active}
+                      className={`min-w-[140px] rounded-xl border px-4 py-3 text-left transition ${
+                        active
+                          ? "border-[var(--color-amber)]/50 bg-[var(--color-amber)]/10 text-[var(--color-bone)]"
+                          : "border-[var(--color-border)] bg-[var(--color-ink)]/60 text-[var(--color-bone-muted)] hover:border-[var(--color-amber)]/35"
+                      } disabled:cursor-not-allowed disabled:opacity-70`}
+                    >
+                      <div className="text-sm font-semibold capitalize">{visibility}</div>
+                      <div className="mt-1 text-xs text-[var(--color-bone-faint)]">
+                        {visibility === "public"
+                          ? "Discoverable in marketplace"
+                          : disabled
+                            ? "Requires Pro or Team"
+                            : "Workspace-only listing"}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </SettingsCardContent>
+            <SettingsCardFooter className="justify-between gap-3">
+              <p className="text-sm text-[var(--color-bone-muted)]">
+                {fn.visibility === "private"
+                  ? "This grandfathered private function remains private."
+                  : "This function is public and can be listed in the marketplace."}
+              </p>
+              {privateLocked ? (
+                <Button
+                  asChild
+                  className="rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+                >
+                  <Link href="/dashboard/settings/billing">Upgrade for private</Link>
+                </Button>
+              ) : null}
+            </SettingsCardFooter>
+          </form>
+        </SettingsCard>
+
+        <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/70 shadow-xl">
+          <SettingsCardHeader>
+            <SettingsCardTitle className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-[var(--color-amber)]" />
+              Marketplace Profile
+            </SettingsCardTitle>
+            <SettingsCardDescription>
+              Add discovery metadata for public listings. Private functions keep this saved until
+              they are published.
+            </SettingsCardDescription>
+          </SettingsCardHeader>
+          <form action={updateFunctionMarketplaceProfileAction}>
+            <SettingsCardContent className="space-y-4">
+              <input type="hidden" name="fnId" value={fn.id} />
+              <div className="grid max-w-2xl gap-2">
+                <Label htmlFor="marketplaceCategory">Category</Label>
+                <select
+                  id="marketplaceCategory"
+                  name="category"
+                  defaultValue={profile?.category ?? "utilities"}
+                  className="h-11 rounded-md border border-[var(--color-border)] bg-[var(--color-ink)]/70 px-3 text-sm text-[var(--color-bone)] outline-none focus:border-[var(--color-amber)]/50"
+                >
+                  {MARKETPLACE_CATEGORIES.map((category) => (
+                    <option key={category} value={category}>
+                      {category
+                        .split("-")
+                        .map((segment) => segment.slice(0, 1).toUpperCase() + segment.slice(1))
+                        .join(" ")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid max-w-2xl gap-2">
+                <Label htmlFor="marketplaceShortDescription">Short description</Label>
+                <Input
+                  id="marketplaceShortDescription"
+                  name="shortDescription"
+                  defaultValue={profile?.shortDescription || fn.description || ""}
+                  maxLength={280}
+                  placeholder="Explain the function in one marketplace-friendly sentence"
+                  className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)] placeholder:text-[var(--color-bone-faint)] focus-visible:ring-[var(--color-amber)]"
+                />
+              </div>
+              <div className="grid max-w-2xl gap-2">
+                <Label htmlFor="marketplaceUseCases">Use cases</Label>
+                <Input
+                  id="marketplaceUseCases"
+                  name="useCases"
+                  defaultValue={(profile?.useCases ?? []).join(", ")}
+                  placeholder="webhook, ai, crm, monitoring"
+                  className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)] placeholder:text-[var(--color-bone-faint)] focus-visible:ring-[var(--color-amber)]"
+                />
+              </div>
+              <div className="grid max-w-2xl gap-2">
+                <Label htmlFor="marketplaceReadme">README</Label>
+                <textarea
+                  id="marketplaceReadme"
+                  name="readme"
+                  defaultValue={profile?.readme ?? ""}
+                  maxLength={8000}
+                  placeholder="Document inputs, outputs, packages, and example payloads."
+                  className="min-h-40 rounded-md border border-[var(--color-border)] bg-[var(--color-ink)]/70 p-3 text-sm text-[var(--color-bone)] outline-none placeholder:text-[var(--color-bone-faint)] focus:border-[var(--color-amber)]/50"
+                />
+              </div>
+            </SettingsCardContent>
+            <SettingsCardFooter className="justify-end">
+              <Button
+                type="submit"
+                className="rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+              >
+                Save Marketplace Profile
+              </Button>
+            </SettingsCardFooter>
+          </form>
         </SettingsCard>
 
         <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/70 shadow-xl">

@@ -1,31 +1,47 @@
 import { Button } from "@/components/ui/button";
 import { requireActiveOrg } from "@/lib/session";
 import { searchFunctionsForOrgPaginated } from "@/server/functions";
-import { Activity, Plus } from "lucide-react";
+import { Activity, Plus, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { FunctionsResultsClient } from "./functions-results-client";
-import { FunctionsSearchFilter } from "./search-filter";
+import { FunctionsSearchBar } from "./functions-search-bar";
+import { filterCount, parseFunctionFilters } from "./search-params";
 
 export const dynamic = "force-dynamic";
 
 export default async function FunctionsExplorerPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; visibility?: string; view?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { orgId } = await requireActiveOrg();
-  const params = await searchParams;
+  const raw = await searchParams;
 
-  const query = params.q;
-  const visibility = params.visibility;
-  const view: "grid" | "list" = params.view === "list" ? "list" : "grid";
+  const urlParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(raw)) {
+    if (Array.isArray(value)) {
+      for (const v of value) urlParams.append(key, v);
+    } else if (typeof value === "string") {
+      urlParams.set(key, value);
+    }
+  }
+  const filters = parseFunctionFilters(urlParams);
 
   const initial = await searchFunctionsForOrgPaginated({
     orgId,
     limit: 10,
-    ...(query ? { query } : {}),
-    ...(visibility ? { visibility } : {}),
+    ...(filters.q ? { query: filters.q } : {}),
+    ...(filters.visibility ? { visibility: filters.visibility } : {}),
+    ...(filters.status ? { status: filters.status } : {}),
+    ...(filters.lastRun ? { lastRun: filters.lastRun } : {}),
+    ...(filters.github ? { github: filters.github } : {}),
+    ...(filters.env ? { env: filters.env } : {}),
+    ...(filters.trigger ? { triggers: filters.trigger } : {}),
+    ...(filters.updatedWithin ? { updatedWithin: filters.updatedWithin } : {}),
+    ...(filters.sort ? { sort: filters.sort } : {}),
   });
+
+  const appliedCount = filterCount(filters);
 
   return (
     <div className="mx-auto max-w-6xl animate-in space-y-6 fade-in duration-500">
@@ -35,7 +51,8 @@ export default async function FunctionsExplorerPage({
             Functions Explorer
           </h1>
           <p className="mt-1 text-sm text-[var(--color-bone-muted)]">
-            Manage, filter, and discover your deployed serverless workloads.
+            Search with chips, typeahead, and property filters — plus sort, grid/list, and keyboard
+            shortcuts.
           </p>
         </div>
         <Button
@@ -49,31 +66,54 @@ export default async function FunctionsExplorerPage({
         </Button>
       </div>
 
-      {/* Control Bar */}
-      <FunctionsSearchFilter initialQuery={query} initialVisibility={visibility} initialView={view} />
+      <FunctionsSearchBar initialFilters={filters} totalResults={initial.total} />
 
-      {/* Grid Results */}
       {initial.items.length > 0 ? (
         <FunctionsResultsClient
           initialItems={initial.items}
           initialHasMore={initial.hasMore}
           initialNextCursor={initial.nextCursor}
-          view={view}
-          {...(query ? { query } : {})}
-          {...(visibility ? { visibility } : {})}
+          filters={filters}
         />
       ) : (
         <div className="mt-8 grid place-items-center rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-ink-elevated)]/60 py-24 text-center shadow-sm">
           <Activity className="mb-4 h-10 w-10 text-[var(--color-bone-faint)]/60" />
           <h2 className="text-xl font-semibold text-[var(--color-bone)]">No functions found</h2>
           <p className="mb-6 mt-2 max-w-sm text-sm text-[var(--color-bone-muted)]">
-            {query || visibility
-              ? "We couldn't find any functions matching your current filters. Try adjusting your search query or visibility filter."
+            {appliedCount > 0
+              ? "No functions match the current filter set. Remove a chip, try a different value, or one of the suggestions below."
               : "You haven't deployed any functions to this workspace yet."}
           </p>
-          {(query || visibility) && (
-            <Button variant="outline" asChild>
-              <Link href="/dashboard/functions">Clear all filters</Link>
+          {appliedCount > 0 ? (
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button variant="outline" asChild>
+                <Link href="/dashboard/functions">Clear all filters</Link>
+              </Button>
+              <Button asChild variant="ghost" className="text-[var(--color-bone-muted)]">
+                <Link href="/dashboard/functions?visibility=public">
+                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                  Try: visibility public
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" className="text-[var(--color-bone-muted)]">
+                <Link href="/dashboard/functions?lastRun=error">
+                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                  Try: last run failed
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" className="text-[var(--color-bone-muted)]">
+                <Link href="/dashboard/functions?github=linked">
+                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                  Try: GitHub linked
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <Button asChild>
+              <Link href="/dashboard/new">
+                <Plus className="mr-2 h-4 w-4" />
+                Create your first function
+              </Link>
             </Button>
           )}
         </div>

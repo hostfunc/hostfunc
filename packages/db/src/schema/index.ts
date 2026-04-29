@@ -7,4 +7,8 @@ export * from "./executions.js";
 export * from "./billing.js";
 export * from "./tokens.js";
 export * from "./webhook.js";
+export * from "./github.js";
+export * from "./fnAiContext.js";
+export * from "./marketplace.js";
+export * from "./fnAssets.js";
 export * from "./relations.js";

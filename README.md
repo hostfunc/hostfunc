@@ -311,3 +311,26 @@ Please browse through our [CONTRIBUTING.md](./CONTRIBUTING.md) meticulously for 
 * `ops/observability.md`
 * `ops/security-reliability-baseline.md`
 * `ops/go-live-checklist.md`
+* `ops/runbooks/launch-hostfunc-io.md`
+
+---
+
+## 🌐 Public repo, hosted service, self-hosting
+
+This repository is the source for both the **open-source hostfunc platform** and the **hosted [hostfunc.io](https://hostfunc.io) service**. The configuration files in `apps/*/wrangler.toml`, `ops/`, and `.github/workflows/` reflect how we run hostfunc.io and double as a working reference for self-hosters.
+
+**Real secrets never live in this repo.** They live exclusively in:
+- **GitHub Environments** (`staging`, `production`) — `CF_API_TOKEN`, `CF_ACCOUNT_ID`.
+- **Vercel project env vars** — `DATABASE_URL`, `BETTER_AUTH_SECRET`, `STRIPE_SECRET_KEY`, OAuth client secrets, etc.
+- **Cloudflare Worker secrets** (`wrangler secret put`) — `LOOKUP_API_TOKEN`, `INGEST_TOKEN`, `RUNTIME_INVOKE_TOKEN`, `CONTROL_PLANE_TOKEN`.
+
+What is in the repo: route patterns (`run.hostfunc.io`), namespace names (`hostfunc-prod`), KV namespace IDs once provisioned. None of these are secrets — they're useless without the API tokens above. Cal.com, Plausible, and PostHog publish equivalent values.
+
+A [`gitleaks`](https://github.com/gitleaks/gitleaks) pre-commit hook plus a [`secret-scan`](.github/workflows/secret-scan.yml) PR gate enforce the policy.
+
+**To self-host**, fork this repo and replace:
+1. The `routes` patterns in the five `apps/*/wrangler.toml` files with your own zone.
+2. The Vercel project env vars with your own values.
+3. The GitHub Environment secrets with your own Cloudflare credentials.
+
+That's all. Everything else works as-is.

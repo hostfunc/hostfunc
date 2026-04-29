@@ -10,11 +10,13 @@ import {
 } from "@/components/settings/settings-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CustomSelect as UiCustomSelect } from "@/components/ui/custom-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   CheckCircle2,
   ChevronDown,
+  GitBranch,
   KeyRound,
   Loader2,
   Sparkles,
@@ -22,7 +24,12 @@ import {
   Waypoints,
 } from "lucide-react";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
-import { updateFunctionIntegrationOverridesStateAction } from "../../actions";
+import {
+  listFunctionGithubBranches,
+  removeFunctionGithubBindingAction,
+  saveFunctionGithubBindingAction,
+  updateFunctionIntegrationOverridesStateAction,
+} from "../../actions";
 
 type WorkspaceSummary = {
   aiProvider: "openai" | "claude";
@@ -56,6 +63,21 @@ type Props = {
     hasSavedFnOverrides: boolean;
     workspace: WorkspaceSummary;
     overrides: OverrideFormInitial;
+    github: {
+      connected: boolean;
+      repos: Array<{
+        repoId: number;
+        fullName: string;
+        defaultBranch: string;
+        ownerAvatarUrl: string;
+      }>;
+      binding: {
+        repoId: number;
+        repoFullName: string;
+        branch: string;
+        pathPrefix: string | null;
+      } | null;
+    };
   };
 };
 
@@ -331,6 +353,36 @@ export function FunctionIntegrationsClient({ fnId, initial }: Props) {
 
   const hasError = Boolean(state?.error?.form?.[0]);
   const hasSuccess = Boolean(state?.ok);
+  const [selectedRepoId, setSelectedRepoId] = useState<number | "">(
+    initial.github.binding?.repoId ?? "",
+  );
+  const [selectedBranch, setSelectedBranch] = useState(initial.github.binding?.branch ?? "");
+  const [pathPrefix, setPathPrefix] = useState(initial.github.binding?.pathPrefix ?? "");
+  const [branches, setBranches] = useState<string[]>([]);
+  const [bindingBusy, setBindingBusy] = useState(false);
+  const [bindingMessage, setBindingMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedRepoId === "") {
+      setBranches([]);
+      return;
+    }
+    let canceled = false;
+    void (async () => {
+      try {
+        const data = await listFunctionGithubBranches({ fnId, repoId: selectedRepoId });
+        if (canceled) return;
+        setBranches(data);
+        if (!selectedBranch && data.length > 0) setSelectedBranch(data[0] ?? "");
+      } catch (error) {
+        if (canceled) return;
+        setBindingMessage(error instanceof Error ? error.message : "Failed to load branches.");
+      }
+    })();
+    return () => {
+      canceled = true;
+    };
+  }, [fnId, selectedRepoId, selectedBranch]);
 
   return (
     <div className="space-y-6">
@@ -378,6 +430,179 @@ export function FunctionIntegrationsClient({ fnId, initial }: Props) {
             </Button>
           </div>
         </SettingsCardContent>
+      </SettingsCard>
+
+      <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/80 shadow-xl">
+        <SettingsCardHeader>
+          <SettingsCardTitle className="flex items-center gap-2 text-lg">
+            <Waypoints className="h-4 w-4 text-[var(--color-amber)]" />
+            GitHub repository binding
+          </SettingsCardTitle>
+          <SettingsCardDescription>
+            Bind this function to a specific GitHub repository and branch for future pull/push workflows.
+          </SettingsCardDescription>
+        </SettingsCardHeader>
+        <SettingsCardContent className="space-y-4">
+          {!initial.github.connected ? (
+            <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+              Connect GitHub first in workspace integrations settings.
+            </p>
+          ) : initial.github.repos.length === 0 ? (
+            <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+              No repositories selected for this workspace. Select repos in integrations settings to
+              unlock GitHub binding here.
+            </p>
+          ) : (
+            <>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="fn-githubRepo">Repository</Label>
+                  <UiCustomSelect
+                    id="fn-githubRepo"
+                    value={selectedRepoId === "" ? "" : String(selectedRepoId)}
+                    onChange={(nextValue) =>
+                      setSelectedRepoId(nextValue ? Number(nextValue) : "")
+                    }
+                    options={[
+                      { value: "", label: "Select repository" },
+                      ...initial.github.repos.map((repo) => ({
+                        value: String(repo.repoId),
+                        label: repo.fullName,
+                        icon: (
+                          <img
+                            src={repo.ownerAvatarUrl}
+                            alt=""
+                            aria-hidden="true"
+                            className="h-4 w-4 rounded-full object-cover"
+                            onError={(event) => {
+                              event.currentTarget.src = "/Github%20logo.svg";
+                              event.currentTarget.classList.remove("rounded-full");
+                            }}
+                          />
+                        ),
+                      })),
+                    ]}
+                    renderValue={(option) => (
+                      <span className="inline-flex items-center gap-2">
+                        {option?.icon ?? null}
+                        <span className="truncate">{option?.label ?? "Select repository"}</span>
+                      </span>
+                    )}
+                    renderOption={(option) => (
+                      <span className="inline-flex items-center gap-2">
+                        {option.icon ?? null}
+                        <span className="truncate">{option.label}</span>
+                      </span>
+                    )}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="fn-githubBranch">Branch</Label>
+                  <UiCustomSelect
+                    id="fn-githubBranch"
+                    value={selectedBranch}
+                    onChange={(nextValue) => setSelectedBranch(nextValue)}
+                    disabled={selectedRepoId === ""}
+                    options={[
+                      {
+                        value: "",
+                        label: selectedRepoId === "" ? "Select repository first" : "Select branch",
+                      },
+                      ...branches.map((branch) => ({
+                        value: branch,
+                        label: branch,
+                        icon: <GitBranch className="h-3.5 w-3.5" />,
+                      })),
+                    ]}
+                    renderValue={(option) => (
+                      <span className="inline-flex items-center gap-2">
+                        {option?.icon ?? null}
+                        <span className="truncate">
+                          {option?.label ??
+                            (selectedRepoId === "" ? "Select repository first" : "Select branch")}
+                        </span>
+                      </span>
+                    )}
+                    renderOption={(option) => (
+                      <span className="inline-flex items-center gap-2">
+                        {option.icon ?? null}
+                        <span className="truncate">{option.label}</span>
+                      </span>
+                    )}
+                  />
+                </div>
+                <div className="grid gap-2 md:col-span-2">
+                  <Label htmlFor="fn-githubPathPrefix">Path prefix (optional)</Label>
+                  <Input
+                    id="fn-githubPathPrefix"
+                    value={pathPrefix}
+                    onChange={(event) => setPathPrefix(event.target.value)}
+                    placeholder="functions/my-function"
+                    className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
+                  />
+                </div>
+              </div>
+              {initial.github.binding ? (
+                <p className="text-sm text-[var(--color-bone-muted)]">
+                  Current binding: {initial.github.binding.repoFullName}@{initial.github.binding.branch}
+                </p>
+              ) : (
+                <p className="text-sm text-[var(--color-bone-muted)]">No binding configured yet.</p>
+              )}
+              {bindingMessage ? (
+                <p className="text-sm text-[var(--color-bone-muted)]">{bindingMessage}</p>
+              ) : null}
+            </>
+          )}
+        </SettingsCardContent>
+        <SettingsCardFooter className="flex items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!initial.github.connected || bindingBusy}
+            className="border-[var(--color-border)] text-[var(--color-bone)] hover:border-red-500/40 hover:bg-red-500/10"
+            onClick={async () => {
+              try {
+                setBindingBusy(true);
+                await removeFunctionGithubBindingAction(fnId);
+                setBindingMessage("GitHub binding removed.");
+                setSelectedRepoId("");
+                setSelectedBranch("");
+                setPathPrefix("");
+              } catch (error) {
+                setBindingMessage(error instanceof Error ? error.message : "Failed to remove binding.");
+              } finally {
+                setBindingBusy(false);
+              }
+            }}
+          >
+            Remove Binding
+          </Button>
+          <Button
+            type="button"
+            disabled={!initial.github.connected || selectedRepoId === "" || !selectedBranch || bindingBusy}
+            className="rounded-full bg-[var(--color-amber)] px-6 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)] disabled:opacity-70"
+            onClick={async () => {
+              if (selectedRepoId === "" || !selectedBranch) return;
+              try {
+                setBindingBusy(true);
+                await saveFunctionGithubBindingAction({
+                  fnId,
+                  repoId: selectedRepoId,
+                  branch: selectedBranch,
+                  pathPrefix: pathPrefix.trim() || undefined,
+                });
+                setBindingMessage("GitHub binding saved.");
+              } catch (error) {
+                setBindingMessage(error instanceof Error ? error.message : "Failed to save binding.");
+              } finally {
+                setBindingBusy(false);
+              }
+            }}
+          >
+            {bindingBusy ? "Saving..." : "Save GitHub Binding"}
+          </Button>
+        </SettingsCardFooter>
       </SettingsCard>
 
       {overrideUiEnabled ? (

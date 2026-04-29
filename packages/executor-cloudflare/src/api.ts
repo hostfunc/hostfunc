@@ -165,6 +165,37 @@ export class CloudflareApi {
     return { success: res.ok || res.status === 404 };
   }
 
+  async putKvBytes(
+    namespaceId: string,
+    key: string,
+    body: ArrayBuffer | Uint8Array | Buffer,
+    opts?: { contentType?: string },
+  ): Promise<void> {
+    const url = `${CF_API}/accounts/${this.cfg.accountId}/storage/kv/namespaces/${namespaceId}/values/${encodeURIComponent(key)}`;
+    const payload =
+      body instanceof Uint8Array
+        ? body
+        : body instanceof ArrayBuffer
+          ? new Uint8Array(body)
+          : new Uint8Array(body);
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${this.cfg.apiToken}`,
+        "content-type": opts?.contentType ?? "application/octet-stream",
+      },
+      body: payload,
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new CloudflareApiCallError(
+        `cloudflare kv put failed (${res.status}): ${text}`,
+        res.status,
+        [],
+      );
+    }
+  }
+
   async getKvValue(namespaceId: string, key: string): Promise<string | null> {
     const url = `${CF_API}/accounts/${this.cfg.accountId}/storage/kv/namespaces/${namespaceId}/values/${encodeURIComponent(key)}`;
     const res = await fetch(url, {

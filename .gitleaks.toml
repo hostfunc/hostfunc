@@ -1,0 +1,47 @@
+# gitleaks config for hostfunc.
+#
+# Extends the default ruleset (covers AWS, GCP, Stripe, GitHub PATs, generic
+# high-entropy strings, etc.) and adds an allowlist for our intentional dev
+# defaults so they don't trip every commit.
+#
+# Run locally: `gitleaks detect --no-git -v` or `gitleaks protect --staged`.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Intentional dev defaults and placeholder values used in .env.example files and wrangler dev configs."
+
+regexes = [
+  # The dev tokens defined in apps/web/src/lib/env.ts and dev wrangler files.
+  # The prod guard in env.ts already refuses to boot if these are present in production.
+  '''dev-runtime-invoke-token''',
+  '''dev-ingest-token''',
+  '''dev-trigger-token''',
+
+  # Placeholder strings in templates (.env.example / .env.production.example).
+  '''replace-with-[a-z0-9-]+''',
+  '''<openssl rand -[a-z0-9]+ \d+>''',
+  '''<project-ref>''',
+  '''<password>''',
+  '''<token>''',
+  '''<region>''',
+  '''<endpoint>''',
+  '''REPLACE_WITH_[A-Z_]+_KV_ID''',
+
+  # Local docker compose default password — clearly local, paired with localhost host.
+  '''postgres://hostfunc:hostfunc@(127\.0\.0\.1|localhost):5433/hostfunc-db''',
+]
+
+paths = [
+  # Lockfiles often have hashes that look high-entropy but aren't secrets.
+  '''pnpm-lock\.yaml''',
+  '''package-lock\.json''',
+  '''yarn\.lock''',
+
+  # SDK build outputs are gitignored normally but skip if they slip in.
+  '''packages/runtime-sdk/src/.+\.(d\.ts|js|js\.map|d\.ts\.map)$''',
+
+  # Generated db migrations sometimes contain long ids that look like secrets.
+  '''packages/db/migrations/meta/''',
+]

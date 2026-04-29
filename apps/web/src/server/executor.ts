@@ -25,6 +25,7 @@ function build(): ExecutorBackend {
     namespace: env.CF_DISPATCH_NAMESPACE,
     runtimeBaseUrl: env.HOSTFUNC_RUNTIME_URL,
     ...(env.CF_FN_INDEX_KV_ID ? { fnIndexKvId: env.CF_FN_INDEX_KV_ID } : {}),
+    ...(env.CF_FN_ASSETS_KV_ID ? { assetsKvId: env.CF_FN_ASSETS_KV_ID } : {}),
   });
 }
 

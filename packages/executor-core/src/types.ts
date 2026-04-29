@@ -33,6 +33,16 @@ export interface DeployInput {
 
   /** Encrypted secret references — never plaintext at this layer. */
   secretRefs: SecretRef[];
+
+  /** Optional asset blobs (README, images, fonts, etc.) attached to this version. */
+  assets?: DeployAssetInput[];
+}
+
+export interface DeployAssetInput {
+  path: string;
+  mime: string;
+  /** Raw asset bytes. Backends decide whether to push to KV/R2 or skip. */
+  content: Buffer | Uint8Array;
 }
 
 export interface DeployResult {

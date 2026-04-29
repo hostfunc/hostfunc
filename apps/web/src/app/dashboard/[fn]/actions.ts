@@ -6,26 +6,58 @@ import { DEFAULT_FUNCTION_SDK, type FunctionPackageRecord } from "@/lib/function
 import { getLatestNpmVersion } from "@/lib/npm-registry";
 import { extractExternalPackageNames } from "@/lib/package-imports";
 import { requireOrgPermission } from "@/lib/session";
-import { ensureWorkspaceSdkApiKey } from "@/server/api-tokens";
+import { fetchExternalDocsContext } from "@/server/ai-docs";
 import {
-  buildPayloadInferenceMessages,
+  type GeneratorAttachment,
   buildGeneratorMessages,
+  buildPayloadInferenceMessages,
   buildRepairMessages,
+  enforceMainAndSdkImport,
   extractJsonObject,
   extractTsCode,
   validateGeneratedCode,
 } from "@/server/ai-generator";
-import { fetchExternalDocsContext } from "@/server/ai-docs";
+import { ensureWorkspaceSdkApiKey } from "@/server/api-tokens";
 import { executor } from "@/server/executor";
 import {
+  getFunctionAssetBlob,
+  listFunctionAssets,
+  snapshotAssetsToVersion,
+} from "@/server/fn-assets";
+import {
+  FnAiContextError,
+  type FnAiContextRecord,
+  createContext as createFnAiContextRecord,
+  deleteContext as deleteFnAiContextRecord,
+  fetchUrlAsContext,
+  getEnabledContextsByIds,
+  refreshUrlContext as refreshFnAiContextUrl,
+  toggleContextEnabled as toggleFnAiContextEnabled,
+  updateContext as updateFnAiContextRecord,
+} from "@/server/fn-ai-context";
+import {
+  MARKETPLACE_CATEGORIES,
   deleteSecretForFunction,
   getDraft,
   getFunctionPackagesForOrg,
   listSecretsForFunction,
   setFunctionPackagesForOrg,
   setSecretForFunction,
+  updateFunctionVisibility,
+  upsertFunctionMarketplaceProfile,
 } from "@/server/functions";
-import { IntegrationConfigError, type AiProvider, resolveAiConfigForGeneration } from "@/server/integrations";
+import {
+  getFunctionGithubBinding,
+  listGithubBranchesForRepo,
+  listSelectedGithubReposForOrg,
+  removeFunctionGithubBinding,
+  saveFunctionGithubBinding,
+} from "@/server/github-integrations";
+import {
+  type AiProvider,
+  IntegrationConfigError,
+  resolveAiConfigForGeneration,
+} from "@/server/integrations";
 import { inferPayloadStatic, parsePayloadCandidate } from "@/server/payload-inference";
 import { getOrgPlan } from "@/server/plan";
 import { db, genId, schema, sql } from "@hostfunc/db";
@@ -47,6 +79,7 @@ const generateCodeSchema = z.object({
   model: z.string().trim().min(1).max(120),
   useLiveLookup: z.boolean().default(false),
   lookupHints: z.array(z.string().trim().min(1).max(100)).max(8).default([]),
+  contextIds: z.array(z.string().min(1).max(80)).max(20).default([]),
 });
 const runFunctionSchema = z.object({
   fnId: z.string(),
@@ -81,6 +114,17 @@ const updateDescriptionSchema = z.object({
   fnId: z.string(),
   description: z.string().max(280),
 });
+const updateVisibilitySchema = z.object({
+  fnId: z.string(),
+  visibility: z.enum(["public", "private"]),
+});
+const updateMarketplaceProfileSchema = z.object({
+  fnId: z.string(),
+  category: z.enum(MARKETPLACE_CATEGORIES as [string, ...string[]]),
+  useCases: z.string().max(300).optional().default(""),
+  shortDescription: z.string().max(280).optional().default(""),
+  readme: z.string().max(8000).optional().default(""),
+});
 const updateIntegrationOverridesSchema = z.object({
   fnId: z.string(),
   aiProvider: z.enum(["", "openai", "claude"]),
@@ -91,6 +135,16 @@ const updateIntegrationOverridesSchema = z.object({
   vectorSecondary: z.enum(["", "none", "external_http", "postgres"]),
   vectorServiceUrl: z.string().max(8_192).optional(),
   vectorDatabaseUrl: z.string().max(8_192).optional(),
+});
+const listGithubBranchesSchema = z.object({
+  fnId: z.string(),
+  repoId: z.number().int().positive(),
+});
+const saveGithubBindingSchema = z.object({
+  fnId: z.string(),
+  repoId: z.number().int().positive(),
+  branch: z.string().trim().min(1).max(200),
+  pathPrefix: z.string().trim().max(500).optional(),
 });
 
 type FunctionSettingsActionState = {
@@ -279,16 +333,32 @@ export async function generateCodeFromPrompt(input: z.infer<typeof generateCodeS
       })
     : "";
 
+  const attachmentRows =
+    parsed.contextIds.length > 0
+      ? await getEnabledContextsByIds(orgId, parsed.fnId, parsed.contextIds)
+      : [];
+  const attachments: GeneratorAttachment[] = attachmentRows.map((row) => ({
+    id: row.id,
+    kind: row.kind,
+    name: row.name,
+    content: row.content,
+    sourceUri: row.sourceUri,
+    bytes: row.bytes,
+  }));
+
   const messages = buildGeneratorMessages({
     userPrompt: parsed.prompt.trim(),
     currentCode: draft?.code ?? "",
     fnSlug: fnRow.slug,
     packages,
     externalDocsContext,
+    attachments,
   });
 
   try {
-    let generated = extractTsCode(await generateWithProvider(ai.provider, ai.apiKey, ai.model, messages));
+    let generated = extractTsCode(
+      await generateWithProvider(ai.provider, ai.apiKey, ai.model, messages),
+    );
     const validation = validateGeneratedCode(generated);
     if (!validation.ok) {
       const repaired = await generateWithProvider(
@@ -299,6 +369,7 @@ export async function generateCodeFromPrompt(input: z.infer<typeof generateCodeS
       );
       generated = extractTsCode(repaired);
     }
+    generated = enforceMainAndSdkImport(generated);
     return { code: generated };
   } catch (error) {
     if (error instanceof IntegrationConfigError) throw error;
@@ -354,7 +425,8 @@ async function generateWithProvider(
         model: modelName,
         max_tokens: 2400,
         ...(systemParts.length > 0 ? { system: systemParts.join("\n\n") } : {}),
-        messages: anthropicMessages.length > 0 ? anthropicMessages : [{ role: "user", content: "" }],
+        messages:
+          anthropicMessages.length > 0 ? anthropicMessages : [{ role: "user", content: "" }],
       }),
     });
     const json = await response.json().catch(() => null);
@@ -562,6 +634,26 @@ export async function deployFunction(fnId: string): Promise<DeployResultUi> {
   });
 
   try {
+    const draftAssetSummaries = await listFunctionAssets(fnId);
+    const draftAssets = await Promise.all(
+      draftAssetSummaries.map(async (summary) => {
+        const blob = await getFunctionAssetBlob({ fnId, path: summary.path });
+        if (!blob) return null;
+        return {
+          path: blob.path,
+          mime: blob.mime,
+          content: blob.content,
+        };
+      }),
+    );
+    const cleanAssets = draftAssets.filter(
+      (a): a is { path: string; mime: string; content: Buffer } => a !== null,
+    );
+
+    if (cleanAssets.length > 0) {
+      await snapshotAssetsToVersion({ fnId, versionId, orgId });
+    }
+
     const result = await executor.deploy({
       functionId: fnId,
       versionId,
@@ -577,6 +669,7 @@ export async function deployFunction(fnId: string): Promise<DeployResultUi> {
         maxCallDepth: orgPlan?.limits.maxCallDepth ?? 3,
       },
       secretRefs: [],
+      assets: cleanAssets,
     });
     const enriched = result as typeof result & {
       sourceMap?: string;
@@ -778,6 +871,50 @@ export async function updateFunctionDescriptionAction(formData: FormData) {
   revalidatePath("/dashboard/functions");
 }
 
+export async function updateFunctionVisibilityAction(formData: FormData) {
+  const { orgId } = await requireOrgPermission("edit_draft");
+  const parsed = updateVisibilitySchema.parse({
+    fnId: formData.get("fnId"),
+    visibility: formData.get("visibility"),
+  });
+  await updateFunctionVisibility({
+    orgId,
+    fnId: parsed.fnId,
+    visibility: parsed.visibility,
+  });
+
+  revalidatePath(`/dashboard/${parsed.fnId}`);
+  revalidatePath(`/dashboard/${parsed.fnId}/settings`);
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/functions");
+  revalidatePath("/marketplace");
+}
+
+export async function updateFunctionMarketplaceProfileAction(formData: FormData) {
+  const { orgId } = await requireOrgPermission("edit_draft");
+  const parsed = updateMarketplaceProfileSchema.parse({
+    fnId: formData.get("fnId"),
+    category: formData.get("category"),
+    useCases: formData.get("useCases") ?? "",
+    shortDescription: formData.get("shortDescription") ?? "",
+    readme: formData.get("readme") ?? "",
+  });
+  await upsertFunctionMarketplaceProfile({
+    orgId,
+    fnId: parsed.fnId,
+    category: parsed.category as (typeof MARKETPLACE_CATEGORIES)[number],
+    useCases: parsed.useCases
+      .split(",")
+      .map((useCase) => useCase.trim())
+      .filter(Boolean),
+    shortDescription: parsed.shortDescription,
+    readme: parsed.readme,
+  });
+
+  revalidatePath(`/dashboard/${parsed.fnId}/settings`);
+  revalidatePath("/marketplace");
+}
+
 export async function updateFunctionIntegrationOverridesAction(formData: FormData) {
   const { orgId, session } = await requireOrgPermission("manage_secrets");
   const parsed = updateIntegrationOverridesSchema.parse({
@@ -835,10 +972,222 @@ export async function updateFunctionIntegrationOverridesStateAction(
   }
 }
 
+export async function listFunctionGithubRepos(fnId: string) {
+  const { orgId } = await requireOrgPermission("view_workspace");
+  await assertOrgOwnsFunction(orgId, fnId);
+  const repos = await listSelectedGithubReposForOrg(orgId);
+  return repos.map((repo) => ({
+    repoId: repo.repoId,
+    fullName: repo.fullName,
+    defaultBranch: repo.defaultBranch,
+    private: repo.isPrivate,
+  }));
+}
+
+export async function listFunctionGithubBranches(input: z.infer<typeof listGithubBranchesSchema>) {
+  const { orgId } = await requireOrgPermission("view_workspace");
+  const parsed = listGithubBranchesSchema.parse(input);
+  await assertOrgOwnsFunction(orgId, parsed.fnId);
+  return listGithubBranchesForRepo({ orgId, repoId: parsed.repoId });
+}
+
+export async function getFunctionGithubBindingAction(fnId: string) {
+  const { orgId } = await requireOrgPermission("view_workspace");
+  await assertOrgOwnsFunction(orgId, fnId);
+  return getFunctionGithubBinding({ orgId, fnId });
+}
+
+export async function saveFunctionGithubBindingAction(
+  input: z.infer<typeof saveGithubBindingSchema>,
+) {
+  const { orgId, session } = await requireOrgPermission("edit_draft");
+  const parsed = saveGithubBindingSchema.parse(input);
+  await assertOrgOwnsFunction(orgId, parsed.fnId);
+  await saveFunctionGithubBinding({
+    orgId,
+    fnId: parsed.fnId,
+    userId: session.user.id,
+    repoId: parsed.repoId,
+    branch: parsed.branch,
+    pathPrefix: parsed.pathPrefix || null,
+  });
+  revalidatePath(`/dashboard/${parsed.fnId}/settings/integrations`);
+  revalidatePath(`/dashboard/${parsed.fnId}`);
+  return { ok: true };
+}
+
+export async function removeFunctionGithubBindingAction(fnId: string) {
+  const { orgId } = await requireOrgPermission("edit_draft");
+  await assertOrgOwnsFunction(orgId, fnId);
+  await removeFunctionGithubBinding({ orgId, fnId });
+  revalidatePath(`/dashboard/${fnId}/settings/integrations`);
+  revalidatePath(`/dashboard/${fnId}`);
+  return { ok: true };
+}
+
 async function purgeLookupCache(orgSlug: string, slug: string) {
   if (!env.CF_FN_INDEX_KV_ID) return;
   const maybeExecutor = executor as typeof executor & {
     purgeLookupCache?: (key: string) => Promise<void>;
   };
   await maybeExecutor.purgeLookupCache?.(`${orgSlug}:${slug}`);
+}
+
+const createFnAiContextSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("note"),
+    fnId: z.string(),
+    name: z.string().trim().min(1).max(200),
+    content: z.string().min(1).max(200_000),
+  }),
+  z.object({
+    kind: z.literal("url"),
+    fnId: z.string(),
+    name: z.string().trim().min(1).max(200),
+    url: z.string().trim().url(),
+  }),
+]);
+
+const updateFnAiContextSchema = z.object({
+  fnId: z.string(),
+  id: z.string().min(1).max(80),
+  name: z.string().trim().min(1).max(200).optional(),
+  content: z.string().min(1).max(200_000).optional(),
+  enabled: z.boolean().optional(),
+});
+
+const idAndFnSchema = z.object({
+  fnId: z.string(),
+  id: z.string().min(1).max(80),
+});
+
+function mapFnAiContextError(error: unknown): Error {
+  if (error instanceof FnAiContextError) {
+    return new Error(error.code);
+  }
+  if (error instanceof Error) return error;
+  return new Error("fn_ai_context_failed");
+}
+
+function toClientContextRecord(record: FnAiContextRecord) {
+  return {
+    id: record.id,
+    kind: record.kind,
+    name: record.name,
+    sourceUri: record.sourceUri,
+    mime: record.mime,
+    bytes: record.bytes,
+    enabled: record.enabled,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+  };
+}
+
+export type FnAiContextClient = ReturnType<typeof toClientContextRecord>;
+
+export async function createFnAiContextAction(input: z.infer<typeof createFnAiContextSchema>) {
+  const { orgId, session } = await requireOrgPermission("edit_draft");
+  const parsed = createFnAiContextSchema.parse(input);
+  await assertOrgOwnsFunction(orgId, parsed.fnId);
+  try {
+    if (parsed.kind === "note") {
+      const created = await createFnAiContextRecord({
+        orgId,
+        fnId: parsed.fnId,
+        userId: session.user.id,
+        kind: "note",
+        name: parsed.name,
+        content: parsed.content,
+      });
+      revalidatePath(`/dashboard/${parsed.fnId}/settings/context`);
+      revalidatePath(`/dashboard/${parsed.fnId}`);
+      return { ok: true as const, item: toClientContextRecord(created) };
+    }
+    const fetched = await fetchUrlAsContext(parsed.url);
+    const created = await createFnAiContextRecord({
+      orgId,
+      fnId: parsed.fnId,
+      userId: session.user.id,
+      kind: "url",
+      name: parsed.name,
+      content: fetched.content,
+      sourceUri: fetched.sourceUri,
+      mime: fetched.mime,
+    });
+    revalidatePath(`/dashboard/${parsed.fnId}/settings/context`);
+    revalidatePath(`/dashboard/${parsed.fnId}`);
+    return { ok: true as const, item: toClientContextRecord(created) };
+  } catch (error) {
+    throw mapFnAiContextError(error);
+  }
+}
+
+export async function updateFnAiContextAction(input: z.infer<typeof updateFnAiContextSchema>) {
+  const { orgId } = await requireOrgPermission("edit_draft");
+  const parsed = updateFnAiContextSchema.parse(input);
+  await assertOrgOwnsFunction(orgId, parsed.fnId);
+  try {
+    const updated = await updateFnAiContextRecord({
+      orgId,
+      fnId: parsed.fnId,
+      id: parsed.id,
+      ...(parsed.name !== undefined ? { name: parsed.name } : {}),
+      ...(parsed.content !== undefined ? { content: parsed.content } : {}),
+      ...(parsed.enabled !== undefined ? { enabled: parsed.enabled } : {}),
+    });
+    revalidatePath(`/dashboard/${parsed.fnId}/settings/context`);
+    revalidatePath(`/dashboard/${parsed.fnId}`);
+    return { ok: true as const, item: toClientContextRecord(updated) };
+  } catch (error) {
+    throw mapFnAiContextError(error);
+  }
+}
+
+export async function toggleFnAiContextAction(
+  input: z.infer<typeof idAndFnSchema> & { enabled: boolean },
+) {
+  const { orgId } = await requireOrgPermission("edit_draft");
+  const parsed = idAndFnSchema.parse(input);
+  await assertOrgOwnsFunction(orgId, parsed.fnId);
+  try {
+    const updated = await toggleFnAiContextEnabled(
+      orgId,
+      parsed.fnId,
+      parsed.id,
+      Boolean(input.enabled),
+    );
+    revalidatePath(`/dashboard/${parsed.fnId}/settings/context`);
+    revalidatePath(`/dashboard/${parsed.fnId}`);
+    return { ok: true as const, item: toClientContextRecord(updated) };
+  } catch (error) {
+    throw mapFnAiContextError(error);
+  }
+}
+
+export async function deleteFnAiContextAction(input: z.infer<typeof idAndFnSchema>) {
+  const { orgId } = await requireOrgPermission("edit_draft");
+  const parsed = idAndFnSchema.parse(input);
+  await assertOrgOwnsFunction(orgId, parsed.fnId);
+  try {
+    await deleteFnAiContextRecord(orgId, parsed.fnId, parsed.id);
+    revalidatePath(`/dashboard/${parsed.fnId}/settings/context`);
+    revalidatePath(`/dashboard/${parsed.fnId}`);
+    return { ok: true as const };
+  } catch (error) {
+    throw mapFnAiContextError(error);
+  }
+}
+
+export async function refreshFnAiContextUrlAction(input: z.infer<typeof idAndFnSchema>) {
+  const { orgId } = await requireOrgPermission("edit_draft");
+  const parsed = idAndFnSchema.parse(input);
+  await assertOrgOwnsFunction(orgId, parsed.fnId);
+  try {
+    const updated = await refreshFnAiContextUrl(orgId, parsed.fnId, parsed.id);
+    revalidatePath(`/dashboard/${parsed.fnId}/settings/context`);
+    revalidatePath(`/dashboard/${parsed.fnId}`);
+    return { ok: true as const, item: toClientContextRecord(updated) };
+  } catch (error) {
+    throw mapFnAiContextError(error);
+  }
 }

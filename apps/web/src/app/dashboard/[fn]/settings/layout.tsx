@@ -37,6 +37,11 @@ export default async function FunctionSettingsLayout({
       icon: "bot",
     },
     {
+      title: "AI Context",
+      href: `/dashboard/${fn}/settings/context`,
+      icon: "sparkles",
+    },
+    {
       title: "Packages",
       href: `/dashboard/${fn}/settings/packages`,
       icon: "blocks",

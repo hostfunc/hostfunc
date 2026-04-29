@@ -16,7 +16,15 @@ export type IdPrefix =
   | "pln"
   | "use"
   | "tok"
-  | "evt";
+  | "evt"
+  | "ghi"
+  | "ghr"
+  | "fgb"
+  | "gca"
+  | "fdc"
+  | "fmc"
+  | "fas"
+  | "fva";
 
 export function genId(prefix: IdPrefix): string {
   return `${prefix}_${ulid()}`;

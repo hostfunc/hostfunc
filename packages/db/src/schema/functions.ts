@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   // bigint,
   // boolean,
   index,
@@ -42,7 +43,10 @@ export const fn = pgTable(
     slug: text("slug").notNull(),
     description: text("description").notNull().default(""),
     packages: jsonb("packages").$type<FunctionPackage[]>().notNull().default([]),
-    visibility: visibilityEnum("visibility").notNull().default("private"),
+    visibility: visibilityEnum("visibility").notNull().default("public"),
+    forkedFromFnId: text("forked_from_fn_id").references((): AnyPgColumn => fn.id, {
+      onDelete: "set null",
+    }),
     currentVersionId: text("current_version_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -51,6 +55,7 @@ export const fn = pgTable(
     orgSlugUnique: uniqueIndex("fn_org_slug_unique").on(t.orgId, t.slug),
     orgIdx: index("fn_org_idx").on(t.orgId),
     visibilityIdx: index("fn_visibility_idx").on(t.visibility),
+    forkedFromIdx: index("fn_forked_from_idx").on(t.forkedFromFnId),
   }),
 );
 

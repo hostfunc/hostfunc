@@ -16,7 +16,7 @@ export const FUNCTION_TEMPLATES: FunctionTemplateDefinition[] = [
     category: "utilities",
     description: "The starter.",
     accentClass: "bg-blue-500/10 text-blue-300 border-blue-500/30",
-    code: `import fn from "@hostfunc/fn";
+    code: `import fn from "@hostfunc/sdk";
 
 export async function main(input: { name?: string }) {
   const name = input.name ?? "world";
@@ -31,7 +31,7 @@ export async function main(input: { name?: string }) {
     category: "utilities",
     description: "Catch + log any POST.",
     accentClass: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
-    code: `import fn from "@hostfunc/fn";
+    code: `import fn from "@hostfunc/sdk";
 
 export async function main(req: Request) {
   const payload = await req.json();
@@ -48,7 +48,7 @@ export async function main(req: Request) {
     category: "notifications",
     description: "Ping a URL, alert on fail.",
     accentClass: "bg-violet-500/10 text-violet-300 border-violet-500/30",
-    code: `import fn from "@hostfunc/fn";
+    code: `import fn from "@hostfunc/sdk";
 
 export async function main(event: { time: string }) {
   const target = "https://example.com/health";
@@ -67,7 +67,7 @@ export async function main(event: { time: string }) {
     category: "ai",
     description: "Summarize via Claude.",
     accentClass: "bg-fuchsia-500/10 text-fuchsia-300 border-fuchsia-500/30",
-    code: `import fn from "@hostfunc/fn";
+    code: `import fn from "@hostfunc/sdk";
 
 export async function main(input: { text: string }) {
   if (!input.text?.trim()) {
@@ -90,7 +90,7 @@ export async function main(input: { text: string }) {
     category: "ai",
     description: "Classify sentiment with confidence.",
     accentClass: "bg-indigo-500/10 text-indigo-300 border-indigo-500/30",
-    code: `import fn from "@hostfunc/fn";
+    code: `import fn from "@hostfunc/sdk";
 
 export async function main(input: { text: string }) {
   const text = input.text?.trim() ?? "";
@@ -135,7 +135,7 @@ export async function main(input: { text: string }) {
     category: "integrations",
     description: "Profile + repos for any user.",
     accentClass: "bg-slate-500/10 text-slate-300 border-slate-500/30",
-    code: `import { secret } from "@hostfunc/fn";
+    code: `import { secret } from "@hostfunc/sdk";
 
 export async function main(input: { username: string }) {
   const token = await secret.getRequired("GITHUB_TOKEN");
@@ -155,7 +155,7 @@ export async function main(input: { username: string }) {
     category: "integrations",
     description: "Send formatted alerts to Slack.",
     accentClass: "bg-teal-500/10 text-teal-300 border-teal-500/30",
-    code: `import { secret } from "@hostfunc/fn";
+    code: `import { secret } from "@hostfunc/sdk";
 
 export async function main(input: { channel: string; text: string }) {
   const webhookUrl = await secret.getRequired("SLACK_WEBHOOK_URL");

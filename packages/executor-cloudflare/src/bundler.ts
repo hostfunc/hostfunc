@@ -5,6 +5,8 @@ export interface BundleOptions {
   code: string;
   /** Function id, used for source-map filenames. */
   fnId: string;
+  /** Version id; embedded as a build-time define so the SDK can find KV blobs. */
+  versionId?: string;
   /** Hard upper bound for the bundled output. */
   maxSizeBytes?: number;
 }
@@ -30,6 +32,59 @@ const RUNTIME_SHIM = `
 // Injected by hostfunc at deploy time. Provides @hostfunc/fn to user code.
 const __ofn_state = { request: null, env: null };
 
+const __ofn_assets_module = {
+  _key(path) {
+    if (typeof path !== "string" || !path.length) {
+      throw new HostfuncError("FN_INPUT_INVALID", "asset path is required");
+    }
+    let p = path.replace(/\\\\/g, "/").replace(/^\\.\\//, "").replace(/^\\/+/, "");
+    if (!p) throw new HostfuncError("FN_INPUT_INVALID", "asset path is required");
+    return p;
+  },
+  async _fetchFromControlPlane(path) {
+    const ctx = __ofn_ctx();
+    const versionId = ctx.versionId || __HOSTFUNC_VERSION_ID__;
+    if (!ctx.controlPlane || !ctx.fnId || !versionId || !ctx.token) {
+      throw new HostfuncError("INFRA_EXECUTE_FAILED", "asset service unavailable");
+    }
+    const url = ctx.controlPlane + "/api/internal/assets/" + ctx.fnId + "/" + versionId + "/" + path;
+    const res = await fetch(url, {
+      headers: { authorization: "Bearer " + ctx.token },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      throw new HostfuncError("INFRA_EXECUTE_FAILED", "asset fetch failed (" + res.status + ")");
+    }
+    return res;
+  },
+  async bytes(path) {
+    const key = this._key(path);
+    const env = __ofn_state.env;
+    const ctx = __ofn_ctx();
+    const versionId = ctx.versionId || __HOSTFUNC_VERSION_ID__;
+    if (env && env.FN_ASSETS_KV && typeof env.FN_ASSETS_KV.get === "function" && versionId) {
+      const kvKey = (ctx.fnId || __HOSTFUNC_FN_ID__) + "@" + versionId + "/" + key;
+      const buf = await env.FN_ASSETS_KV.get(kvKey, "arrayBuffer");
+      if (buf) return new Uint8Array(buf);
+    }
+    const res = await this._fetchFromControlPlane(key);
+    if (!res) return null;
+    const buf = await res.arrayBuffer();
+    return new Uint8Array(buf);
+  },
+  async text(path) {
+    const bytes = await this.bytes(path);
+    if (!bytes) return null;
+    return new TextDecoder().decode(bytes);
+  },
+  url(path) {
+    const ctx = __ofn_ctx();
+    if (!ctx.controlPlane || !ctx.fnId) return null;
+    return ctx.controlPlane + "/api/marketplace/" + ctx.fnId + "/assets/" + this._key(path);
+  },
+};
+
 const __ofn_ctx = () => {
   const req = __ofn_state.request;
   if (!req) throw new Error("hostfunc: no active request");
@@ -39,6 +94,7 @@ const __ofn_ctx = () => {
   return {
     execId: req.headers.get("x-hostfunc-exec-id") || "",
     fnId: req.headers.get("x-hostfunc-fn-id") || "",
+    versionId: req.headers.get("x-hostfunc-version-id") || __HOSTFUNC_VERSION_ID__ || "",
     orgId: req.headers.get("x-hostfunc-org-id") || "",
     token:
       req.headers.get("x-hostfunc-exec-token") ||
@@ -339,8 +395,10 @@ ${RUNTIME_SHIM}
 
 // Virtual module: @hostfunc/fn
 const __ofn_fn = __ofn_fn_module.default;
+__ofn_fn.assets = __ofn_assets_module;
 const fn = __ofn_fn;
 const secret = __ofn_fn_module.secret;
+const assets = __ofn_assets_module;
 const askAi = __ofn_ai_module.askAi;
 const streamAi = __ofn_ai_module.streamAi;
 const createEmbedding = __ofn_ai_module.createEmbedding;
@@ -479,6 +537,10 @@ export async function bundleFunction(opts: BundleOptions): Promise<BundleResult>
       // Mark anything starting with `cloudflare:` and `node:` as external
       // so esbuild doesn't try to resolve them — Workers handles them at runtime.
       external: ["cloudflare:*", "node:*"],
+      define: {
+        __HOSTFUNC_FN_ID__: JSON.stringify(opts.fnId),
+        __HOSTFUNC_VERSION_ID__: JSON.stringify(opts.versionId ?? ""),
+      },
       logLevel: "silent",
     });
   } catch (e) {

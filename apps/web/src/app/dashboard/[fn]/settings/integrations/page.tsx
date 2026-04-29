@@ -1,5 +1,10 @@
 import { requireOrgPermission } from "@/lib/session";
 import { getFunctionForOrg } from "@/server/functions";
+import {
+  getFunctionGithubBinding,
+  getGithubInstallationStatus,
+  listSelectedGithubReposForOrg,
+} from "@/server/github-integrations";
 import { getFunctionIntegrationOverrides, getWorkspaceIntegrations } from "@/server/integrations";
 import { notFound } from "next/navigation";
 import { FunctionIntegrationsClient } from "./integrations-client";
@@ -38,9 +43,12 @@ export default async function FunctionIntegrationsSettingsPage({
   const fn = await getFunctionForOrg(orgId, fnId);
   if (!fn) notFound();
 
-  const [overrides, workspace] = await Promise.all([
+  const [overrides, workspace, githubStatus, githubRepos, githubBinding] = await Promise.all([
     getFunctionIntegrationOverrides(orgId, fnId),
     getWorkspaceIntegrations(orgId),
+    getGithubInstallationStatus(orgId),
+    listSelectedGithubReposForOrg(orgId),
+    getFunctionGithubBinding({ orgId, fnId }),
   ]);
 
   const hasSavedFnOverrides = hasAnyFunctionOverride(overrides);
@@ -86,6 +94,25 @@ export default async function FunctionIntegrationsSettingsPage({
             claudeKeyPreview: maskFnSecretPreview(overrides.HF_FN_CLAUDE_API_KEY),
             hasVectorServiceUrl: Boolean(overrides.HF_FN_VECTOR_SERVICE_URL),
             hasVectorDatabaseUrl: Boolean(overrides.HF_FN_VECTOR_DATABASE_URL),
+          },
+          github: {
+            connected: githubStatus.connected,
+            repos: githubRepos.map((repo) => ({
+              repoId: repo.repoId,
+              fullName: repo.fullName,
+              defaultBranch: repo.defaultBranch,
+              ownerAvatarUrl:
+                repo.ownerAvatarUrl ||
+                `https://github.com/${encodeURIComponent(repo.owner)}.png?size=64`,
+            })),
+            binding: githubBinding
+              ? {
+                  repoId: githubBinding.repoId,
+                  repoFullName: githubBinding.repoFullName,
+                  branch: githubBinding.branch,
+                  pathPrefix: githubBinding.pathPrefix,
+                }
+              : null,
           },
         }}
       />
