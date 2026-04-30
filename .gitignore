@@ -46,3 +46,5 @@ apps/runtime/.wrangler/
 apps/runtime/.dev.vars
 apps/*/.wrangler/
 dev/
+.vercel
+.env*.local
