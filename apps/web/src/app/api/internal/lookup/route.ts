@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
   }
 
   const httpCfg = row.httpTriggerConfig as { http?: { requireAuth?: boolean } } | null | undefined;
-  const httpRequireAuth = httpCfg?.http?.requireAuth ?? true;
+  const httpRequireAuth = httpCfg?.http?.requireAuth ?? false;
 
   return Response.json({
     ok: true,

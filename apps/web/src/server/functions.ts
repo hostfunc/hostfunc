@@ -1164,7 +1164,7 @@ export async function forkFunction(input: {
       fnId,
       orgId: input.targetOrgId,
       kind: "http",
-      config: { http: { requireAuth: true } },
+      config: { http: { requireAuth: false } },
     });
     await ensureMarketplaceProfile(tx, source.id, source.orgId);
     await tx.insert(schema.fnFork).values({
@@ -1327,7 +1327,7 @@ export async function createFunction(input: CreateFunctionInput) {
       fnId,
       orgId: input.orgId,
       kind: "http",
-      config: { http: { requireAuth: true } },
+      config: { http: { requireAuth: false } },
     });
   });
   return fnId;
