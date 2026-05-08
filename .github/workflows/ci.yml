@@ -66,7 +66,7 @@ jobs:
     # catch real prerender issues (e.g. missing Suspense boundaries) pre-merge.
     env:
       DATABASE_URL: https://example.com
-      BETTER_AUTH_SECRET: 01234567890123456789012345678901
+      BETTER_AUTH_SECRET: "ci-better-auth-secret-0123456789abcdef"
       BETTER_AUTH_URL: https://staging.hostfunc.io
       GOOGLE_CLIENT_ID: ci-google-client-id
       GOOGLE_CLIENT_SECRET: ci-google-client-secret
