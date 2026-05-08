@@ -1,6 +1,7 @@
 "use client";
 
 import { LiveLogs } from "@/components/logs/live-logs";
+import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -15,6 +16,7 @@ interface ExecutionItem {
 export function EditorExecutionPane({ fnId }: { fnId: string }) {
   const [items, setItems] = useState<ExecutionItem[]>([]);
   const [selectedExecutionId, setSelectedExecutionId] = useState<string | null>(null);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,11 +50,22 @@ export function EditorExecutionPane({ fnId }: { fnId: string }) {
   );
 
   return (
-    <div className="h-72 shrink-0 border-t border-black/50 bg-[#0a0a0a] font-mono">
+    <div
+      className={`${isCollapsed ? "shrink-0" : "h-72"} border-t border-black/50 bg-[#0a0a0a] font-mono`}
+    >
       <div className="flex items-center justify-between border-b border-white/5 bg-[#111111] px-4 py-2">
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <button
+          type="button"
+          onClick={() => setIsCollapsed((prev) => !prev)}
+          className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground transition hover:text-slate-200"
+          aria-expanded={!isCollapsed}
+          aria-label={isCollapsed ? "Expand execution logs" : "Collapse execution logs"}
+        >
+          <ChevronDown
+            className={`h-3.5 w-3.5 transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
+          />
           Execution Logs
-        </span>
+        </button>
         {selected ? (
           <span className="text-[10px] text-slate-400">
             {selected.status} · {selected.wallMs}ms · {selected.triggerKind}
@@ -62,41 +75,43 @@ export function EditorExecutionPane({ fnId }: { fnId: string }) {
         )}
       </div>
 
-      <div className="grid h-[calc(100%-2.25rem)] grid-cols-3">
-        <div className="col-span-1 overflow-y-auto border-r border-white/5">
-          {items.slice(0, 30).map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setSelectedExecutionId(item.id)}
-              className={`w-full border-b border-white/5 px-3 py-2 text-left text-[11px] hover:bg-white/5 ${
-                selected?.id === item.id ? "bg-white/10" : ""
-              }`}
-            >
-              <div className="truncate text-slate-200">{item.id}</div>
-              <div className="mt-1 text-slate-500">
-                {new Date(item.startedAt).toLocaleTimeString()} · {item.status}
-              </div>
-            </button>
-          ))}
-        </div>
-        <div className="col-span-2 p-2">
-          {selected ? (
-            <LiveLogs execId={selected.id} />
-          ) : (
-            <div className="p-3 text-xs text-muted-foreground">
-              Run the function to start streaming logs.{" "}
-              <Link
-                href="/docs/functions"
-                className="text-slate-300 underline underline-offset-2 hover:text-white"
+      {!isCollapsed ? (
+        <div className="grid h-[calc(100%-2.25rem)] grid-cols-3">
+          <div className="col-span-1 overflow-y-auto border-r border-white/5">
+            {items.slice(0, 30).map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setSelectedExecutionId(item.id)}
+                className={`w-full border-b border-white/5 px-3 py-2 text-left text-[11px] hover:bg-white/5 ${
+                  selected?.id === item.id ? "bg-white/10" : ""
+                }`}
               >
-                View run + chaining examples
-              </Link>
-              .
+                <div className="truncate text-slate-200">{item.id}</div>
+                <div className="mt-1 text-slate-500">
+                  {new Date(item.startedAt).toLocaleTimeString()} · {item.status}
+                </div>
+              </button>
+            ))}
+          </div>
+          <div className="col-span-2 p-2">
+            {selected ? (
+              <LiveLogs execId={selected.id} />
+            ) : (
+              <div className="p-3 text-xs text-muted-foreground">
+                Run the function to start streaming logs.{" "}
+                <Link
+                  href="/docs/functions"
+                  className="text-slate-300 underline underline-offset-2 hover:text-white"
+                >
+                  View run + chaining examples
+                </Link>
+                .
+              </div>
+            )}
             </div>
-          )}
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

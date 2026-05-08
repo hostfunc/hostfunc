@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/session";
 import {
   MARKETPLACE_CATEGORIES,
   type MarketplaceSort,
+  type MarketplaceView,
   searchMarketplaceFunctions,
 } from "@/server/functions";
 import { Boxes, Plus, Sparkles } from "lucide-react";
@@ -35,6 +36,8 @@ export default async function DashboardMarketplacePage({
   const sort =
     oneOf(typeof params.sort === "string" ? params.sort : undefined, MARKETPLACE_SORTS) ??
     "featured";
+  const rawView = Array.isArray(params.view) ? params.view : [params.view];
+  const view: MarketplaceView = rawView.some((value) => value === "list") ? "list" : "grid";
 
   const marketplace = await searchMarketplaceFunctions({
     ...(q ? { query: q } : {}),
@@ -45,7 +48,7 @@ export default async function DashboardMarketplacePage({
   });
 
   return (
-    <div className="mx-auto max-w-6xl animate-in space-y-8 fade-in duration-500">
+    <div className="mx-auto max-w-7xl animate-in space-y-8 fade-in duration-500">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-[var(--color-amber)]">
@@ -62,7 +65,8 @@ export default async function DashboardMarketplacePage({
         </div>
         <Button
           asChild
-          className="rounded-full bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+          variant="glass"
+          className="rounded-full"
         >
           <Link href="/dashboard/new">
             <Plus className="mr-2 h-4 w-4" />
@@ -71,17 +75,16 @@ export default async function DashboardMarketplacePage({
         </Button>
       </div>
 
-      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/60 p-5">
-        <MarketplaceFilters
-          basePath={BASE_PATH}
-          q={q}
-          category={category}
-          sort={sort}
-          showSearch
-          showCategories
-          variant="compact"
-        />
-      </div>
+      <MarketplaceFilters
+        basePath={BASE_PATH}
+        q={q}
+        category={category}
+        sort={sort}
+        view={view}
+        showSearch
+        showCategories
+        variant="compact"
+      />
 
       <section className="space-y-6">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
@@ -101,6 +104,7 @@ export default async function DashboardMarketplacePage({
             q={q}
             category={category}
             sort={sort}
+            view={view}
             showSearch={false}
             showCategories={false}
             showSort
@@ -128,7 +132,8 @@ export default async function DashboardMarketplacePage({
               ) : null}
               <Button
                 asChild
-                className="rounded-full bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+                variant="glass"
+                className="rounded-full"
               >
                 <Link href="/dashboard/new">
                   <Plus className="mr-2 h-4 w-4" />
@@ -138,9 +143,15 @@ export default async function DashboardMarketplacePage({
             </div>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className={view === "list" ? "space-y-4" : "grid gap-6 md:grid-cols-2 xl:grid-cols-3"}>
             {marketplace.items.map((fn) => (
-              <CommunityFunctionCard key={fn.id} fn={fn} basePath={BASE_PATH} signedIn />
+              <CommunityFunctionCard
+                key={fn.id}
+                fn={fn}
+                basePath={BASE_PATH}
+                signedIn
+                view={view}
+              />
             ))}
           </div>
         )}

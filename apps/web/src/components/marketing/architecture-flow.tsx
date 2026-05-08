@@ -39,7 +39,7 @@ export function ArchitectureFlow({ stages }: Props) {
     <div ref={ref} className="relative">
       {/* Horizontal connecting line */}
       <svg
-        className="absolute left-[10%] right-[10%] top-12 hidden md:block"
+        className="absolute inset-x-0 top-12 hidden md:block"
         height="2"
         viewBox="0 0 1000 2"
         preserveAspectRatio="none"

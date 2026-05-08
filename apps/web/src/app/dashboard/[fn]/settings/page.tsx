@@ -19,8 +19,10 @@ import { getEffectivePlan } from "@/server/plans";
 import { FileCode2, Globe, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { MarketplaceReadmeEditor } from "./marketplace-readme-editor";
 import {
   updateFunctionDescriptionAction,
+  updateFunctionSlugAction,
   updateFunctionMarketplaceProfileAction,
   updateFunctionVisibilityAction,
 } from "../actions";
@@ -109,7 +111,8 @@ export default async function GeneralFunctionSettingsPage({
               {privateLocked ? (
                 <Button
                   asChild
-                  className="rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+                  variant="glass"
+                  className="rounded-full px-5"
                 >
                   <Link href="/dashboard/settings/billing">Upgrade for private</Link>
                 </Button>
@@ -132,7 +135,7 @@ export default async function GeneralFunctionSettingsPage({
           <form action={updateFunctionMarketplaceProfileAction}>
             <SettingsCardContent className="space-y-4">
               <input type="hidden" name="fnId" value={fn.id} />
-              <div className="grid max-w-2xl gap-2">
+              <div className="grid gap-2">
                 <Label htmlFor="marketplaceCategory">Category</Label>
                 <select
                   id="marketplaceCategory"
@@ -150,7 +153,7 @@ export default async function GeneralFunctionSettingsPage({
                   ))}
                 </select>
               </div>
-              <div className="grid max-w-2xl gap-2">
+              <div className="grid gap-2">
                 <Label htmlFor="marketplaceShortDescription">Short description</Label>
                 <Input
                   id="marketplaceShortDescription"
@@ -161,7 +164,7 @@ export default async function GeneralFunctionSettingsPage({
                   className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)] placeholder:text-[var(--color-bone-faint)] focus-visible:ring-[var(--color-amber)]"
                 />
               </div>
-              <div className="grid max-w-2xl gap-2">
+              <div className="grid gap-2">
                 <Label htmlFor="marketplaceUseCases">Use cases</Label>
                 <Input
                   id="marketplaceUseCases"
@@ -171,22 +174,19 @@ export default async function GeneralFunctionSettingsPage({
                   className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)] placeholder:text-[var(--color-bone-faint)] focus-visible:ring-[var(--color-amber)]"
                 />
               </div>
-              <div className="grid max-w-2xl gap-2">
+              <div className="grid gap-2">
                 <Label htmlFor="marketplaceReadme">README</Label>
-                <textarea
-                  id="marketplaceReadme"
+                <MarketplaceReadmeEditor
                   name="readme"
-                  defaultValue={profile?.readme ?? ""}
-                  maxLength={8000}
-                  placeholder="Document inputs, outputs, packages, and example payloads."
-                  className="min-h-40 rounded-md border border-[var(--color-border)] bg-[var(--color-ink)]/70 p-3 text-sm text-[var(--color-bone)] outline-none placeholder:text-[var(--color-bone-faint)] focus:border-[var(--color-amber)]/50"
+                  initialValue={profile?.readme ?? ""}
                 />
               </div>
             </SettingsCardContent>
             <SettingsCardFooter className="justify-end">
               <Button
                 type="submit"
-                className="rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+                variant="glass"
+                className="rounded-full px-5"
               >
                 Save Marketplace Profile
               </Button>
@@ -204,28 +204,32 @@ export default async function GeneralFunctionSettingsPage({
               The human-readable name of your function.
             </SettingsCardDescription>
           </SettingsCardHeader>
-          <SettingsCardContent>
-            <div className="grid max-w-sm gap-2">
-              <Label htmlFor="fnName" className="sr-only">
-                Name
-              </Label>
-              <Input
-                id="fnName"
-                value={fn.slug}
-                readOnly
-                className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
-              />
-            </div>
-          </SettingsCardContent>
-          <SettingsCardFooter className="justify-end">
-            <Button
-              disabled
-              title="Slug updates are not yet available"
-              className="rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
-            >
-              Save Name
-            </Button>
-          </SettingsCardFooter>
+          <form action={updateFunctionSlugAction}>
+            <SettingsCardContent>
+              <input type="hidden" name="fnId" value={fn.id} />
+              <div className="grid max-w-sm gap-2">
+                <Label htmlFor="fnName" className="sr-only">
+                  Name
+                </Label>
+                <Input
+                  id="fnName"
+                  name="slug"
+                  defaultValue={fn.slug}
+                  placeholder="my-function-name"
+                  className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)] placeholder:text-[var(--color-bone-faint)] focus-visible:ring-[var(--color-amber)]"
+                />
+              </div>
+            </SettingsCardContent>
+            <SettingsCardFooter className="justify-end">
+              <Button
+                type="submit"
+                variant="glass"
+                className="rounded-full px-5"
+              >
+                Save Name
+              </Button>
+            </SettingsCardFooter>
+          </form>
         </SettingsCard>
 
         <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/70 shadow-xl">
@@ -254,7 +258,8 @@ export default async function GeneralFunctionSettingsPage({
             <SettingsCardFooter className="justify-end">
               <Button
                 type="submit"
-                className="rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+                variant="glass"
+                className="rounded-full px-5"
               >
                 Save Description
               </Button>

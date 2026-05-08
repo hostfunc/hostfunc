@@ -449,7 +449,7 @@ export function IntegrationsClient({ initial }: Props) {
                 <GithubOauthConnectButton
                   returnTo="/dashboard/settings/integrations"
                   label="Connect GitHub"
-                  className="bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+                  variant="glass"
                 />
               )}
             </div>
@@ -531,7 +531,8 @@ export function IntegrationsClient({ initial }: Props) {
                 <Button
                   type="button"
                   disabled={repoSaveBusy}
-                  className="rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+                  variant="glass"
+                  className="rounded-full px-5"
                   onClick={async () => {
                     setRepoActionMessage(null);
                     setRepoSaveBusy(true);
@@ -885,7 +886,8 @@ export function IntegrationsClient({ initial }: Props) {
             <Button
               type="submit"
               disabled={pending}
-              className="rounded-full bg-[var(--color-amber)] px-6 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)] disabled:opacity-70"
+              variant="glass"
+              className="rounded-full px-6 disabled:opacity-70"
             >
               {pending ? (
                 <>

@@ -6,6 +6,8 @@ import { DEFAULT_FUNCTION_SDK, type FunctionPackageRecord } from "@/lib/function
 import { getLatestNpmVersion } from "@/lib/npm-registry";
 import { getEffectivePlan } from "@/server/plans";
 import { db, genId, schema, sql } from "@hostfunc/db";
+const DEFAULT_NODE_TYPES = "@types/node";
+
 
 type DbInsertExecutor = Pick<typeof db, "insert">;
 
@@ -1143,14 +1145,22 @@ export async function forkFunction(input: {
   const starterCode = source.currentCode ?? source.draftCode ?? "";
   const fnId = genId("fn");
 
+  const nodeTypesVersion = await getLatestNpmVersion(DEFAULT_NODE_TYPES);
   await db.transaction(async (tx) => {
+    const sourcePackages = normalizePackages(source.packages);
+    const forkPackages = sourcePackages.some((pkg) => pkg.name === DEFAULT_NODE_TYPES)
+      ? sourcePackages
+      : normalizePackages([
+          ...sourcePackages,
+          toPackageRecord(DEFAULT_NODE_TYPES, "default", nodeTypesVersion),
+        ]);
     await tx.insert(schema.fn).values({
       id: fnId,
       orgId: input.targetOrgId,
       createdById: input.userId,
       slug,
       description: source.description,
-      packages: normalizePackages(source.packages),
+      packages: forkPackages,
       visibility: "public",
       forkedFromFnId: source.id,
     });
@@ -1304,7 +1314,10 @@ export async function createFunction(input: CreateFunctionInput) {
     await assertCanUsePrivateFunctions(input.orgId);
   }
   const fnId = genId("fn");
-  const sdkVersion = await getLatestNpmVersion(DEFAULT_FUNCTION_SDK);
+  const [sdkVersion, nodeTypesVersion] = await Promise.all([
+    getLatestNpmVersion(DEFAULT_FUNCTION_SDK),
+    getLatestNpmVersion(DEFAULT_NODE_TYPES),
+  ]);
   await db.transaction(async (tx) => {
     await tx.insert(schema.fn).values({
       id: fnId,
@@ -1312,7 +1325,10 @@ export async function createFunction(input: CreateFunctionInput) {
       createdById: input.createdById,
       slug: input.slug,
       description: input.description ?? "",
-      packages: [toPackageRecord(DEFAULT_FUNCTION_SDK, "default", sdkVersion)],
+      packages: normalizePackages([
+        toPackageRecord(DEFAULT_FUNCTION_SDK, "default", sdkVersion),
+        toPackageRecord(DEFAULT_NODE_TYPES, "default", nodeTypesVersion),
+      ]),
       visibility: input.visibility ?? "public",
       forkedFromFnId: input.forkedFromFnId ?? null,
     });

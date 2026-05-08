@@ -55,7 +55,7 @@ export default async function NewWorkspaceLayout({ children }: { children: React
         organizations={organizations}
         activeOrganizationId={orgId}
       />
-      <main className="relative mx-auto max-w-6xl px-6 py-8">{children}</main>
+      <main className="relative mx-auto max-w-7xl px-6 py-8">{children}</main>
     </div>
   );
 }

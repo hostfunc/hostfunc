@@ -66,7 +66,8 @@ export function GeneralSettingsClient({ initialName, initialSlug }: Props) {
             <Button
               type="submit"
               disabled={namePending}
-              className="rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+              variant="glass"
+              className="rounded-full px-5"
             >
               {namePending ? (
                 <>

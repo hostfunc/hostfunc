@@ -150,6 +150,7 @@
 
   .docs-code .token.comment {
     color: var(--color-syntax-comment);
+    font-style: italic;
   }
 
   .docs-code .token.keyword {
@@ -190,6 +191,18 @@
 
   .docs-code .token.punctuation {
     color: var(--color-bone-faint);
+  }
+
+  .docs-prose p {
+    max-width: 72ch;
+  }
+
+  .docs-prose li {
+    max-width: 72ch;
+  }
+
+  .docs-prose code {
+    font-family: var(--font-mono);
   }
 
   .markdown-readme {

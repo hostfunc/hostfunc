@@ -35,7 +35,8 @@ export function TokensClient({ initialTokens }: { initialTokens: TokenRow[] }) {
           />
           <Button
             disabled={pending}
-            className="rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)] sm:w-fit"
+            variant="glass"
+            className="rounded-full px-5 sm:w-fit"
             onClick={() =>
               startTransition(async () => {
                 const result = await createToken({ name });
@@ -60,7 +61,7 @@ export function TokensClient({ initialTokens }: { initialTokens: TokenRow[] }) {
         <div className="border-b border-[var(--color-border)] px-6 py-4 text-sm font-semibold text-[var(--color-bone)]">
           Existing tokens
         </div>
-        <div className="divide-y">
+        <div className="divide-y divide-[var(--color-border)]">
           {tokens.length === 0 ? (
             <div className="p-6 text-sm text-[var(--color-bone-muted)]">No tokens yet.</div>
           ) : (

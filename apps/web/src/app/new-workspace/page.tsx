@@ -50,7 +50,7 @@ export default function NewWorkspacePage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-lg py-6">
+    <div className="mx-auto w-full max-w-xl py-6">
       <div className="mb-8 flex flex-col items-center text-center">
         <div className="mb-4 rounded-2xl border border-[var(--color-amber)]/30 bg-[var(--color-amber)]/12 p-3">
           <FolderPlus className="h-6 w-6 text-[var(--color-amber)]" />

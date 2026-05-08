@@ -23,6 +23,7 @@ import {
   getFunctionAssetBlob,
   listFunctionAssets,
   snapshotAssetsToVersion,
+  syncMarketplaceReadmeToAsset,
 } from "@/server/fn-assets";
 import {
   FnAiContextError,
@@ -113,6 +114,15 @@ const refreshPackageSchema = z.object({
 const updateDescriptionSchema = z.object({
   fnId: z.string(),
   description: z.string().max(280),
+});
+const updateSlugSchema = z.object({
+  fnId: z.string(),
+  slug: z
+    .string()
+    .trim()
+    .min(3)
+    .max(64)
+    .regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers, and hyphens"),
 });
 const updateVisibilitySchema = z.object({
   fnId: z.string(),
@@ -871,6 +881,48 @@ export async function updateFunctionDescriptionAction(formData: FormData) {
   revalidatePath("/dashboard/functions");
 }
 
+export async function updateFunctionSlugAction(formData: FormData) {
+  const { orgId } = await requireOrgPermission("edit_draft");
+  const parsed = updateSlugSchema.parse({
+    fnId: formData.get("fnId"),
+    slug: formData.get("slug") ?? "",
+  });
+  const fnRow = await assertOrgOwnsFunction(orgId, parsed.fnId);
+  const nextSlug = parsed.slug.trim();
+  if (fnRow.slug === nextSlug) return;
+
+  try {
+    await db
+      .update(schema.fn)
+      .set({ slug: nextSlug, updatedAt: new Date() })
+      .where(
+        compatWhere(sql`${schema.fn.id} = ${parsed.fnId} and ${schema.fn.orgId} = ${orgId}`) as never,
+      );
+  } catch (error) {
+    const maybeDbError = error as { code?: string; message?: string };
+    if (maybeDbError.code === "23505") {
+      throw new Error("slug_already_exists");
+    }
+    throw error;
+  }
+
+  const orgRow = await db
+    .select({ slug: schema.organization.slug })
+    .from(schema.organization)
+    .where(compatWhere(sql`${schema.organization.id} = ${orgId}`) as never)
+    .limit(1);
+  const orgSlug = orgRow[0]?.slug;
+  if (orgSlug) {
+    await purgeLookupCache(orgSlug, fnRow.slug).catch(() => {});
+    await purgeLookupCache(orgSlug, nextSlug).catch(() => {});
+  }
+
+  revalidatePath(`/dashboard/${parsed.fnId}`);
+  revalidatePath(`/dashboard/${parsed.fnId}/settings`);
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/functions");
+}
+
 export async function updateFunctionVisibilityAction(formData: FormData) {
   const { orgId } = await requireOrgPermission("edit_draft");
   const parsed = updateVisibilitySchema.parse({
@@ -910,7 +962,9 @@ export async function updateFunctionMarketplaceProfileAction(formData: FormData)
     shortDescription: parsed.shortDescription,
     readme: parsed.readme,
   });
+  await syncMarketplaceReadmeToAsset(parsed.fnId, parsed.readme);
 
+  revalidatePath(`/dashboard/${parsed.fnId}`);
   revalidatePath(`/dashboard/${parsed.fnId}/settings`);
   revalidatePath("/marketplace");
 }

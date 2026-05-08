@@ -98,12 +98,14 @@ export function TriggersClient({
   orgSlug,
   fnSlug,
   hasApiTokens,
+  canUseHttpAuth,
 }: {
   fnId: string;
   triggers: TriggerRow[];
   orgSlug: string;
   fnSlug: string;
   hasApiTokens: boolean;
+  canUseHttpAuth: boolean;
 }) {
   const byKind = useMemo(
     () => ({
@@ -135,6 +137,7 @@ export function TriggersClient({
   );
   const [mcpToolName, setMcpToolName] = useState(byKind.mcp?.config.mcp?.toolName ?? "");
   const [mcpDescription, setMcpDescription] = useState(byKind.mcp?.config.mcp?.description ?? "");
+  const canEnableRequireAuth = canUseHttpAuth || requireAuth === "true";
 
   const cronIsValid = isValidCronSchedule(cronSchedule);
   const allowlistValues = emailAllowlist
@@ -233,6 +236,7 @@ export function TriggersClient({
             id="require-auth-select"
             value={requireAuth}
             onChange={(event) => setRequireAuth(event.target.value)}
+            disabled={!canEnableRequireAuth}
             className="h-11 min-w-44 rounded-md border border-[var(--color-border)] bg-[var(--color-ink)]/70 px-3 text-sm text-[var(--color-bone)]"
           >
             <option value="false">No</option>
@@ -240,7 +244,8 @@ export function TriggersClient({
           </select>
           <Button
             disabled={savingKind === "http"}
-            className="h-11 rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+            variant="glass"
+            className="h-11 rounded-full px-5"
             onClick={() =>
               void runAction(
                 "http",
@@ -253,6 +258,15 @@ export function TriggersClient({
             {savingKind === "http" ? "Saving..." : "Save HTTP"}
           </Button>
         </div>
+        {!canUseHttpAuth ? (
+          <p className="text-xs text-amber-200/90">
+            Requiring HTTP auth is available on paid plans.{" "}
+            <Link href="/dashboard/settings/billing" className="underline hover:text-amber-100">
+              Upgrade to enable
+            </Link>
+            .
+          </p>
+        ) : null}
         {feedback.http ? (
           <p
             className={`flex items-center gap-2 text-xs ${
@@ -315,7 +329,8 @@ export function TriggersClient({
         <div className="flex gap-2">
           <Button
             disabled={savingKind === "cron" || !cronIsValid}
-            className="h-11 rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+            variant="glass"
+            className="h-11 rounded-full px-5"
             onClick={() =>
               void runAction(
                 "cron",
@@ -419,7 +434,8 @@ export function TriggersClient({
         <div className="flex flex-wrap gap-2">
           <Button
             disabled={savingKind === "email" || invalidAllowlistEmails.length > 0}
-            className="h-11 rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+            variant="glass"
+            className="h-11 rounded-full px-5"
             onClick={() =>
               void runAction(
                 "email",
@@ -531,7 +547,8 @@ export function TriggersClient({
         <div className="flex gap-2">
           <Button
             disabled={savingKind === "mcp" || !mcpToolNameValid}
-            className="h-11 rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+            variant="glass"
+            className="h-11 rounded-full px-5"
             onClick={() =>
               void runAction(
                 "mcp",

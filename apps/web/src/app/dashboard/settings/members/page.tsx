@@ -137,7 +137,7 @@ function InviteMemberDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="h-10 rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] transition-all hover:bg-[var(--color-amber-hover)]">
+        <Button variant="glass" className="h-10 rounded-full px-5 transition-all">
           <UserPlus className="w-4 h-4 mr-2" />
           Invite Member
         </Button>
@@ -232,7 +232,8 @@ function InviteMemberDialog() {
             <Button
               type="submit"
               disabled={pending || !email}
-              className="bg-[var(--color-amber)] px-6 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+              variant="glass"
+              className="px-6"
             >
               {pending ? (
                 <>

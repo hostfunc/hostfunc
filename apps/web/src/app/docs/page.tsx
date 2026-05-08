@@ -8,6 +8,23 @@ export const metadata = {
   description: "Learn how to build, deploy, and manage serverless functions.",
 };
 
+function renderInlineCode(text: string) {
+  const parts = text.split(/(`[^`]+`)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
+      return (
+        <code
+          key={`inline-code-${idx}-${part}`}
+          className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[0.92em] text-[var(--color-bone)]"
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return <span key={`inline-text-${idx}-${part}`}>{part}</span>;
+  });
+}
+
 export default function DocsPage({ params }: { params: { slug?: string[] } }) {
   const path = params.slug ? `/docs/${params.slug.join("/")}` : "/docs";
   const content = getDocsPage(path);
@@ -34,7 +51,9 @@ export default function DocsPage({ params }: { params: { slug?: string[] } }) {
         <h1 className="mb-6 font-display text-5xl leading-tight tracking-tight text-[var(--color-bone)] sm:text-6xl">
           {content.title}
         </h1>
-        <p className="max-w-2xl text-xl leading-relaxed text-[var(--color-bone-muted)]">{content.summary}</p>
+        <p className="max-w-2xl text-xl leading-relaxed text-[var(--color-bone-muted)]">
+          {renderInlineCode(content.summary)}
+        </p>
       </div>
 
       <div className="my-12 h-px w-full bg-gradient-to-r from-[var(--color-border)] via-[var(--color-border)]/50 to-transparent" />
@@ -43,8 +62,11 @@ export default function DocsPage({ params }: { params: { slug?: string[] } }) {
       <div className="space-y-8">
         <section>
           <h2 className="mb-6 text-2xl font-bold tracking-tight text-[var(--color-bone)]">
-            Explore the Platform
+            Read By Area
           </h2>
+          <p className="mb-6 max-w-2xl text-sm leading-relaxed text-[var(--color-bone-muted)]">
+            Start with Getting Started, then move through platform behavior, operations, and SDK modules.
+          </p>
           <div className="grid gap-4 md:grid-cols-2">
             {areaCards.map((card) => (
               <Link
@@ -58,7 +80,9 @@ export default function DocsPage({ params }: { params: { slug?: string[] } }) {
                   </h3>
                   <ChevronRight className="h-4 w-4 text-[var(--color-bone-faint)] transition-all group-hover:translate-x-0.5 group-hover:text-[var(--color-amber)]" />
                 </div>
-                <p className="mt-3 text-sm leading-relaxed text-[var(--color-bone-muted)]">{card.summary}</p>
+                <p className="mt-3 text-sm leading-relaxed text-[var(--color-bone-muted)]">
+                  {renderInlineCode(card.summary)}
+                </p>
               </Link>
             ))}
           </div>

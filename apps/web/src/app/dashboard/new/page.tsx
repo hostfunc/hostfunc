@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CustomSelect as UiCustomSelect } from "@/components/ui/custom-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useActiveOrganization } from "@/lib/auth-client";
 import { FUNCTION_TEMPLATES, TEMPLATES } from "@/lib/templates";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
@@ -31,6 +32,7 @@ import { createFunctionAction } from "./actions";
 
 function NewFunctionPageClient() {
   const searchParams = useSearchParams();
+  const { data: activeOrganization } = useActiveOrganization();
   const requestedTemplateId = searchParams.get("template");
   const availableIds = useMemo(
     () => new Set(FUNCTION_TEMPLATES.map((template) => template.id)),
@@ -115,6 +117,15 @@ function NewFunctionPageClient() {
     if (description.trim().length > 0) return "Applying template...";
     return "Opening editor...";
   }, [isPending, slug, description]);
+  const urlPrefix = useMemo(() => {
+    const orgSlug = activeOrganization?.slug?.trim();
+    return orgSlug ? `hostfunc.io/${orgSlug}/` : "hostfunc.io/";
+  }, [activeOrganization?.slug]);
+  const slugInputPaddingLeft = useMemo(() => {
+    // Reserve enough room for "hostfunc.io/{workspace}/" prefix plus a small gap.
+    const px = 28 + urlPrefix.length * 7.2;
+    return `${Math.min(320, Math.max(115, Math.round(px)))}px`;
+  }, [urlPrefix]);
 
   useEffect(() => {
     if (!step1Complete && currentStep !== 1) {
@@ -245,8 +256,8 @@ function NewFunctionPageClient() {
                     </Label>
                     <div className="relative flex items-center">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <span className="text-muted-foreground sm:text-sm border-r pr-2 py-1 border-muted">
-                          hostfunc.io/
+                        <span className="border-r border-muted pr-2 py-1 text-[var(--color-bone-faint)] sm:text-sm">
+                          {urlPrefix}
                         </span>
                       </div>
                       <Input
@@ -254,7 +265,8 @@ function NewFunctionPageClient() {
                         placeholder="my-awesome-api"
                         value={slug}
                         onChange={(event) => setSlug(event.target.value)}
-                        className="h-12 border-[var(--color-border)] bg-[var(--color-ink-elevated)]/50 pl-[115px] text-[var(--color-bone)] backdrop-blur-sm transition-all focus:bg-[var(--color-ink-elevated)] focus-visible:ring-[var(--color-amber)]"
+                        className="h-12 border-[var(--color-border)] bg-[var(--color-ink-elevated)]/50 text-[var(--color-bone)] transition-all focus:bg-[var(--color-ink-elevated)] focus-visible:ring-[var(--color-amber)]"
+                        style={{ paddingLeft: slugInputPaddingLeft }}
                         required
                       />
                       {state?.error?.slug && (
@@ -310,7 +322,8 @@ function NewFunctionPageClient() {
                       type="button"
                       onClick={() => setCurrentStep(2)}
                       disabled={!step1Complete}
-                      className="rounded-full bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+                      variant="glass"
+                      className="rounded-full"
                     >
                       Continue to template
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -432,7 +445,8 @@ function NewFunctionPageClient() {
                       type="button"
                       onClick={() => setCurrentStep(3)}
                       disabled={!step2Complete}
-                      className="rounded-full bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+                      variant="glass"
+                      className="rounded-full"
                     >
                       Continue to review
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -596,7 +610,8 @@ function NewFunctionPageClient() {
                 <Button
                   type="submit"
                   size="lg"
-                  className="group relative h-12 w-full overflow-hidden rounded-full bg-[var(--color-amber)] text-[var(--color-ink)] shadow-lg hover:bg-[var(--color-amber-hover)]"
+                  variant="glass"
+                  className="group relative h-12 w-full overflow-hidden rounded-full shadow-lg"
                   disabled={isPending || !canSubmit}
                 >
                   <span className="relative z-10 flex items-center justify-center font-medium">

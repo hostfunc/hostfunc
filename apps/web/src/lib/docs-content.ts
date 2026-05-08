@@ -34,16 +34,23 @@ export interface DocsPageContent {
   related: Array<{ label: string; href: string }>;
 }
 
+export interface DocsSearchRecord {
+  href: string;
+  title: string;
+  summary: string;
+  sectionTitles: string[];
+}
+
 export const docsSections: DocsSection[] = [
   {
-    title: "Getting Started",
+    title: "Start Here",
     links: [
       { name: "Introduction", href: "/docs" },
       { name: "Getting Started", href: "/docs/getting-started" },
     ],
   },
   {
-    title: "Platform",
+    title: "Core Platform",
     links: [
       { name: "Functions", href: "/docs/functions" },
       { name: "Triggers", href: "/docs/triggers" },
@@ -71,128 +78,80 @@ export const docsSections: DocsSection[] = [
 
 export const docsPages: Record<string, DocsPageContent> = {
   "/docs": {
-    title: "Hostfunc Documentation",
+    title: "Hostfunc Docs",
     summary:
-      "Hostfunc provides a dashboard-first control plane for TypeScript functions with deploy, runtime, observability, API-token tooling, and MCP integrations.",
+      "Hostfunc is a control plane for TypeScript functions: build in dashboard or CLI, deploy to Cloudflare runtime workers, and operate with execution logs, metrics, and token-based automation.",
     highlights: [
-      "Dashboard function creation, draft save, and deploy flows are available now.",
-      "Triggers support HTTP, cron, email, and MCP metadata with org-scoped settings.",
-      "Execution history, logs, and filtering are available in dashboard and API routes.",
-      "API tokens and MCP endpoint are implemented for external tooling access.",
+      "Function lifecycle: draft -> deploy -> immutable version -> runtime invocation.",
+      "Trigger model: HTTP, cron, email, and MCP metadata per function.",
+      "Operational surfaces: execution history, logs, statuses, and usage limits.",
+      "Automation surfaces: API tokens, CLI routes, and `/api/mcp` JSON-RPC tools.",
     ],
     related: [
-      { label: "Go to dashboard", href: "/dashboard" },
-      { label: "View triggers docs", href: "/docs/triggers" },
-      { label: "View SDK docs", href: "/docs/sdk" },
+      { label: "Getting Started", href: "/docs/getting-started" },
+      { label: "Functions", href: "/docs/functions" },
+      { label: "CLI", href: "/docs/cli" },
     ],
   },
   "/docs/getting-started": {
     title: "Getting Started",
     summary:
-      "Use the web dashboard or CLI with API tokens to create, deploy, and invoke functions.",
+      "Use dashboard or CLI to deploy your first function, then verify execution and logs through the same control plane.",
     highlights: [
-      "Dashboard and CLI workflows are both supported from day one.",
-      "Use `@hostfunc/fn` for function composition and secure secret access.",
-      "MCP lets AI tools invoke your functions through token-authenticated endpoints.",
-      "Executions, logs, and trigger metadata are available immediately after deploy.",
+      "HTTP runtime path is `/run/:orgSlug/:fnSlug`.",
+      "`@hostfunc/sdk` is the current runtime SDK (`@hostfunc/fn` remains supported).",
+      "Secrets are fetched at runtime with `secret.get`/`secret.getRequired`.",
+      "Every invocation creates an execution record and log stream.",
     ],
     guideSections: [
       {
-        title: "1) Create your first function",
+        title: "1. Create a function in dashboard",
         description:
-          "Choose your preferred entry point: dashboard, CLI, or AI-assisted generation (coming soon).",
+          "Start in `/dashboard/new`, set slug/metadata, and write a small `main` function.",
         bullets: [
-          "Dashboard: open `/dashboard/new`, choose a slug, and start editing immediately.",
-          "CLI: initialize a function target with `hostfunc init --fnId <fn_id>` and deploy from terminal.",
-          "AI agent (coming soon): describe intent and let hostfunc generate a first draft function.",
+          "Draft changes are editable before deployment.",
+          "Add required secrets in function settings before first production run.",
         ],
-        code: `# Dashboard flow
-# 1) Open /dashboard/new
-# 2) Create function
-# 3) Write code and deploy
-
-# CLI flow
-hostfunc init --fnId <fn_id>
-hostfunc deploy`,
-      },
-      {
-        title: "2) Build and deploy from the editor",
-        description:
-          "Save draft code, configure secrets in settings, then deploy an immutable runtime version.",
-        bullets: [
-          "Drafts are autosaved in the editor and can be iterated quickly.",
-          "Add encrypted secrets in Function Settings before first production deploy.",
-          "After deploy, invoke your runtime route at `/run/:owner/:slug`.",
-        ],
-        code: `import fn, { secret } from "@hostfunc/fn";
+        code: `import fn, { secret } from "@hostfunc/sdk";
 
 export async function main(input: { name?: string }) {
-  const apiKey = await secret.getRequired("CLAUDE_API_KEY");
-  const greeting = input.name ?? "world";
-
-  return {
-    ok: true,
-    greeting: \`hello \${greeting}\`,
-    hasApiKey: Boolean(apiKey),
-  };
+  const token = await secret.getRequired("INTERNAL_API_TOKEN");
+  return { ok: true, greeting: \`hello \${input.name ?? "world"}\`, tokenLoaded: Boolean(token) };
 }`,
       },
       {
-        title: "3) Install and use the in-function SDK",
-        description: "The SDK is provided by hostfunc runtime as `@hostfunc/fn`.",
-        bullets: [
-          "Default export `fn` exposes composition APIs like `executeFunction`.",
-          "Named export `secret` provides secure secret retrieval inside runtime.",
-          "Use `owner/slug` targets for cross-function calls.",
-        ],
-        code: `import fn, { secret } from "@hostfunc/fn";
-
-export async function main(input: { orderId: string }) {
-  const token = await secret.getRequired("INTERNAL_TOKEN");
-
-  const receipt = await fn.executeFunction("my-org/create-receipt", {
-    orderId: input.orderId,
-    token,
-  });
-
-  return await fn.executeFunction("my-org/notify-receipt", { receipt });
-}`,
-      },
-      {
-        title: "4) Configure secrets and environment safely",
+        title: "2. Deploy and invoke",
         description:
-          "Keep credentials in hostfunc secrets. Never hardcode secrets or print them in logs.",
+          "Deploy creates an immutable version and updates the function pointer used by runtime dispatch.",
         bullets: [
-          "Use `secret.getRequired` for mandatory credentials.",
-          "Use `secret.get` only when absence is an expected runtime branch.",
-          "Rotate secrets through function settings without redeploying source code.",
+          "Invoke over HTTP at `/run/:orgSlug/:fnSlug`.",
+          "If HTTP trigger requires auth, pass a workspace API token.",
         ],
+        code: `curl -X POST "https://run.hostfunc.io/run/acme/invoice-sync" \\
+  -H "content-type: application/json" \\
+  -d '{"invoiceId":"inv_123"}'`,
       },
       {
-        title: "5) Set up CLI workflow",
-        description: "Automate deploy, run, logs, and secret updates from terminals and CI.",
+        title: "3. Set up CLI for repeatable deploys",
+        description: "CLI maps directly to `/api/cli/*` routes and uses API token auth.",
         bullets: [
-          "Authenticate once with an org API token.",
-          "Initialize with `hostfunc.json` for function targeting.",
-          "Use CLI routes for repeatable release pipelines.",
+          "Credentials are stored under `~/.hostfunc` by default.",
+          "Project defaults live in `hostfunc.json`.",
         ],
         code: `npm install -g @hostfunc/cli
-
 hostfunc login --token <api-token> --url http://localhost:3000
 hostfunc init --fnId <fn_id>
 hostfunc deploy
 hostfunc run --payload ./payload.json
-hostfunc logs --executionId <execution_id>
-hostfunc secrets set CLAUDE_API_KEY <value>`,
+hostfunc logs --executionId <execution_id>`,
       },
       {
-        title: "6) Enable MCP for AI tooling",
+        title: "4. Connect MCP clients when needed",
         description:
-          "Connect AI clients to hostfunc via MCP so tools can invoke functions and inspect executions.",
+          "Use `/api/mcp` with bearer token auth for AI/editor tool access.",
         bullets: [
-          "MCP endpoint: `/api/mcp`.",
-          "Authenticate with API tokens and enforce allowlisted origins.",
-          "Use MCP for controlled tool calls from editors/agents.",
+          "Methods implemented: `initialize`, `tools/list`, `tools/call`, `ping`.",
+          "Tools implemented: `functions.*`, `executions.*`.",
         ],
         code: `{
   "mcpServers": {
@@ -209,118 +168,100 @@ hostfunc secrets set CLAUDE_API_KEY <value>`,
   }
 }`,
       },
-      {
-        title: "7) Operate with observability",
-        description: "After deployment, use executions and logs to monitor behavior and failures.",
-        bullets: [
-          "Track statuses (`ok`, `fn_error`, `limit_exceeded`, `infra_error`).",
-          "Filter by trigger type (`http`, `cron`, `email`, `mcp`, `fn_call`).",
-          "Use execution detail + live logs to debug downstream chaining issues quickly.",
-        ],
-      },
     ],
     related: [
-      { label: "Function settings", href: "/docs/functions" },
-      { label: "MCP setup", href: "/docs/mcp" },
-      { label: "CLI reference", href: "/docs/cli" },
-      { label: "Executions and logs", href: "/docs/executions" },
-      { label: "Security and tokens", href: "/docs/security" },
+      { label: "Functions", href: "/docs/functions" },
+      { label: "Executions and Logs", href: "/docs/executions" },
+      { label: "MCP", href: "/docs/mcp" },
     ],
   },
   "/docs/functions": {
     title: "Functions",
     summary:
-      "Functions are stored as drafts and immutable deployed versions with org tenancy boundaries.",
+      "Functions move through draft and deployed versions. Runtime dispatch resolves deployed version metadata and executes in Cloudflare workers.",
     highlights: [
-      "Drafts are user-scoped and saved before deploy.",
-      "Deploy creates `fn_version` records and updates current version pointers.",
-      'Use `import fn, { secret } from "@hostfunc/fn"` for in-function APIs.',
-      'Chain calls with `await fn.executeFunction("owner/slug", payload)`.',
-      'Load secrets with `await secret.getRequired("KEY")` from function settings.',
+      "Deploy creates immutable versions and stores runtime handles per version.",
+      "SDK composition calls (`fn.executeFunction`) preserve execution lineage.",
+      "Secret access is runtime-mediated, never hardcoded in function source.",
+      "Call depth is enforced to prevent recursive loops.",
     ],
     sdkGuide: {
       quickstart:
-        "Import the SDK once per function file. Use `fn.executeFunction` for function-to-function composition and `secret.get`/`secret.getRequired` for runtime secrets.",
+        "Use `@hostfunc/sdk` as default import surface. Use `@hostfunc/fn` only for legacy compatibility.",
       apiReference: [
         {
           name: "fn.executeFunction",
           signature:
             "await fn.executeFunction(slug: string, input?: Record<string, unknown>): Promise<unknown>",
           description:
-            "Invokes another Hostfunc function through the control plane. This preserves execution lineage and records trigger kind as `fn_call` in downstream executions.",
+            "Invokes another function through runtime dispatch and records parent-child execution linkage.",
           args: [
             {
               name: "slug",
-              type: "string (`owner/slug`)",
+              type: "string (`orgSlug/fnSlug`)",
               required: true,
-              description:
-                "Target function identifier. Must include owner and function slug separated by a slash.",
+              description: "Target function identifier.",
             },
             {
               name: "input",
               type: "Record<string, unknown>",
               required: false,
-              description:
-                "JSON-serializable payload forwarded to the downstream function as its `main` input.",
+              description: "JSON payload forwarded to downstream `main()` input.",
             },
           ],
           returns:
-            "Parsed JSON value returned by the downstream function. If the callee returns no value, this resolves to `null`.",
+            "Parsed JSON returned by the downstream function.",
           throws: [
-            "HostfuncError(FN_NOT_FOUND): slug is malformed and does not follow `owner/slug`.",
-            "HostfuncError(FN_CALL_DEPTH): call chain depth exceeded or loop detected.",
-            "HostfuncError(FN_THREW): downstream invocation returned a non-2xx response.",
+            "FN_NOT_FOUND if slug is malformed or function is unavailable.",
+            "FN_CALL_DEPTH when call-depth protection triggers.",
+            "FN_THREW for non-2xx downstream responses.",
           ],
           notes: [
-            "Call depth is enforced by runtime headers to prevent recursive loops.",
-            "Use small payloads and pass references/ids instead of large blobs for better latency.",
+            "Prefer stable slugs from config, not raw user input.",
+            "Pass IDs/references instead of large blobs for better latency.",
           ],
         },
         {
           name: "secret.get",
           signature: "await secret.get(key: string): Promise<string | null>",
           description:
-            "Fetches an encrypted secret configured in Function Settings. Returns `null` when the secret key is missing.",
+            "Fetches an optional secret configured for the current function.",
           args: [
             {
               name: "key",
               type: "string",
               required: true,
-              description: "Secret key name exactly as configured in the dashboard.",
+              description: "Secret key name configured in function settings.",
             },
           ],
           returns: "Secret value as string, or `null` when not set.",
-          throws: [
-            "HostfuncError(INFRA_EXECUTE_FAILED): runtime cannot contact the control plane or auth headers are invalid.",
-          ],
+          throws: ["INFRA_EXECUTE_FAILED when secret service cannot be reached/authenticated."],
         },
         {
           name: "secret.getRequired",
           signature: "await secret.getRequired(key: string): Promise<string>",
-          description:
-            "Strict secret fetch helper. Use this when the function cannot run without a specific secret.",
+          description: "Fetches a required secret and throws if the key is missing.",
           args: [
             {
               name: "key",
               type: "string",
               required: true,
-              description: "Secret key name exactly as configured in the dashboard.",
+              description: "Secret key name configured in function settings.",
             },
           ],
           returns: "Secret value as string.",
           throws: [
-            "HostfuncError(FN_THREW): required secret is missing.",
-            "HostfuncError(INFRA_EXECUTE_FAILED): runtime cannot fetch secrets from the control plane.",
+            "MISSING_SECRET (wrapped in SDK error detail) when key is missing.",
+            "INFRA_EXECUTE_FAILED when control-plane secret service fails.",
           ],
-          notes: ["Prefer this method for API keys and credentials required on every invocation."],
+          notes: ["Use for credentials required on every invocation path."],
         },
       ],
       codeExamples: [
         {
-          title: "Canonical SDK import and composition",
-          description:
-            "Baseline pattern for functions that read secrets and invoke another function.",
-          code: `import fn, { secret } from "@hostfunc/fn";
+          title: "Composition with required secret",
+          description: "Default pattern for function-to-function workflows.",
+          code: `import fn, { secret } from "@hostfunc/sdk";
 
 export async function main(input: { customerId: string }) {
   const apiKey = await secret.getRequired("CLAUDE_API_KEY");
@@ -336,61 +277,12 @@ export async function main(input: { customerId: string }) {
   });
 }`,
         },
-        {
-          title: "Safe optional secret fallback",
-          description:
-            "Use `secret.get` when a secret is optional and you want an explicit fallback behavior.",
-          code: `import fn, { secret } from "@hostfunc/fn";
-
-export async function main(input: { orderId: string }) {
-  const webhookUrl = await secret.get("OPTIONAL_WEBHOOK_URL");
-  const result = await fn.executeFunction("my-org/create-order-event", {
-    orderId: input.orderId,
-  });
-
-  if (!webhookUrl) {
-    return { delivered: false, reason: "missing_optional_webhook", result };
-  }
-
-  return await fn.executeFunction("my-org/send-webhook", {
-    webhookUrl,
-    result,
-  });
-}`,
-        },
-        {
-          title: "Chaining guardrails and slug validation",
-          description:
-            "Recommended defensive handling for user-provided slugs before invoking downstream functions.",
-          code: `import fn from "@hostfunc/fn";
-
-function isValidSlug(value: string) {
-  return /^[a-z0-9-]+\\/[a-z0-9-]+$/i.test(value);
-}
-
-export async function main(input: { targetSlug: string; payload?: Record<string, unknown> }) {
-  if (!isValidSlug(input.targetSlug)) {
-    return { ok: false, error: "invalid_target_slug" };
-  }
-
-  try {
-    const data = await fn.executeFunction(input.targetSlug, input.payload ?? {});
-    return { ok: true, data };
-  } catch (error) {
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : "execute_failed",
-    };
-  }
-}`,
-        },
       ],
       bestPractices: [
-        "Keep chained functions small and single-purpose; compose behavior by passing concise JSON payloads.",
-        "Use stable `owner/slug` identifiers rather than user input whenever possible.",
-        "Treat `secret.getRequired` failures as configuration problems and return actionable errors.",
-        "Avoid passing raw secret values to unrelated downstream functions unless absolutely required.",
-        "Design downstream functions to be idempotent so retries do not duplicate side effects.",
+        "Keep functions small and composable.",
+        "Treat missing required secrets as configuration failures.",
+        "Design downstream calls to be idempotent for retries.",
+        "Use explicit payload schemas to avoid shape drift.",
       ],
     },
     related: [
@@ -402,18 +294,18 @@ export async function main(input: { targetSlug: string; payload?: Record<string,
   "/docs/triggers": {
     title: "Triggers",
     summary:
-      "Trigger configuration supports HTTP, cron, email, and MCP kinds with one trigger per kind per function.",
+      "Trigger config is persisted per function/kind and controls how runtime invocation is initiated.",
     highlights: [
-      "HTTP triggers default to `requireAuth: false` (public). Enable `requireAuth: true` to require a workspace API token unless the request is a verified nested `executeFunction` call.",
-      "Cron and email invocations use a shared `RUNTIME_INVOKE_TOKEN` from the control plane to the runtime (not spoofable like client headers).",
-      "Email uses a platform-generated inbound address and invokes `email(data)` with a documented `data.email` payload.",
-      "MCP trigger config is stored in metadata; MCP execution currently routes through tool handlers.",
+      "Kinds: `http`, `cron`, `email`, `mcp`.",
+      "Cron/email invokes runtime through authenticated internal paths.",
+      "HTTP can be public or token-protected via `requireAuth`.",
+      "MCP trigger metadata is stored and available for tooling.",
     ],
     guideSections: [
       {
-        title: "Trigger kinds and config schema",
+        title: "Trigger schema",
         description:
-          "Hostfunc persists a single trigger config per kind for each function (`fnId + kind` uniqueness).",
+          "Each function keeps at most one row per trigger kind (`fnId + kind`).",
         bullets: [
           "http: `{ requireAuth: boolean }` (defaults to false for new functions)",
           "cron: `{ schedule: string, timezone?: string }`",
@@ -423,7 +315,7 @@ export async function main(input: { targetSlug: string; payload?: Record<string,
       },
       {
         title: "HTTP trigger",
-        description: "HTTP runtime entry point is `/run/:orgSlug/:fnSlug`.",
+        description: "HTTP entrypoint is runtime route `/run/:orgSlug/:fnSlug`.",
         bullets: [
           "HTTP is created automatically for new functions.",
           "When `requireAuth` is true, send `Authorization: Bearer <workspace API token>` (see Settings → Tokens).",
@@ -451,10 +343,10 @@ export async function main(input: { targetSlug: string; payload?: Record<string,
       {
         title: "MCP-related triggering",
         description:
-          "MCP tool calls can execute functions through API handlers. Treat MCP as tooling surface with audited calls.",
+          "MCP tool calls execute through `/api/mcp` handlers and are audited.",
         bullets: [
           "MCP tools include function execution operations.",
-          "MCP trigger metadata config exists in trigger model for function-level metadata.",
+          "MCP trigger config exists in trigger model for function-level metadata.",
         ],
       },
     ],
@@ -466,11 +358,11 @@ export async function main(input: { targetSlug: string; payload?: Record<string,
   "/docs/executions": {
     title: "Executions and Logs",
     summary:
-      "Execution list, details, metrics, and log streaming are available in dashboard and API.",
+      "Every invocation writes an execution row plus logs and metrics. Use dashboard and CLI to investigate failures quickly.",
     highlights: [
-      "List/filter executions by status, trigger kind, and date range.",
-      "Execution details include metrics and error context.",
-      "Live logs stream via SSE endpoint for execution detail views.",
+      "Statuses include `ok`, `fn_error`, `limit_exceeded`, `infra_error`.",
+      "Trigger kind and parent execution metadata are first-class fields.",
+      "Logs are ingested and available via dashboard and `/api/cli/executions/logs`.",
     ],
     guideSections: [
       {
@@ -492,11 +384,11 @@ export async function main(input: { targetSlug: string; payload?: Record<string,
         ],
       },
       {
-        title: "Live logs and ingestion",
+        title: "Logs and ingestion",
         description:
-          "Runtime ingest writes logs and metrics, then live log streams are delivered over SSE.",
+          "Runtime/tail ingestion writes structured logs and runtime metrics to control-plane storage.",
         bullets: [
-          "SSE route: `/api/logs/:execId`.",
+          "Dashboard execution detail consumes live updates through server APIs.",
           "CLI logs route: `/api/cli/executions/logs` (latest or by execution id).",
           "Structured log fields are preserved with each log line.",
         ],
@@ -519,7 +411,7 @@ export async function main(input: { targetSlug: string; payload?: Record<string,
   "/docs/security": {
     title: "Security and Access",
     summary:
-      "Org session auth, API token auth, and internal bearer-token control-plane auth are split by boundary.",
+      "Security is split by boundary: dashboard session auth, API-token auth for automation, and internal bearer-token controls for runtime/control-plane traffic.",
     highlights: [
       "Dashboard actions require an active session and organization context.",
       "CLI/MCP automation uses bearer API tokens validated against hashed token records.",
@@ -612,12 +504,12 @@ hostfunc secrets set CLAUDE_API_KEY <value>`,
         title: "Command to API mapping",
         description: "CLI operations map directly to org-scoped API routes.",
         bullets: [
-          "login -> `GET /api/cli/login`",
-          "list -> `GET /api/cli/functions`",
-          "deploy -> `POST /api/cli/functions/deploy`",
-          "run -> `POST /api/cli/functions/run`",
-          "logs -> `GET /api/cli/executions/logs`",
-          "secrets set -> `POST /api/cli/secrets`",
+          "`login` -> `GET /api/cli/login`",
+          "`list` -> `GET /api/cli/functions`",
+          "`deploy` -> `POST /api/cli/functions/deploy`",
+          "`run` -> `POST /api/cli/functions/run`",
+          "`logs` -> `GET /api/cli/executions/logs`",
+          "`secrets set` -> `POST /api/cli/secrets`",
         ],
       },
     ],
@@ -695,7 +587,7 @@ hostfunc secrets set CLAUDE_API_KEY <value>`,
   "/docs/sdk": {
     title: "@hostfunc/sdk",
     summary:
-      "The hostfunc runtime SDK provides composable function calls, secret access, AI helpers, agent orchestration, and vector operations.",
+      "The runtime SDK is split into core function APIs plus optional AI, agent, and vector modules.",
     highlights: [
       "Import core APIs from `@hostfunc/sdk` (`executeFunction`, `secret`, `log`).",
       "Import AI helpers from `@hostfunc/sdk/ai` (`askAi`, `streamAi`, `createEmbedding`).",
@@ -704,14 +596,14 @@ hostfunc secrets set CLAUDE_API_KEY <value>`,
     ],
     sdkGuide: {
       quickstart:
-        "Use @hostfunc/sdk as the default runtime import for all new functions. The legacy @hostfunc/fn alias still works during migration, but new code should target @hostfunc/sdk.",
+        "Use `@hostfunc/sdk` for new functions. Submodules (`/ai`, `/agent`, `/vector`) call internal APIs and require proper workspace integration setup.",
       apiReference: [
         {
           name: "fn.executeFunction",
           signature:
             "await fn.executeFunction<T = unknown>(slug: string, input?: unknown, options?: { timeoutMs?: number }): Promise<T>",
           description:
-            "Invoke another function by org/slug. The runtime preserves call lineage and applies call-depth protection.",
+            "Invoke another function by org/slug with lineage and call-depth protection.",
           args: [
             {
               name: "slug",
@@ -791,7 +683,7 @@ export async function main(input: { customerId: string }) {
         "Prefer @hostfunc/sdk for all new code; keep @hostfunc/fn only for legacy compatibility.",
         "Use org/slug identifiers, not mutable user-provided values.",
         "Keep chained payloads compact and pass IDs/references for large data.",
-        "Configure AI/Vector defaults in /dashboard/settings/integrations before using module helpers.",
+        "Configure integrations in `/dashboard/settings/integrations` before using AI/vector helpers.",
       ],
     },
     related: [
@@ -901,7 +793,7 @@ const run = await runAgent({
       bestPractices: [
         "Set maxSteps and timeoutMs to keep agent runs bounded.",
         "Restrict tools to least-privilege capabilities for each agent role.",
-        "Agent execution uses the same AI provider resolution as askAi (function override -> workspace default).",
+        "Agent execution uses the same AI provider resolution chain as other AI helpers.",
       ],
     },
     related: [
@@ -964,7 +856,7 @@ const results = await query("profiles", embedding, { topK: 5 });`,
         "Use stable namespace names by domain (profiles, docs, incidents, etc.).",
         "Store lightweight metadata for filtering and downstream display.",
         "Tune topK based on latency/quality trade-offs for each workload.",
-        "Configure backend order (primary/fallback) in integrations settings and provide credentials for both.",
+        "Configure vector backends in integrations settings before production usage.",
       ],
     },
     related: [
@@ -990,4 +882,13 @@ export function assertDocsContentIntegrity(): void {
       throw new Error(`docs nav link missing page content: ${href}`);
     }
   }
+}
+
+export function getDocsSearchIndex(): DocsSearchRecord[] {
+  return Object.entries(docsPages).map(([href, page]) => ({
+    href,
+    title: page.title,
+    summary: page.summary,
+    sectionTitles: page.guideSections?.map((section) => section.title) ?? [],
+  }));
 }
