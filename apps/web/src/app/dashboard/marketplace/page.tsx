@@ -1,11 +1,11 @@
 import { CommunityFunctionCard } from "@/components/marketplace/community-function-card";
 import { MarketplaceFilters } from "@/components/marketplace/marketplace-filters";
+import type { MarketplaceView } from "@/components/marketplace/search-params";
 import { Button } from "@/components/ui/button";
 import { requireSession } from "@/lib/session";
 import {
   MARKETPLACE_CATEGORIES,
   type MarketplaceSort,
-  type MarketplaceView,
   searchMarketplaceFunctions,
 } from "@/server/functions";
 import { Boxes, Plus, Sparkles } from "lucide-react";

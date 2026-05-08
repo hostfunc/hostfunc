@@ -65,7 +65,6 @@ jobs:
     # Provide non-secret CI placeholders so env validation passes and we can
     # catch real prerender issues (e.g. missing Suspense boundaries) pre-merge.
     env:
-      NODE_ENV: production
       DATABASE_URL: https://example.com
       BETTER_AUTH_SECRET: 01234567890123456789012345678901
       BETTER_AUTH_URL: https://staging.hostfunc.io
@@ -93,7 +92,8 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile --prod=false
+      - run: pnpm --filter @hostfunc/web build:deps
       - run: pnpm --filter @hostfunc/web build
 
   cli-pack-smoke:

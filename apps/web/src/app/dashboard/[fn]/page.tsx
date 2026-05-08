@@ -84,7 +84,7 @@ export default async function FunctionEditorPage({
           readOnly={!canEditDraft}
           contexts={contexts}
           assets={assets}
-          gitBinding={gitBinding}
+          gitBinding={gitBinding ?? null}
         />
       </div>
     </div>
