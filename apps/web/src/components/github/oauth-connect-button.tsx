@@ -1,20 +1,23 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import type { ComponentProps } from "react";
 import { useState } from "react";
 
 interface Props {
   returnTo: string;
   label: string;
   className?: string;
+  variant?: ComponentProps<typeof Button>["variant"];
 }
 
-export function GithubOauthConnectButton({ returnTo, label, className }: Props) {
+export function GithubOauthConnectButton({ returnTo, label, className, variant }: Props) {
   const [pending, setPending] = useState(false);
 
   return (
     <Button
       type="button"
+      variant={variant}
       className={className}
       disabled={pending}
       onClick={() => {
