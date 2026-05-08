@@ -83,6 +83,7 @@ jobs:
       TRIGGER_CONTROL_TOKEN: ci-trigger-control-token
       HOSTFUNC_EXECUTOR: local
       NEXT_PUBLIC_BETTER_AUTH_URL: https://staging.hostfunc.io
+      STRIPE_SECRET_KEY: sk_test_ci_placeholder
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
