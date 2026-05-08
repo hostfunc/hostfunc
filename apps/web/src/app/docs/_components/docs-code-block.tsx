@@ -38,7 +38,7 @@ export function DocsCodeBlock({
   };
 
   return (
-    <div className="docs-code relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-black/40">
+    <div className="docs-code relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[#0c0d0f]">
       <div className="flex items-center justify-between border-b border-[var(--color-border)] px-3 py-2">
         <span className="text-[11px] uppercase tracking-wider text-[var(--color-bone-faint)]">
           {resolvedLanguage}
@@ -57,8 +57,8 @@ export function DocsCodeBlock({
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <pre className="overflow-x-auto p-4 text-xs leading-relaxed text-[var(--color-bone)]">
-        <code>
+      <pre className="overflow-x-auto p-4 text-sm leading-7 text-[var(--color-bone)]">
+        <code className="font-mono">
           {lines.map((line, lineIdx) => {
             const lineOffset = lines
               .slice(0, lineIdx)
@@ -69,7 +69,6 @@ export function DocsCodeBlock({
                   <span
                     key={`token-${lineOffset + token.start}-${token.value}`}
                     className={token.className}
-                    style={getTokenStyle(token.className)}
                   >
                     {token.value}
                   </span>
@@ -147,21 +146,4 @@ function getTokenClass(language: "typescript" | "bash" | "json", token: string):
   if (/^(true|false|null)$/.test(token)) return "token keyword";
   if (/^-?\d/.test(token)) return "token number";
   return "token punctuation";
-}
-
-function getTokenStyle(className?: string): { color?: string } | undefined {
-  if (!className) return undefined;
-  if (className.includes("comment")) return { color: "var(--color-syntax-comment)" };
-  if (className.includes("keyword")) return { color: "var(--color-syntax-keyword)" };
-  if (className.includes("string")) return { color: "var(--color-syntax-string)" };
-  if (className.includes("number")) return { color: "var(--color-syntax-number)" };
-  if (className.includes("function")) return { color: "var(--color-syntax-function)" };
-  if (className.includes("type")) return { color: "var(--color-syntax-type)" };
-  if (className.includes("property")) return { color: "var(--color-syntax-property)" };
-  if (className.includes("variable")) return { color: "var(--color-amber-hover)" };
-  if (className.includes("attr-name")) return { color: "var(--color-cyan)" };
-  if (className.includes("operator") || className.includes("punctuation")) {
-    return { color: "var(--color-bone-faint)" };
-  }
-  return undefined;
 }

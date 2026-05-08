@@ -69,7 +69,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         organizations={organizations}
         activeOrganizationId={orgId}
       />
-      <main className="relative mx-auto max-w-6xl px-6 py-8">
+      <main className="relative mx-auto max-w-7xl px-6 py-8">
         {/* <UsageStatusBar
           planName={usage.planName}
           executionsToday={usage.usage.executionsToday}

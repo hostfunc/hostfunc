@@ -334,7 +334,8 @@ export function ContextClient({
             <Button
               onClick={() => void addNote()}
               disabled={savingNote || !noteName.trim() || !noteContent.trim()}
-              className="h-10 w-full rounded-full bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+              variant="glass"
+              className="h-10 w-full rounded-full"
             >
               {savingNote ? (
                 <Loader2 className="mr-1 h-4 w-4 animate-spin" />
@@ -366,7 +367,8 @@ export function ContextClient({
             <Button
               onClick={() => void addUrl()}
               disabled={savingUrl || !urlName.trim() || !url.trim()}
-              className="h-10 w-full rounded-full bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+              variant="glass"
+              className="h-10 w-full rounded-full"
             >
               {savingUrl ? (
                 <Loader2 className="mr-1 h-4 w-4 animate-spin" />

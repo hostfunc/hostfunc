@@ -329,6 +329,20 @@ export async function syncReadmeToMarketplace(fnId: string, body: string): Promi
     });
 }
 
+export async function syncMarketplaceReadmeToAsset(fnId: string, readme: string): Promise<void> {
+  const content = readme.trim();
+  if (!content) {
+    await deleteFunctionAsset({ fnId, path: "README.md" });
+    return;
+  }
+  await upsertFunctionAsset({
+    fnId,
+    path: "README.md",
+    mime: "text/markdown",
+    content: Buffer.from(readme, "utf8"),
+  });
+}
+
 export interface VersionAssetSummary {
   path: string;
   kind: AssetKind;

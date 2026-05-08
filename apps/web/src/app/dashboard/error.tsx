@@ -120,7 +120,7 @@ export default function DashboardError({
 
       <div className="mt-5 flex flex-wrap gap-3">
         {requestAccessHref ? (
-          <Button asChild className="rounded-full bg-[var(--color-amber)] text-[var(--color-ink)]">
+          <Button asChild variant="glass" className="rounded-full">
             <a href={requestAccessHref}>
               <Mail className="mr-2 h-4 w-4" />
               Request access again

@@ -267,7 +267,8 @@ export function PackagesClient({
           <Button
             onClick={() => void onAdd()}
             disabled={pending || !packageName.trim()}
-            className="h-11 rounded-full bg-[var(--color-amber)] px-5 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+            variant="glass"
+            className="h-11 rounded-full px-5"
           >
             <Plus className="mr-1 h-4 w-4" />
             Add

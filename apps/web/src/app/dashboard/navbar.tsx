@@ -21,17 +21,14 @@ import {
 import { signOut } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import {
-  Activity,
   ArrowRight,
   BadgeCheck,
   ChevronDown,
   Crown,
   Hexagon,
-  Layers,
   LogOut,
   Plus,
   Settings,
-  Store,
   User,
   Zap,
 } from "lucide-react";
@@ -140,14 +137,14 @@ export function DashboardNavbar({
   }, []);
 
   const navLinks = [
-    { name: "Overview", href: "/dashboard", icon: Activity, exact: true },
-    { name: "Functions", href: "/dashboard/functions", icon: Layers },
-    { name: "Marketplace", href: "/dashboard/marketplace", icon: Store },
+    { name: "Overview", href: "/dashboard", exact: true },
+    { name: "Functions", href: "/dashboard/functions" },
+    { name: "Marketplace", href: "/dashboard/marketplace" },
   ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+    <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
+      <div className="flex w-full items-center justify-between px-6 py-3">
         {/* Left Side: Brand & Workspaces */}
         <div className="flex items-center gap-6">
           <DropdownMenu modal={false}>
@@ -231,8 +228,6 @@ export function DashboardNavbar({
             {navLinks.map((link) => {
               const isActive = link.exact ? pathname === link.href : pathname.startsWith(link.href);
 
-              const Icon = link.icon;
-
               return (
                 <Link
                   key={link.name}
@@ -244,7 +239,6 @@ export function DashboardNavbar({
                       : "text-[var(--color-bone-muted)] hover:bg-white/[0.05] hover:text-[var(--color-bone)]",
                   )}
                 >
-                  <Icon className="h-4 w-4" />
                   {link.name}
                   {isActive && (
                     <div className="absolute -bottom-[15px] left-2 right-2 h-[2px] rounded-t-full bg-[var(--color-amber)]" />
@@ -260,10 +254,11 @@ export function DashboardNavbar({
           <Button
             size="sm"
             asChild
-            className="group h-8 rounded-full bg-[var(--color-amber)] px-4 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+            variant="glass"
+            className="group h-8 rounded-full px-4 transition-colors"
           >
             <Link href="/dashboard/new">
-              <Zap className="mr-1.5 size-3.5 text-[var(--color-ink)] transition-transform group-hover:scale-110" />
+              <Zap className="mr-1.5 size-3.5 text-[var(--color-amber)] transition-transform duration-200 group-hover:scale-105 group-hover:text-[var(--color-amber-hover)]" />
               New System
             </Link>
           </Button>
@@ -361,7 +356,8 @@ export function DashboardNavbar({
             </Button>
             <Button
               asChild
-              className="rounded-full bg-[var(--color-amber)] px-6 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+              variant="glass"
+              className="rounded-full px-6"
             >
               <Link href="/dashboard/settings/billing" onClick={() => setShowUpgradeModal(false)}>
                 View plans

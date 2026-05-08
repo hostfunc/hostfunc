@@ -66,7 +66,7 @@ function LoginPageClient() {
       <div className="border-grid pointer-events-none absolute inset-0 opacity-35" />
 
       <header className="relative z-20 border-b border-[var(--color-border)] bg-[var(--color-ink)]/75 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="flex w-full items-center justify-between px-6 py-4">
           <Link href="/" className="group flex items-center gap-2">
             <Hexagon className="size-5 text-[var(--color-amber)] transition-transform duration-300 group-hover:scale-105" />
             <span className="font-display text-xl text-[var(--color-bone)]">hostfunc</span>
@@ -81,7 +81,7 @@ function LoginPageClient() {
         </div>
       </header>
 
-      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-73px)] w-full max-w-6xl items-center justify-center px-6 py-16">
+      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-73px)] w-full max-w-7xl items-center justify-center px-6 py-16">
         <div className="grid w-full max-w-5xl gap-8 lg:grid-cols-[1fr_440px] lg:gap-10">
           <motion.div
             className="hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/80 p-8 lg:block"
@@ -153,7 +153,7 @@ function LoginPageClient() {
                           src="/Github%20logo.svg"
                           alt=""
                           aria-hidden="true"
-                          className="mr-2 h-4 w-4 object-contain"
+                          className="mr-2 h-4 w-4 object-contain brightness-0 invert"
                         />
                         Continue with GitHub
                       </Button>

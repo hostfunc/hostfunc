@@ -1,4 +1,5 @@
 import { requireActiveOrg } from "@/lib/session";
+import { getEffectivePlan } from "@/server/plans";
 import { db, schema } from "@hostfunc/db";
 import { and, count, eq } from "drizzle-orm";
 import { RadioTower } from "lucide-react";
@@ -31,7 +32,8 @@ export default async function TriggersFunctionSettingsPage({
     .from(schema.apiToken)
     .where(eq(schema.apiToken.orgId, orgId));
   const hasApiTokens = Number(tokenRow?.n ?? 0) > 0;
-  const triggers = await loadTriggers(fnRow.id);
+  const [triggers, plan] = await Promise.all([loadTriggers(fnRow.id), getEffectivePlan(orgId)]);
+  const canUseHttpAuth = plan.planSlug !== "free";
 
   return (
     <div className="animate-in space-y-10 fade-in duration-500 pb-10">
@@ -58,6 +60,7 @@ export default async function TriggersFunctionSettingsPage({
         orgSlug={fnRow.orgSlug}
         fnSlug={fnRow.slug}
         hasApiTokens={hasApiTokens}
+        canUseHttpAuth={canUseHttpAuth}
       />
     </div>
   );

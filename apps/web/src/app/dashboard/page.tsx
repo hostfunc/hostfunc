@@ -395,7 +395,8 @@ export default async function DashboardPage({
               <RangeSwitcher current={range} />
               <Button
                 asChild
-                className="rounded-full bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+                variant="glass"
+                className="rounded-full"
               >
                 <Link href="/dashboard/new">Deploy a function</Link>
               </Button>
@@ -541,12 +542,9 @@ export default async function DashboardPage({
             Create your first function to start processing events, running crons, and exploring the
             dashboard.
           </p>
-          <Link
-            href="/dashboard/new"
-            className="mt-6 inline-flex items-center rounded-full bg-[var(--color-amber)] px-5 py-2 font-medium text-[var(--color-ink)] text-sm shadow transition-colors hover:bg-[var(--color-amber-hover)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-amber)]"
-          >
-            Deploy New Function
-          </Link>
+          <Button asChild variant="glass" className="mt-6 rounded-full px-5 py-2 text-sm shadow">
+            <Link href="/dashboard/new">Deploy New Function</Link>
+          </Button>
         </div>
       )}
     </div>

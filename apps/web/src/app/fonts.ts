@@ -1,4 +1,4 @@
-import { Geist, Instrument_Serif, JetBrains_Mono } from "next/font/google";
+import { Geist, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 
 export const geist = Geist({
   subsets: ["latin"],
@@ -6,10 +6,9 @@ export const geist = Geist({
   display: "swap",
 });
 
-export const instrumentSerif = Instrument_Serif({
+export const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-display",
   display: "swap",
 });

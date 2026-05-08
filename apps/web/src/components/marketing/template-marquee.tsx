@@ -14,7 +14,7 @@ export function TemplateMarquee({ templates }: Props) {
   const highlighted = templates.slice(0, 4);
 
   return (
-    <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-2">
+    <div className="mx-auto grid w-full max-w-screen-2xl gap-6 px-6 md:grid-cols-2">
       {highlighted.map((template) => (
         <article
           key={template.templateId}

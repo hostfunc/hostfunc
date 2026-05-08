@@ -40,10 +40,25 @@ export function DeployButton({ fnId, onDeploy }: { fnId: string; onDeploy: () =>
       });
     } catch (e) {
       const reason = e instanceof Error ? e.message : "unknown error";
+      setState({ phase: "failed", reason });
+      const planLimit = parseDeployPlanLimit(reason);
+      if (planLimit) {
+        toast.error("Deploy limit reached", {
+          description: `Free plan allows up to ${planLimit.maxActiveFunctions} active deployed functions. Upgrade to deploy more.`,
+          cancel: {
+            label: "Cancel",
+            onClick: () => {},
+          },
+          action: {
+            label: "Upgrade",
+            onClick: () => openUpgradeModal(),
+          },
+        });
+        return;
+      }
       if (isQuotaLimitError(reason)) {
         openUpgradeModal();
       }
-      setState({ phase: "failed", reason });
       toast.error("Deploy failed", { description: reason });
     }
   }
@@ -84,6 +99,16 @@ export function DeployButton({ fnId, onDeploy }: { fnId: string; onDeploy: () =>
       </Button>
     </div>
   );
+}
+
+function parseDeployPlanLimit(
+  reason: string,
+): { maxActiveFunctions: number } | null {
+  const match = reason.match(/^plan_limit_exceeded:max_active_functions:(\d+)$/);
+  if (!match) return null;
+  const maxActiveFunctions = Number.parseInt(match[1] ?? "", 10);
+  if (!Number.isFinite(maxActiveFunctions) || maxActiveFunctions <= 0) return null;
+  return { maxActiveFunctions };
 }
 
 function wait(ms: number) {

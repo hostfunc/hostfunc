@@ -39,7 +39,7 @@ function JoinPageClient() {
 
   if (!invitationId) {
     return (
-      <main className="mx-auto max-w-xl py-24 text-center">
+      <main className="mx-auto max-w-2xl py-24 text-center">
         <h1 className="text-2xl font-semibold">Missing invitation</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           This invitation link is incomplete. Ask the workspace owner to send a new one.
@@ -50,7 +50,7 @@ function JoinPageClient() {
 
   if (!session) {
     return (
-      <main className="mx-auto max-w-xl py-24 text-center">
+      <main className="mx-auto max-w-2xl py-24 text-center">
         <h1 className="text-2xl font-semibold">Sign in to accept invitation</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           You need to authenticate before we can add you to this workspace.
@@ -63,7 +63,7 @@ function JoinPageClient() {
   }
 
   return (
-    <main className="mx-auto max-w-xl py-24 text-center">
+    <main className="mx-auto max-w-2xl py-24 text-center">
       <h1 className="text-2xl font-semibold">
         {status === "error"
           ? "Invitation could not be accepted"
@@ -87,7 +87,7 @@ export default function JoinPage() {
   return (
     <Suspense
       fallback={
-        <main className="mx-auto max-w-xl py-24 text-center">
+        <main className="mx-auto max-w-2xl py-24 text-center">
           <h1 className="text-2xl font-semibold">Preparing invitation...</h1>
           <p className="mt-2 text-sm text-muted-foreground">Loading invitation details.</p>
         </main>

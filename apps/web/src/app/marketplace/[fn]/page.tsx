@@ -33,8 +33,8 @@ export default async function MarketplaceFunctionPage({
     <main className="relative min-h-screen bg-[var(--color-ink)] text-[var(--color-bone)]">
       <div className="gradient-radial-amber pointer-events-none absolute inset-x-0 top-0 h-[520px]" />
       <div className="border-grid pointer-events-none absolute inset-0 opacity-35" />
-      <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
+        <div className="flex w-full items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
             <Hexagon className="size-5 text-[var(--color-amber)]" strokeWidth={1.5} />
             <span className="font-display text-xl text-[var(--color-bone)]">hostfunc</span>
@@ -51,7 +51,7 @@ export default async function MarketplaceFunctionPage({
         </div>
       </header>
 
-      <div className="relative mx-auto max-w-7xl px-6 py-12">
+      <div className="relative mx-auto max-w-screen-2xl px-6 py-12">
         <Button
           asChild
           variant="ghost"

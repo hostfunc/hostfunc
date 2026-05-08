@@ -44,10 +44,14 @@ export default async function FunctionsExplorerPage({
   const appliedCount = filterCount(filters);
 
   return (
-    <div className="mx-auto max-w-6xl animate-in space-y-6 fade-in duration-500">
+    <div className="mx-auto max-w-7xl animate-in space-y-6 fade-in duration-500">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="font-display text-4xl tracking-tight text-[var(--color-bone)]">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-[var(--color-amber)]">
+            <Sparkles className="size-3.5" />
+            Functions
+          </div>
+          <h1 className="mt-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
             Functions Explorer
           </h1>
           <p className="mt-1 text-sm text-[var(--color-bone-muted)]">
@@ -57,7 +61,8 @@ export default async function FunctionsExplorerPage({
         </div>
         <Button
           asChild
-          className="rounded-full bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+          variant="glass"
+          className="rounded-full"
         >
           <Link href="/dashboard/new">
             <Plus className="mr-2 h-4 w-4" />

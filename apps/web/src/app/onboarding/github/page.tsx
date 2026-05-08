@@ -19,7 +19,7 @@ export default async function GithubOnboardingPage({
   const github = await getGithubInstallationStatus(consent.orgId);
   if (github.connected) {
     return (
-      <main className="mx-auto flex min-h-[70dvh] w-full max-w-2xl items-center justify-center px-6 py-10">
+      <main className="mx-auto flex min-h-[70dvh] w-full max-w-3xl items-center justify-center px-6 py-10">
         <div className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/80 p-8 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15">
             <CheckCircle2 className="h-6 w-6 text-emerald-300" />
@@ -39,7 +39,7 @@ export default async function GithubOnboardingPage({
   }
 
   return (
-    <main className="mx-auto flex min-h-[70dvh] w-full max-w-2xl items-center justify-center px-6 py-10">
+    <main className="mx-auto flex min-h-[70dvh] w-full max-w-3xl items-center justify-center px-6 py-10">
       <div className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/80 p-8">
         <div className="mb-4 flex items-center gap-3">
           <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-ink)] p-2">

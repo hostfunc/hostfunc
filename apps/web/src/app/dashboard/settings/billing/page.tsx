@@ -1,3 +1,5 @@
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { requireOrgPermission } from "@/lib/session";
 import { getEffectivePlan } from "@/server/plans";
 import { db, schema } from "@hostfunc/db";
@@ -165,7 +167,10 @@ export default async function BillingSettingsPage() {
           <form action={createCheckoutSession}>
             <button
               type="submit"
-              className="w-full rounded-xl bg-[var(--color-amber)] px-4 py-3 text-sm font-medium text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+              className={cn(
+                buttonVariants({ variant: "glass" }),
+                "w-full rounded-xl px-4 py-3 text-sm font-medium",
+              )}
             >
               Upgrade / Change Plan
             </button>

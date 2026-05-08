@@ -581,7 +581,8 @@ export function FunctionIntegrationsClient({ fnId, initial }: Props) {
           <Button
             type="button"
             disabled={!initial.github.connected || selectedRepoId === "" || !selectedBranch || bindingBusy}
-            className="rounded-full bg-[var(--color-amber)] px-6 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)] disabled:opacity-70"
+            variant="glass"
+            className="rounded-full px-6 disabled:opacity-70"
             onClick={async () => {
               if (selectedRepoId === "" || !selectedBranch) return;
               try {
@@ -863,7 +864,8 @@ export function FunctionIntegrationsClient({ fnId, initial }: Props) {
               <Button
                 type="submit"
                 disabled={pending}
-                className="rounded-full bg-[var(--color-amber)] px-6 text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)] disabled:opacity-70"
+                variant="glass"
+                className="rounded-full px-6 disabled:opacity-70"
               >
                 {pending ? (
                   <>

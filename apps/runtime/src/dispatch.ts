@@ -18,7 +18,7 @@ interface FnLookup {
   versionId: string;
   scriptName: string;
   visibility: "public" | "private";
-  /** When absent (stale KV), treat as true. */
+  /** When absent, use public-by-default behavior. */
   httpRequireAuth?: boolean;
 }
 
@@ -83,10 +83,10 @@ function isInternalInvoke(authHeader: string | null, env: Env): boolean {
   return authHeader === `Bearer ${token}`;
 }
 
-function normalizeLookup(lookup: FnLookup | FnLookupError): FnLookup | FnLookupError {
+export function normalizeLookup(lookup: FnLookup | FnLookupError): FnLookup | FnLookupError {
   if (!lookup.ok) return lookup;
   if (lookup.httpRequireAuth === undefined) {
-    return { ...lookup, httpRequireAuth: true };
+    return { ...lookup, httpRequireAuth: false };
   }
   return lookup;
 }

@@ -15,7 +15,7 @@ export function CodePreview({ code, compact = false, className = "" }: CodePrevi
       </div>
       <pre
         className={`whitespace-pre-wrap break-words p-3 font-mono text-[11px] leading-relaxed ${
-          compact ? "min-h-44 max-h-64" : "min-h-56 max-h-96"
+          compact ? "h-56" : "min-h-56 max-h-96"
         } overflow-hidden`}
       >
         <code>

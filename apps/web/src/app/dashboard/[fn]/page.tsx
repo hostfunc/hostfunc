@@ -11,7 +11,7 @@ import {
   getFunctionPackagesForOrg,
 } from "@/server/functions";
 import { getFunctionGithubBinding } from "@/server/github-integrations";
-import { Activity, BookOpen, GitBranch, Settings } from "lucide-react";
+import { BookOpen, Settings } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -50,27 +50,6 @@ export default async function FunctionEditorPage({
           <p className="text-xs text-[var(--color-bone-muted)]">
             {fn.description || "No description"}
           </p>
-          {gitBinding ? (
-            <a
-              href={`https://github.com/${gitBinding.repoFullName}/tree/${encodeURIComponent(gitBinding.branch)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white px-2 py-0.5 text-[11px] text-[var(--color-ink)] transition hover:bg-white/90"
-            >
-              <img
-                src="/Github%20logo.svg"
-                alt=""
-                aria-hidden="true"
-                className="h-3.5 w-3.5 object-contain"
-              />
-              <span>{gitBinding.repoFullName}</span>
-              <span className="h-1 w-1 rounded-full bg-[var(--color-ink)]/30" />
-              <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-ink)]/8 px-1.5 py-0.5 font-mono text-[10px]">
-                <GitBranch className="h-3 w-3" />
-                {gitBinding.branch}
-              </span>
-            </a>
-          ) : null}
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -82,28 +61,6 @@ export default async function FunctionEditorPage({
             <Link href="/docs/functions">
               <BookOpen className="mr-2 h-4 w-4" />
               Docs
-            </Link>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            asChild
-            className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]"
-          >
-            <Link href={`/dashboard/${fnId}/executions`}>
-              <Activity className="mr-2 h-4 w-4" />
-              Executions
-            </Link>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            asChild
-            className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]"
-          >
-            <Link href={`/dashboard/${fnId}/lineage`}>
-              <GitBranch className="mr-2 h-4 w-4" />
-              Lineage
             </Link>
           </Button>
           <Button
@@ -127,6 +84,7 @@ export default async function FunctionEditorPage({
           readOnly={!canEditDraft}
           contexts={contexts}
           assets={assets}
+          gitBinding={gitBinding}
         />
       </div>
     </div>

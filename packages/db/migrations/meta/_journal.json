@@ -78,6 +78,13 @@
       "when": 1777500000000,
       "tag": "0010_function_assets",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1777561200000,
+      "tag": "0011_public_http_default",
+      "breakpoints": true
     }
   ]
 }

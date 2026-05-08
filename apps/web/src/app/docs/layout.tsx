@@ -1,10 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { DocsSearch } from "@/app/docs/_components/docs-search";
 import { useSession } from "@/lib/auth-client";
 import { assertDocsContentIntegrity, docsSections } from "@/lib/docs-content";
 import { cn } from "@/lib/utils";
-import { Hexagon, LayoutDashboard, Menu, Search, X } from "lucide-react";
+import { Hexagon, LayoutDashboard, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -21,8 +22,8 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
       <div className="border-grid pointer-events-none absolute inset-0 opacity-30" />
       {/* Top Docs Navbar */}
       <header className="sticky top-0 z-40 w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
-        <div className="flex h-16 items-center px-6 lg:px-8 max-w-screen-2xl mx-auto justify-between">
-          <div className="flex items-center gap-6">
+        <div className="flex h-16 w-full items-center gap-4 px-6 lg:px-8">
+          <div className="flex shrink-0 items-center gap-6">
             <Link href="/" className="flex items-center gap-2 group w-max">
               <Hexagon className="h-5 w-5 text-[var(--color-amber)] transition-colors group-hover:text-[var(--color-amber-hover)]" />
               <span className="font-display text-xl tracking-tight text-[var(--color-bone)]">
@@ -32,21 +33,13 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
                 Docs
               </span>
             </Link>
-
-            <div className="hidden md:flex items-center relative ml-4">
-              <Search className="absolute left-3 h-4 w-4 text-[var(--color-bone-faint)]" />
-              <input
-                disabled
-                placeholder="Search documentation..."
-                className="h-9 w-64 rounded-full border border-[var(--color-border)] bg-[var(--color-ink-elevated)] pl-9 pr-4 text-sm text-[var(--color-bone)] placeholder:text-[var(--color-bone-faint)] focus:outline-none focus:ring-1 focus:ring-[var(--color-amber)] transition-all"
-              />
-              <kbd className="absolute right-3 hidden h-5 items-center gap-1 rounded border border-[var(--color-border)] bg-white/[0.04] px-1.5 font-mono text-[10px] font-medium text-[var(--color-bone-faint)] sm:inline-flex">
-                <span className="text-xs">⌘</span>K
-              </kbd>
-            </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="hidden min-w-0 flex-1 justify-center md:flex">
+            <DocsSearch />
+          </div>
+
+          <div className="ml-auto flex shrink-0 items-center gap-4">
             {isPending ? (
               <div className="h-9 w-24 bg-white/5 animate-pulse rounded-full hidden sm:block" />
             ) : session ? (

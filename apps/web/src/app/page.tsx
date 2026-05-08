@@ -9,6 +9,7 @@ import {
 } from "@/lib/marketing-content";
 import {
   Activity,
+  ArrowUpRight,
   ArrowRight,
   Calendar,
   Check,
@@ -60,8 +61,8 @@ export default function HomePage() {
   return (
     <main className="relative min-h-screen bg-[var(--color-ink)] text-[var(--color-bone)]">
       {/* ─────────────────────────────────── NAV ─────────────────────────────────── */}
-      <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
+        <div className="flex w-full items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
             <Hexagon className="size-5 text-[var(--color-amber)]" strokeWidth={1.5} />
             <span className="font-display text-xl text-[var(--color-bone)]">
@@ -73,9 +74,14 @@ export default function HomePage() {
               <Link
                 key={link.label}
                 href={link.href}
+                target={link.label === "Docs" ? "_blank" : undefined}
+                rel={link.label === "Docs" ? "noopener noreferrer" : undefined}
                 className="text-sm text-[var(--color-bone-muted)] transition-colors hover:text-[var(--color-bone)]"
               >
-                {link.label}
+                <span className="inline-flex items-center gap-1">
+                  {link.label}
+                  {link.label === "Docs" ? <ArrowUpRight className="size-3.5" /> : null}
+                </span>
               </Link>
             ))}
           </nav>
@@ -107,6 +113,23 @@ export default function HomePage() {
                 </Button>
               </>
             )}
+            <Button
+              asChild
+              size="icon"
+              variant="outline"
+              className="size-9 rounded-full border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
+            >
+              <Link
+                href="https://github.com/hostfunc/hostfunc"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Open GitHub repository"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
+                  <path d="M12 .5C5.65.5.5 5.65.5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56l-.01-1.98c-3.2.7-3.88-1.37-3.88-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.15.08 1.76 1.2 1.76 1.2 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.72-1.53-2.56-.3-5.24-1.28-5.24-5.7 0-1.26.45-2.3 1.2-3.1-.12-.3-.52-1.5.11-3.12 0 0 .98-.32 3.2 1.19a10.9 10.9 0 0 1 5.82 0c2.22-1.5 3.2-1.19 3.2-1.19.63 1.62.23 2.82.11 3.12.75.8 1.2 1.84 1.2 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.08.78 2.18l-.01 3.23c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z" />
+                </svg>
+              </Link>
+            </Button>
           </div>
         </div>
       </header>
@@ -121,7 +144,7 @@ export default function HomePage() {
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_var(--color-ink)_75%)]" />
         <div className="gradient-radial-amber absolute inset-x-0 top-0 -z-10 h-[600px]" />
 
-        <div className="mx-auto max-w-6xl px-6 py-32 lg:py-40">
+        <div className="mx-auto max-w-7xl px-6 py-32 lg:py-40">
           <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-ink-overlay)] px-3 py-1 text-xs text-[var(--color-bone-muted)] backdrop-blur-md">
               <span className="relative flex size-1.5">
@@ -183,7 +206,7 @@ export default function HomePage() {
 
       {/* ────────────────────────────── HERO EDITOR ───────────────────────────── */}
       <section className="relative px-6 pb-24">
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-5xl">
           <AnimatedEditor
             filename={marketingContent.heroEditor.filename}
             code={marketingContent.heroEditor.code}
@@ -195,7 +218,7 @@ export default function HomePage() {
 
       {/* ─────────────────────────── AGENT-NATIVE PITCH ──────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] bg-gradient-to-b from-[var(--color-ink)] via-[#0d0c0a] to-[var(--color-ink)] py-32">
-        <div className="mx-auto max-w-7xl px-6">
+        <div className="mx-auto max-w-screen-2xl px-6">
           <div className="mx-auto max-w-3xl text-center">
             <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-amber)]">
               {marketingContent.agentPitch.eyebrow}
@@ -241,7 +264,7 @@ export default function HomePage() {
 
       {/* ─────────────────────────────── TRIGGERS ─────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] py-32">
-        <div className="mx-auto max-w-7xl px-6">
+        <div className="mx-auto max-w-screen-2xl px-6">
           <SectionHeader
             eyebrow="Triggers"
             title={
@@ -262,7 +285,7 @@ export default function HomePage() {
 
       {/* ─────────────────────────── COMPOSITION ──────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
-        <div className="mx-auto max-w-7xl px-6">
+        <div className="mx-auto max-w-screen-2xl px-6">
           <SectionHeader
             eyebrow={marketingContent.composition.eyebrow}
             title={<span className="italic">{marketingContent.composition.headline}</span>}
@@ -285,7 +308,7 @@ export default function HomePage() {
 
       {/* ─────────────────────────────── CLI ──────────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] py-32">
-        <div className="mx-auto max-w-7xl px-6">
+        <div className="mx-auto max-w-screen-2xl px-6">
           <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:items-center">
             <div>
               <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-amber)]">
@@ -310,7 +333,7 @@ export default function HomePage() {
       {/* ────────────────────────── ARCHITECTURE ──────────────────────────────── */}
       <section className="relative overflow-hidden border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
         <div className="border-grid pointer-events-none absolute inset-0 opacity-50" />
-        <div className="mx-auto max-w-7xl px-6">
+        <div className="mx-auto max-w-screen-2xl px-6">
           <SectionHeader
             eyebrow={marketingContent.architecture.eyebrow}
             title={<span className="italic">{marketingContent.architecture.headline}</span>}
@@ -324,7 +347,7 @@ export default function HomePage() {
 
       {/* ───────────────────────────── CONNECTORS ─────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] py-32">
-        <div className="mx-auto max-w-7xl px-6">
+        <div className="mx-auto max-w-screen-2xl px-6">
           <SectionHeader
             eyebrow="Connectors"
             title={
@@ -345,7 +368,7 @@ export default function HomePage() {
 
       {/* ───────────────────────────── TEMPLATES ──────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
-        <div className="mx-auto max-w-7xl px-6 text-center">
+        <div className="mx-auto max-w-screen-2xl px-6 text-center">
           <SectionHeader
             eyebrow="Templates"
             title={
@@ -365,7 +388,7 @@ export default function HomePage() {
 
       {/* ────────────────────────── FEATURE GRID ──────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] py-32">
-        <div className="mx-auto max-w-7xl px-6">
+        <div className="mx-auto max-w-screen-2xl px-6">
           <SectionHeader
             eyebrow="Capabilities"
             title={
@@ -405,7 +428,7 @@ export default function HomePage() {
 
       {/* ────────────────────────────── PRICING ───────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
-        <div className="mx-auto max-w-7xl px-6">
+        <div className="mx-auto max-w-screen-2xl px-6">
           <SectionHeader
             eyebrow={marketingContent.pricing.eyebrow}
             title={
@@ -480,7 +503,7 @@ export default function HomePage() {
 
       {/* ───────────────────────────── COMMUNITY ──────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
-        <div className="mx-auto max-w-7xl px-6">
+        <div className="mx-auto max-w-screen-2xl px-6">
           <div className="grid gap-16 md:grid-cols-2 md:items-center">
             <div>
               <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-amber)]">
@@ -536,7 +559,7 @@ export default function HomePage() {
       {/* ──────────────────────────────── CLOSER ──────────────────────────────── */}
       <section className="relative overflow-hidden border-t border-[var(--color-border)] py-32">
         <div className="gradient-radial-amber pointer-events-none absolute inset-x-0 bottom-0 top-0" />
-        <div className="relative mx-auto max-w-3xl px-6 text-center">
+        <div className="relative mx-auto max-w-4xl px-6 text-center">
           <h2 className="text-balance font-display text-5xl leading-[1.02] text-[var(--color-bone)] md:text-7xl">
             <span className="italic">{marketingContent.closer.headline}</span>
           </h2>
@@ -560,7 +583,7 @@ export default function HomePage() {
 
       {/* ────────────────────────────── FOOTER ────────────────────────────────── */}
       <footer className="border-t border-[var(--color-border)] bg-[#070706] py-12">
-        <div className="mx-auto max-w-7xl px-6">
+        <div className="w-full px-6">
           <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
             <div className="flex items-center gap-2">
               <Hexagon

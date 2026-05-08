@@ -173,10 +173,9 @@ export const marketingContent: MarketingContent = {
   secondaryCta: { label: "Read docs", href: "/docs" },
 
   navLinks: [
-    { label: "Docs", href: "/docs" },
     { label: "Marketplace", href: "/marketplace" },
     { label: "Connectors", href: "/connectors" },
-    { label: "GitHub", href: "https://github.com/hostfunc/hostfunc" },
+    { label: "Docs", href: "/docs" },
   ],
 
   trustItems: [
@@ -267,7 +266,7 @@ export async function main(input: { city: string }) {
       title: "HTTP",
       tagline: "Public URL per function.",
       body: "Every deployed function gets a stable run URL. Call it with curl, wire it to a webhook, route it through your CDN.",
-      snippet: `curl -X POST https://you.run/run/you/process \\
+      snippet: `curl -X POST https://hostfunc.io/run/you/process \\
   -H "content-type: application/json" \\
   -d '{"event":"order.created"}'`,
     },
@@ -288,7 +287,7 @@ export async function main() {
       id: "email",
       title: "Email",
       tagline: "Cloudflare Email Routing.",
-      body: "Inbound mail to alias@mail.you.dev triggers the function. Allowlist senders, parse headers, ship the body to S3 — all in 20 lines.",
+      body: "Inbound mail to alias@hostfunc.io triggers the function. Allowlist senders, parse headers, ship the body to S3 — all in 20 lines.",
       snippet: `export async function main(email: {
   from: string;
   to: string;
@@ -307,7 +306,7 @@ export async function main() {
 {
   "mcpServers": {
     "hostfunc": {
-      "url": "https://you.run/api/mcp",
+      "url": "https://hostfunc.io/api/mcp",
       "headers": { "Authorization": "Bearer hf_live_…" }
     }
   }
@@ -378,7 +377,7 @@ export async function main(input: { url: string }) {
           "Deploying weather-digest…",
           "✓ Bundled (12 KB)",
           "✓ Uploaded to dispatch namespace",
-          "✓ Live at https://you.run/run/you/weather-digest",
+          "✓ Live at https://hostfunc.io/run/you/weather-digest",
         ],
       },
       {

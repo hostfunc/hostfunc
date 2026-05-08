@@ -2,6 +2,7 @@
 
 import { env } from "@/lib/env";
 import { requireOrgPermission } from "@/lib/session";
+import { getEffectivePlan } from "@/server/plans";
 import {
   deleteTriggerForFunction,
   listTriggersForFunction,
@@ -65,6 +66,10 @@ export async function saveHttpTrigger(input: z.infer<typeof httpSchema>) {
   const { orgId } = await requireOrgPermission("manage_triggers");
   const parsed = httpSchema.parse(input);
   await assertOrgOwnsFunction(orgId, parsed.fnId);
+  const plan = await getEffectivePlan(orgId);
+  if (parsed.requireAuth && plan.planSlug === "free") {
+    throw new Error("http_auth_requires_upgrade");
+  }
   await upsertTriggerForFunction({
     orgId,
     fnId: parsed.fnId,
