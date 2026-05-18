@@ -1,30 +1,26 @@
 "use client";
 
-import {
-  SettingsCard,
-  SettingsCardContent,
-  SettingsCardDescription,
-  SettingsCardFooter,
-  SettingsCardHeader,
-  SettingsCardTitle,
-} from "@/components/settings/settings-card";
-import { Badge } from "@/components/ui/badge";
+import { IntegrationRow } from "@/components/settings/integration-row";
+import type { IntegrationStatus } from "@/components/settings/integration-status-badge";
 import { Button } from "@/components/ui/button";
-import { CustomSelect as UiCustomSelect } from "@/components/ui/custom-select";
+import { CustomSelect } from "@/components/ui/custom-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  CheckCircle2,
-  ChevronDown,
-  GitBranch,
-  KeyRound,
-  Loader2,
-  Sparkles,
-  TriangleAlert,
-  Waypoints,
-} from "lucide-react";
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Database, GitBranch, Loader2, RotateCcw, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { useActionState, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
+  clearFunctionIntegrationOverridesAction,
   listFunctionGithubBranches,
   removeFunctionGithubBindingAction,
   saveFunctionGithubBindingAction,
@@ -57,6 +53,20 @@ type OverrideFormInitial = {
   hasVectorDatabaseUrl: boolean;
 };
 
+type GithubRepo = {
+  repoId: number;
+  fullName: string;
+  defaultBranch: string;
+  ownerAvatarUrl: string;
+};
+
+type GithubBinding = {
+  repoId: number;
+  repoFullName: string;
+  branch: string;
+  pathPrefix: string | null;
+};
+
 type Props = {
   fnId: string;
   initial: {
@@ -65,18 +75,8 @@ type Props = {
     overrides: OverrideFormInitial;
     github: {
       connected: boolean;
-      repos: Array<{
-        repoId: number;
-        fullName: string;
-        defaultBranch: string;
-        ownerAvatarUrl: string;
-      }>;
-      binding: {
-        repoId: number;
-        repoFullName: string;
-        branch: string;
-        pathPrefix: string | null;
-      } | null;
+      repos: GithubRepo[];
+      binding: GithubBinding | null;
     };
   };
 };
@@ -114,253 +114,590 @@ function modelsForProvider(provider: "openai" | "claude"): readonly string[] {
   return provider === "openai" ? OPENAI_MODELS : CLAUDE_MODELS;
 }
 
-function vectorBackendLabel(value: "external_http" | "postgres" | "none"): string {
-  if (value === "external_http") return "External HTTP";
-  if (value === "postgres") return "Postgres URL";
-  return "None";
-}
-
 function providerLabel(provider: "openai" | "claude"): string {
   return provider === "openai" ? "OpenAI" : "Claude";
 }
 
-function SecretStatus({ label, present }: { label: string; present: boolean }) {
-  return (
-    <div className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-ink)]/70 px-3 py-2">
-      <span className="text-sm text-[var(--color-bone-muted)]">{label}</span>
-      <Badge
-        variant="outline"
-        className={
-          present
-            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-            : "border-amber-500/40 bg-amber-500/10 text-amber-200"
-        }
-      >
-        {present ? "Configured" : "Missing"}
-      </Badge>
-    </div>
-  );
+function vectorBackendLabel(value: "external_http" | "postgres" | "none"): string {
+  if (value === "external_http") return "External HTTP";
+  if (value === "postgres") return "Postgres";
+  return "None";
 }
 
-function ProviderLogo({ provider }: { provider: "openai" | "claude" }) {
+function ProviderIcon({
+  provider,
+  className,
+}: { provider: "openai" | "claude"; className?: string }) {
   const src = provider === "openai" ? "/ChatGPT%20logo.svg" : "/Claude%20logo.svg";
-  const fallbackLabel = provider === "openai" ? "O" : "C";
   return (
     <span
-      className="inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full border border-[var(--color-border)] bg-white"
-      aria-hidden="true"
+      className={`inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-white ${className ?? ""}`}
     >
-      <img
-        src={src}
-        alt=""
-        className="h-full w-full object-cover"
-        onError={(event) => {
-          event.currentTarget.style.display = "none";
-          const container = event.currentTarget.parentElement;
-          if (!container || container.textContent?.trim()) return;
-          container.classList.add(
-            provider === "openai" ? "text-emerald-400" : "text-violet-400",
-            "bg-[var(--color-ink)]",
-            "text-[10px]",
-            "font-bold",
-          );
-          container.textContent = fallbackLabel;
-        }}
-      />
+      <img src={src} alt="" className="h-full w-full object-cover" />
     </span>
   );
 }
 
-function CustomSelect({
-  id,
-  name,
-  value,
-  onChange,
-  options,
-}: {
-  id: string;
-  name: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: Array<{ value: string; label: string }>;
-}) {
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const selectedLabel = options.find((option) => option.value === value)?.label ?? value;
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: MouseEvent) => {
-      if (!menuRef.current) return;
-      if (!menuRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("mousedown", onPointerDown);
-    window.addEventListener("keydown", onEscape);
-    return () => {
-      window.removeEventListener("mousedown", onPointerDown);
-      window.removeEventListener("keydown", onEscape);
-    };
-  }, [open]);
-
+function GithubIcon({ className }: { className?: string }) {
   return (
-    <>
-      <input type="hidden" id={id} name={name} value={value} />
-      <div className="relative" ref={menuRef}>
-        <button
-          type="button"
-          onClick={() => setOpen((prev) => !prev)}
-          className="flex h-11 w-full items-center justify-between rounded-md border border-[var(--color-border)] bg-[var(--color-ink)] px-3 text-left text-[var(--color-bone)] transition hover:border-[var(--color-amber)]/40"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-        >
-          <span className="text-sm font-medium">{selectedLabel}</span>
-          <ChevronDown
-            className={`h-4 w-4 text-[var(--color-bone-faint)] transition ${open ? "rotate-180" : ""}`}
-          />
-        </button>
-        {open ? (
-          <div className="absolute z-20 mt-2 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-ink-elevated)] p-1 shadow-xl">
-            {options.map((option) => {
-              const isSelected = option.value === value;
-              return (
-                <button
-                  key={option.value === "" ? "__empty" : option.value}
-                  type="button"
-                  onClick={() => {
-                    onChange(option.value);
-                    setOpen(false);
-                  }}
-                  className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition ${
-                    isSelected
-                      ? "bg-[var(--color-amber)]/15 text-[var(--color-bone)]"
-                      : "text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
-                  }`}
-                >
-                  <span>{option.label}</span>
-                  {isSelected ? (
-                    <CheckCircle2 className="h-4 w-4 text-[var(--color-amber)]" />
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-      </div>
-    </>
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className ?? "h-5 w-5 text-[var(--color-bone)]"}
+      fill="currentColor"
+    >
+      <path d="M12 0.5C5.65 0.5 0.5 5.65 0.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-.99-.02-1.95-3.2.7-3.87-1.54-3.87-1.54-.52-1.33-1.27-1.69-1.27-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.95 10.95 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.58.23 2.75.11 3.04.73.81 1.18 1.84 1.18 3.1 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.07.78 2.16 0 1.56-.01 2.81-.01 3.19 0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12c0-6.35-5.15-11.5-11.5-11.5z" />
+    </svg>
   );
 }
 
-function WorkspaceDefaultsSummary({ workspace }: { workspace: WorkspaceSummary }) {
-  const w = workspace;
+type SheetKey = "ai" | "vector" | "github" | null;
+
+export function FunctionIntegrationsClient({ fnId, initial }: Props) {
+  const [openSheet, setOpenSheet] = useState<SheetKey>(null);
+
+  const hasAiOverride =
+    initial.overrides.aiProvider !== "" ||
+    initial.overrides.aiModel !== "" ||
+    initial.overrides.hasOpenAiKey ||
+    initial.overrides.hasClaudeKey;
+
+  const hasVectorOverride =
+    initial.overrides.vectorPrimary !== "" ||
+    initial.overrides.vectorSecondary !== "" ||
+    initial.overrides.hasVectorServiceUrl ||
+    initial.overrides.hasVectorDatabaseUrl;
+
+  const hasGithubBinding = initial.github.binding !== null;
+
+  const effectiveAiProvider = (initial.overrides.aiProvider || initial.workspace.aiProvider) as
+    | "openai"
+    | "claude";
+  const effectiveAiModel = initial.overrides.aiModel || initial.workspace.aiModel;
+
+  const effectiveVectorPrimary = (initial.overrides.vectorPrimary ||
+    initial.workspace.vectorPrimary) as "external_http" | "postgres";
+  const effectiveVectorSecondary = (initial.overrides.vectorSecondary ||
+    initial.workspace.vectorSecondary) as "external_http" | "postgres" | "none";
+
+  const overrideCount = [hasAiOverride, hasVectorOverride].filter(Boolean).length;
+
+  const aiStatus: IntegrationStatus = hasAiOverride ? "custom" : "inherited";
+  const vectorStatus: IntegrationStatus = hasVectorOverride ? "custom" : "inherited";
+  const githubStatus: IntegrationStatus = !initial.github.connected
+    ? "disconnected"
+    : hasGithubBinding
+      ? "connected"
+      : "unconfigured";
+
   return (
-    <div className="grid gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink)]/50 p-4 text-sm md:grid-cols-2">
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-bone-faint)]">
-          Provider
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-[var(--color-bone-muted)]">
+          {overrideCount === 0
+            ? "This function uses workspace defaults for AI and vector integrations."
+            : overrideCount === 1
+              ? "1 integration has a function-level override."
+              : "2 integrations have function-level overrides."}
         </p>
-        <p className="mt-1 font-medium text-[var(--color-bone)]">{providerLabel(w.aiProvider)}</p>
+        <Link
+          href="/dashboard/settings/integrations"
+          className="text-sm text-[var(--color-bone)] underline-offset-4 hover:text-[var(--color-amber)] hover:underline"
+        >
+          Edit workspace defaults →
+        </Link>
       </div>
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-bone-faint)]">
-          Default model
-        </p>
-        <p className="mt-1 font-medium text-[var(--color-bone)]">{w.aiModel}</p>
+
+      <div className="space-y-3">
+        <IntegrationRow
+          icon={<ProviderIcon provider={effectiveAiProvider} />}
+          title="AI Model"
+          description={`${providerLabel(effectiveAiProvider)} · ${effectiveAiModel}`}
+          helperText={
+            hasAiOverride
+              ? "Function override active"
+              : `Using workspace default · ${providerLabel(initial.workspace.aiProvider)} ${initial.workspace.aiModel}`
+          }
+          status={aiStatus}
+          onClick={() => setOpenSheet("ai")}
+        />
+        <IntegrationRow
+          icon={<Database className="h-5 w-5 text-[var(--color-amber)]" />}
+          title="Vector Backend"
+          description={`${vectorBackendLabel(effectiveVectorPrimary)} → ${vectorBackendLabel(effectiveVectorSecondary)}`}
+          helperText={
+            hasVectorOverride
+              ? "Function override active"
+              : `Using workspace default · ${vectorBackendLabel(initial.workspace.vectorPrimary)} → ${vectorBackendLabel(initial.workspace.vectorSecondary)}`
+          }
+          status={vectorStatus}
+          onClick={() => setOpenSheet("vector")}
+        />
+        <IntegrationRow
+          icon={<GithubIcon className="h-5 w-5 text-[var(--color-bone)]" />}
+          title="GitHub Repository"
+          description={
+            initial.github.binding
+              ? `${initial.github.binding.repoFullName} @ ${initial.github.binding.branch}`
+              : initial.github.connected
+                ? "No repository bound"
+                : "Workspace not connected"
+          }
+          helperText={
+            initial.github.binding?.pathPrefix
+              ? `Path: ${initial.github.binding.pathPrefix}`
+              : undefined
+          }
+          status={githubStatus}
+          onClick={() => setOpenSheet("github")}
+        />
       </div>
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-bone-faint)]">
-          Vector primary
-        </p>
-        <p className="mt-1 font-medium text-[var(--color-bone)]">
-          {vectorBackendLabel(w.vectorPrimary)}
-        </p>
-      </div>
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-bone-faint)]">
-          Vector fallback
-        </p>
-        <p className="mt-1 font-medium text-[var(--color-bone)]">
-          {vectorBackendLabel(w.vectorSecondary)}
-        </p>
-      </div>
-      <div className="md:col-span-2 space-y-1 border-t border-[var(--color-border)] pt-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-bone-faint)]">
-          Workspace API keys (masked)
-        </p>
-        <p className="text-[var(--color-bone-muted)]">
-          OpenAI: {w.openAiKeyPreview ?? (w.hasOpenAiKey ? "Configured" : "Not configured")}
-        </p>
-        <p className="text-[var(--color-bone-muted)]">
-          Claude: {w.claudeKeyPreview ?? (w.hasClaudeKey ? "Configured" : "Not configured")}
-        </p>
-      </div>
+
+      <AiOverrideSheet
+        open={openSheet === "ai"}
+        onOpenChange={(open) => setOpenSheet(open ? "ai" : null)}
+        fnId={fnId}
+        workspace={initial.workspace}
+        overrides={initial.overrides}
+      />
+      <VectorOverrideSheet
+        open={openSheet === "vector"}
+        onOpenChange={(open) => setOpenSheet(open ? "vector" : null)}
+        fnId={fnId}
+        workspace={initial.workspace}
+        overrides={initial.overrides}
+      />
+      <GithubBindingSheet
+        open={openSheet === "github"}
+        onOpenChange={(open) => setOpenSheet(open ? "github" : null)}
+        fnId={fnId}
+        github={initial.github}
+      />
     </div>
   );
 }
 
-export function FunctionIntegrationsClient({ fnId, initial }: Props) {
-  const [overrideUiEnabled, setOverrideUiEnabled] = useState(false);
+function AiOverrideSheet({
+  open,
+  onOpenChange,
+  fnId,
+  workspace,
+  overrides,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  fnId: string;
+  workspace: WorkspaceSummary;
+  overrides: OverrideFormInitial;
+}) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     updateFunctionIntegrationOverridesStateAction,
     null,
   );
+  const [aiProvider, setAiProvider] = useState<"" | "openai" | "claude">(overrides.aiProvider);
+  const [aiModel, setAiModel] = useState(overrides.aiModel);
+  const [resetting, setResetting] = useState(false);
 
-  const [aiProvider, setAiProvider] = useState<"" | "openai" | "claude">(
-    initial.overrides.aiProvider,
+  useEffect(() => {
+    if (open) {
+      setAiProvider(overrides.aiProvider);
+      setAiModel(overrides.aiModel);
+    }
+  }, [open, overrides.aiProvider, overrides.aiModel]);
+
+  useEffect(() => {
+    if (!state) return;
+    if (state.ok) {
+      toast.success("AI overrides saved", { description: state.message });
+      onOpenChange(false);
+    } else if (state.error?.form?.length) {
+      toast.error("Failed to save AI overrides", {
+        description: state.error.form.join("\n"),
+      });
+    }
+  }, [state, onOpenChange]);
+
+  const providerOptions = useMemo(
+    () => [
+      { value: "", label: `Workspace default (${providerLabel(workspace.aiProvider)})` },
+      { value: "openai", label: "OpenAI" },
+      { value: "claude", label: "Claude" },
+    ],
+    [workspace.aiProvider],
   );
-  const [aiModel, setAiModel] = useState(initial.overrides.aiModel);
-  const [vectorPrimary, setVectorPrimary] = useState<"" | "external_http" | "postgres">(
-    initial.overrides.vectorPrimary,
-  );
-  const [vectorSecondary, setVectorSecondary] = useState<
-    "" | "none" | "external_http" | "postgres"
-  >(initial.overrides.vectorSecondary);
-  const [providerMenuOpen, setProviderMenuOpen] = useState(false);
-  const providerMenuRef = useRef<HTMLDivElement | null>(null);
 
   const modelOptions = useMemo(() => {
     if (aiProvider === "") {
-      return aiModel ? [aiModel] : [];
+      return [{ value: "", label: `Workspace default (${workspace.aiModel})` }];
     }
     const base = modelsForProvider(aiProvider);
-    return aiModel && !base.includes(aiModel) ? [aiModel, ...base] : base;
-  }, [aiProvider, aiModel]);
+    const list = aiModel && !base.includes(aiModel) ? [aiModel, ...base] : [...base];
+    return [
+      { value: "", label: `Workspace default (${workspace.aiModel})` },
+      ...list.map((m) => ({ value: m, label: m })),
+    ];
+  }, [aiProvider, aiModel, workspace.aiModel]);
 
-  const providerLabelText = aiProvider === "" ? "Workspace default" : providerLabel(aiProvider);
+  const hasAnyOverride =
+    overrides.aiProvider !== "" ||
+    overrides.aiModel !== "" ||
+    overrides.hasOpenAiKey ||
+    overrides.hasClaudeKey;
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-[var(--color-amber)]" />
+            AI Model
+          </SheetTitle>
+          <SheetDescription>
+            Override the AI provider, model, or credentials for this function. Leave a field on
+            “Workspace default” to inherit from the workspace.
+          </SheetDescription>
+        </SheetHeader>
+        <form action={formAction} className="flex flex-1 flex-col">
+          <SheetBody className="space-y-5">
+            <input type="hidden" name="fnId" value={fnId} />
+            {/* Preserve vector overrides on save */}
+            <input type="hidden" name="vectorPrimary" value={overrides.vectorPrimary} />
+            <input type="hidden" name="vectorSecondary" value={overrides.vectorSecondary} />
+
+            <div className="grid gap-2">
+              <Label htmlFor="fn-aiProvider">Provider</Label>
+              <CustomSelect
+                id="fn-aiProvider"
+                name="aiProvider"
+                value={aiProvider}
+                onChange={(value) => {
+                  const next = value as "" | "openai" | "claude";
+                  setAiProvider(next);
+                  if (next === "") {
+                    setAiModel("");
+                  } else {
+                    const nextModels = modelsForProvider(next);
+                    if (!nextModels.includes(aiModel)) setAiModel("");
+                  }
+                }}
+                options={providerOptions}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="fn-aiModel">Model</Label>
+              <CustomSelect
+                id="fn-aiModel"
+                name="aiModel"
+                value={aiModel}
+                onChange={(value) => setAiModel(value)}
+                options={modelOptions}
+                disabled={aiProvider === ""}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="fn-openaiApiKey">OpenAI API key</Label>
+              <Input
+                id="fn-openaiApiKey"
+                name="openaiApiKey"
+                type="password"
+                autoComplete="off"
+                placeholder={overrides.openAiKeyPreview ?? "sk-..."}
+                className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
+              />
+              <p className="text-xs text-[var(--color-bone-faint)]">
+                {overrides.openAiKeyPreview
+                  ? `Override on file: ${overrides.openAiKeyPreview} · leave empty to keep`
+                  : workspace.hasOpenAiKey
+                    ? "Inheriting workspace key. Enter a key to override."
+                    : "No workspace key set."}
+              </p>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="fn-claudeApiKey">Claude API key</Label>
+              <Input
+                id="fn-claudeApiKey"
+                name="claudeApiKey"
+                type="password"
+                autoComplete="off"
+                placeholder={overrides.claudeKeyPreview ?? "sk-ant-..."}
+                className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
+              />
+              <p className="text-xs text-[var(--color-bone-faint)]">
+                {overrides.claudeKeyPreview
+                  ? `Override on file: ${overrides.claudeKeyPreview} · leave empty to keep`
+                  : workspace.hasClaudeKey
+                    ? "Inheriting workspace key. Enter a key to override."
+                    : "No workspace key set."}
+              </p>
+            </div>
+          </SheetBody>
+          <SheetFooter>
+            {hasAnyOverride ? (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={resetting || pending}
+                className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]"
+                onClick={async () => {
+                  setResetting(true);
+                  try {
+                    await clearFunctionIntegrationOverridesAction({ fnId, scope: "ai" });
+                    toast.success("Reset to workspace default");
+                    onOpenChange(false);
+                  } catch (error) {
+                    toast.error("Failed to reset", {
+                      description: error instanceof Error ? error.message : undefined,
+                    });
+                  } finally {
+                    setResetting(false);
+                  }
+                }}
+              >
+                {resetting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-4 w-4" />
+                )}
+                Reset to workspace default
+              </Button>
+            ) : null}
+            <div className="flex-1" />
+            <Button type="submit" variant="glass" disabled={pending} className="rounded-full px-6">
+              {pending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save changes"
+              )}
+            </Button>
+          </SheetFooter>
+        </form>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function VectorOverrideSheet({
+  open,
+  onOpenChange,
+  fnId,
+  workspace,
+  overrides,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  fnId: string;
+  workspace: WorkspaceSummary;
+  overrides: OverrideFormInitial;
+}) {
+  const [state, formAction, pending] = useActionState<ActionState, FormData>(
+    updateFunctionIntegrationOverridesStateAction,
+    null,
+  );
+  const [vectorPrimary, setVectorPrimary] = useState<"" | "external_http" | "postgres">(
+    overrides.vectorPrimary,
+  );
+  const [vectorSecondary, setVectorSecondary] = useState<
+    "" | "none" | "external_http" | "postgres"
+  >(overrides.vectorSecondary);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
-    if (!providerMenuOpen) return;
-    const onPointerDown = (event: MouseEvent) => {
-      if (!providerMenuRef.current) return;
-      if (!providerMenuRef.current.contains(event.target as Node)) {
-        setProviderMenuOpen(false);
-      }
-    };
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setProviderMenuOpen(false);
-    };
-    window.addEventListener("mousedown", onPointerDown);
-    window.addEventListener("keydown", onEscape);
-    return () => {
-      window.removeEventListener("mousedown", onPointerDown);
-      window.removeEventListener("keydown", onEscape);
-    };
-  }, [providerMenuOpen]);
+    if (open) {
+      setVectorPrimary(overrides.vectorPrimary);
+      setVectorSecondary(overrides.vectorSecondary);
+    }
+  }, [open, overrides.vectorPrimary, overrides.vectorSecondary]);
 
-  const hasError = Boolean(state?.error?.form?.[0]);
-  const hasSuccess = Boolean(state?.ok);
-  const [selectedRepoId, setSelectedRepoId] = useState<number | "">(
-    initial.github.binding?.repoId ?? "",
+  useEffect(() => {
+    if (!state) return;
+    if (state.ok) {
+      toast.success("Vector overrides saved", { description: state.message });
+      onOpenChange(false);
+    } else if (state.error?.form?.length) {
+      toast.error("Failed to save vector overrides", {
+        description: state.error.form.join("\n"),
+      });
+    }
+  }, [state, onOpenChange]);
+
+  const hasAnyOverride =
+    overrides.vectorPrimary !== "" ||
+    overrides.vectorSecondary !== "" ||
+    overrides.hasVectorServiceUrl ||
+    overrides.hasVectorDatabaseUrl;
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5 text-[var(--color-amber)]" />
+            Vector Backend
+          </SheetTitle>
+          <SheetDescription>
+            Override deterministic primary/fallback routing or service endpoints for this function.
+            Leave a field on “Workspace default” to inherit.
+          </SheetDescription>
+        </SheetHeader>
+        <form action={formAction} className="flex flex-1 flex-col">
+          <SheetBody className="space-y-5">
+            <input type="hidden" name="fnId" value={fnId} />
+            {/* Preserve AI overrides on save */}
+            <input type="hidden" name="aiProvider" value={overrides.aiProvider} />
+            <input type="hidden" name="aiModel" value={overrides.aiModel} />
+
+            <div className="grid gap-2">
+              <Label htmlFor="fn-vectorPrimary">Primary backend</Label>
+              <CustomSelect
+                id="fn-vectorPrimary"
+                name="vectorPrimary"
+                value={vectorPrimary}
+                onChange={(value) => setVectorPrimary(value as "" | "external_http" | "postgres")}
+                options={[
+                  {
+                    value: "",
+                    label: `Workspace default (${vectorBackendLabel(workspace.vectorPrimary)})`,
+                  },
+                  { value: "external_http", label: "External HTTP" },
+                  { value: "postgres", label: "Postgres" },
+                ]}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="fn-vectorSecondary">Fallback backend</Label>
+              <CustomSelect
+                id="fn-vectorSecondary"
+                name="vectorSecondary"
+                value={vectorSecondary}
+                onChange={(value) =>
+                  setVectorSecondary(value as "" | "none" | "external_http" | "postgres")
+                }
+                options={[
+                  {
+                    value: "",
+                    label: `Workspace default (${vectorBackendLabel(workspace.vectorSecondary)})`,
+                  },
+                  { value: "none", label: "None" },
+                  { value: "external_http", label: "External HTTP" },
+                  { value: "postgres", label: "Postgres" },
+                ]}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="fn-vectorServiceUrl">Vector service URL</Label>
+              <Input
+                id="fn-vectorServiceUrl"
+                name="vectorServiceUrl"
+                placeholder="https://vector.example.com"
+                className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
+              />
+              <p className="text-xs text-[var(--color-bone-faint)]">
+                {overrides.hasVectorServiceUrl
+                  ? "Override on file · leave empty to keep"
+                  : workspace.hasVectorServiceUrl
+                    ? "Inheriting workspace URL. Enter to override."
+                    : "No workspace URL set."}
+              </p>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="fn-vectorDatabaseUrl">Vector database URL</Label>
+              <Input
+                id="fn-vectorDatabaseUrl"
+                name="vectorDatabaseUrl"
+                placeholder="postgres://..."
+                className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
+              />
+              <p className="text-xs text-[var(--color-bone-faint)]">
+                {overrides.hasVectorDatabaseUrl
+                  ? "Override on file · leave empty to keep"
+                  : workspace.hasVectorDatabaseUrl
+                    ? "Inheriting workspace URL. Enter to override."
+                    : "No workspace URL set."}
+              </p>
+            </div>
+          </SheetBody>
+          <SheetFooter>
+            {hasAnyOverride ? (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={resetting || pending}
+                className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]"
+                onClick={async () => {
+                  setResetting(true);
+                  try {
+                    await clearFunctionIntegrationOverridesAction({ fnId, scope: "vector" });
+                    toast.success("Reset to workspace default");
+                    onOpenChange(false);
+                  } catch (error) {
+                    toast.error("Failed to reset", {
+                      description: error instanceof Error ? error.message : undefined,
+                    });
+                  } finally {
+                    setResetting(false);
+                  }
+                }}
+              >
+                {resetting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-4 w-4" />
+                )}
+                Reset to workspace default
+              </Button>
+            ) : null}
+            <div className="flex-1" />
+            <Button type="submit" variant="glass" disabled={pending} className="rounded-full px-6">
+              {pending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save changes"
+              )}
+            </Button>
+          </SheetFooter>
+        </form>
+      </SheetContent>
+    </Sheet>
   );
-  const [selectedBranch, setSelectedBranch] = useState(initial.github.binding?.branch ?? "");
-  const [pathPrefix, setPathPrefix] = useState(initial.github.binding?.pathPrefix ?? "");
+}
+
+function GithubBindingSheet({
+  open,
+  onOpenChange,
+  fnId,
+  github,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  fnId: string;
+  github: { connected: boolean; repos: GithubRepo[]; binding: GithubBinding | null };
+}) {
+  const [selectedRepoId, setSelectedRepoId] = useState<number | "">(github.binding?.repoId ?? "");
+  const [selectedBranch, setSelectedBranch] = useState(github.binding?.branch ?? "");
+  const [pathPrefix, setPathPrefix] = useState(github.binding?.pathPrefix ?? "");
   const [branches, setBranches] = useState<string[]>([]);
-  const [bindingBusy, setBindingBusy] = useState(false);
-  const [bindingMessage, setBindingMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [removing, setRemoving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setSelectedRepoId(github.binding?.repoId ?? "");
+      setSelectedBranch(github.binding?.branch ?? "");
+      setPathPrefix(github.binding?.pathPrefix ?? "");
+    }
+  }, [open, github.binding]);
 
   useEffect(() => {
     if (selectedRepoId === "") {
@@ -376,7 +713,9 @@ export function FunctionIntegrationsClient({ fnId, initial }: Props) {
         if (!selectedBranch && data.length > 0) setSelectedBranch(data[0] ?? "");
       } catch (error) {
         if (canceled) return;
-        setBindingMessage(error instanceof Error ? error.message : "Failed to load branches.");
+        toast.error("Failed to load branches", {
+          description: error instanceof Error ? error.message : undefined,
+        });
       }
     })();
     return () => {
@@ -384,502 +723,213 @@ export function FunctionIntegrationsClient({ fnId, initial }: Props) {
     };
   }, [fnId, selectedRepoId, selectedBranch]);
 
+  const canSave =
+    github.connected && selectedRepoId !== "" && selectedBranch !== "" && !busy && !removing;
+
   return (
-    <div className="space-y-6">
-      <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/80 shadow-xl">
-        <SettingsCardHeader>
-          <SettingsCardTitle className="flex items-center gap-2 text-lg">
-            <Sparkles className="h-4 w-4 text-[var(--color-amber)]" />
-            Workspace integration workflow
-          </SettingsCardTitle>
-          <SettingsCardDescription>
-            By default this function uses the same AI and vector integration defaults as your
-            workspace. Open the override editor only when this function needs different credentials,
-            models, or vector routing.
-          </SettingsCardDescription>
-        </SettingsCardHeader>
-        <SettingsCardContent className="space-y-4">
-          <WorkspaceDefaultsSummary workspace={initial.workspace} />
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <GithubIcon className="h-5 w-5 text-[var(--color-bone)]" />
+            GitHub Repository
+          </SheetTitle>
+          <SheetDescription>
+            Bind this function to a repository and branch. Source pulls and PR workflows target the
+            binding.
+          </SheetDescription>
+        </SheetHeader>
+        <SheetBody className="space-y-5">
+          {!github.connected ? (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+              <p className="font-medium">GitHub is not connected for this workspace.</p>
+              <p className="mt-1 text-xs text-amber-200/80">
+                Connect GitHub at the workspace level first, then return here to bind a repository.
+              </p>
+              <Link
+                href="/dashboard/settings/integrations"
+                className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-amber-100 underline-offset-4 hover:underline"
+              >
+                Open workspace integrations →
+              </Link>
+            </div>
+          ) : github.repos.length === 0 ? (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+              <p className="font-medium">No repositories selected for this workspace.</p>
+              <p className="mt-1 text-xs text-amber-200/80">
+                Select at least one repository in workspace integrations settings to enable binding
+                here.
+              </p>
+              <Link
+                href="/dashboard/settings/integrations"
+                className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-amber-100 underline-offset-4 hover:underline"
+              >
+                Manage workspace repositories →
+              </Link>
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="fn-githubRepo">Repository</Label>
+                <CustomSelect
+                  id="fn-githubRepo"
+                  value={selectedRepoId === "" ? "" : String(selectedRepoId)}
+                  onChange={(value) => {
+                    setSelectedRepoId(value ? Number(value) : "");
+                    setSelectedBranch("");
+                  }}
+                  placeholder="Select repository"
+                  options={[
+                    { value: "", label: "Select repository" },
+                    ...github.repos.map((repo) => ({
+                      value: String(repo.repoId),
+                      label: repo.fullName,
+                      icon: (
+                        <img
+                          src={repo.ownerAvatarUrl}
+                          alt=""
+                          aria-hidden="true"
+                          className="h-4 w-4 rounded-full object-cover"
+                        />
+                      ),
+                    })),
+                  ]}
+                  renderValue={(option) => (
+                    <span className="inline-flex items-center gap-2">
+                      {option?.icon ?? null}
+                      <span className="truncate">{option?.label ?? "Select repository"}</span>
+                    </span>
+                  )}
+                  renderOption={(option) => (
+                    <span className="inline-flex items-center gap-2">
+                      {option.icon ?? null}
+                      <span className="truncate">{option.label}</span>
+                    </span>
+                  )}
+                />
+              </div>
 
-          {initial.hasSavedFnOverrides ? (
-            <p className="text-sm leading-relaxed text-[var(--color-bone-muted)]">
-              This function has saved override secrets on file. They may still apply at runtime even
-              while the override editor is hidden. Turn on the editor below to review or change
-              them.
-            </p>
-          ) : null}
+              <div className="grid gap-2">
+                <Label htmlFor="fn-githubBranch">Branch</Label>
+                <CustomSelect
+                  id="fn-githubBranch"
+                  value={selectedBranch}
+                  onChange={(value) => setSelectedBranch(value)}
+                  disabled={selectedRepoId === ""}
+                  options={[
+                    {
+                      value: "",
+                      label:
+                        selectedRepoId === ""
+                          ? "Select repository first"
+                          : branches.length === 0
+                            ? "Loading branches..."
+                            : "Select branch",
+                    },
+                    ...branches.map((branch) => ({
+                      value: branch,
+                      label: branch,
+                      icon: <GitBranch className="h-3.5 w-3.5" />,
+                    })),
+                  ]}
+                  renderValue={(option) => (
+                    <span className="inline-flex items-center gap-2">
+                      {option?.icon ?? null}
+                      <span className="truncate">{option?.label ?? "Select branch"}</span>
+                    </span>
+                  )}
+                  renderOption={(option) => (
+                    <span className="inline-flex items-center gap-2">
+                      {option.icon ?? null}
+                      <span className="truncate">{option.label}</span>
+                    </span>
+                  )}
+                />
+              </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-[var(--color-bone-muted)]">
-              {overrideUiEnabled
-                ? "You are editing function-level overrides. Empty select values inherit workspace defaults."
-                : "Override editor is hidden. Integration behavior follows your workspace unless saved overrides exist (see above)."}
-            </p>
+              <div className="grid gap-2">
+                <Label htmlFor="fn-pathPrefix">Path prefix (optional)</Label>
+                <Input
+                  id="fn-pathPrefix"
+                  value={pathPrefix}
+                  onChange={(event) => setPathPrefix(event.target.value)}
+                  placeholder="functions/my-function"
+                  className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
+                />
+                <p className="text-xs text-[var(--color-bone-faint)]">
+                  Only files under this path are considered part of this function.
+                </p>
+              </div>
+            </>
+          )}
+        </SheetBody>
+        <SheetFooter>
+          {github.binding ? (
             <Button
               type="button"
               variant="outline"
-              aria-pressed={overrideUiEnabled}
-              onClick={() => setOverrideUiEnabled((v) => !v)}
-              className={
-                overrideUiEnabled
-                  ? "shrink-0 rounded-full border-[var(--color-amber)]/50 bg-[var(--color-amber)]/10 text-[var(--color-bone)] hover:bg-[var(--color-amber)]/15"
-                  : "shrink-0 rounded-full border-[var(--color-border)] text-[var(--color-bone)] hover:border-[var(--color-amber)]/40"
-              }
+              disabled={removing || busy}
+              className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-200"
+              onClick={async () => {
+                setRemoving(true);
+                try {
+                  await removeFunctionGithubBindingAction(fnId);
+                  setSelectedRepoId("");
+                  setSelectedBranch("");
+                  setPathPrefix("");
+                  toast.success("GitHub binding removed");
+                  onOpenChange(false);
+                } catch (error) {
+                  toast.error("Failed to remove binding", {
+                    description: error instanceof Error ? error.message : undefined,
+                  });
+                } finally {
+                  setRemoving(false);
+                }
+              }}
             >
-              {overrideUiEnabled ? "Hide override editor" : "Override workspace integrations"}
+              {removing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Remove binding
             </Button>
-          </div>
-        </SettingsCardContent>
-      </SettingsCard>
-
-      <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/80 shadow-xl">
-        <SettingsCardHeader>
-          <SettingsCardTitle className="flex items-center gap-2 text-lg">
-            <Waypoints className="h-4 w-4 text-[var(--color-amber)]" />
-            GitHub repository binding
-          </SettingsCardTitle>
-          <SettingsCardDescription>
-            Bind this function to a specific GitHub repository and branch for future pull/push workflows.
-          </SettingsCardDescription>
-        </SettingsCardHeader>
-        <SettingsCardContent className="space-y-4">
-          {!initial.github.connected ? (
-            <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-              Connect GitHub first in workspace integrations settings.
-            </p>
-          ) : initial.github.repos.length === 0 ? (
-            <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-              No repositories selected for this workspace. Select repos in integrations settings to
-              unlock GitHub binding here.
-            </p>
-          ) : (
-            <>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label htmlFor="fn-githubRepo">Repository</Label>
-                  <UiCustomSelect
-                    id="fn-githubRepo"
-                    value={selectedRepoId === "" ? "" : String(selectedRepoId)}
-                    onChange={(nextValue) =>
-                      setSelectedRepoId(nextValue ? Number(nextValue) : "")
-                    }
-                    options={[
-                      { value: "", label: "Select repository" },
-                      ...initial.github.repos.map((repo) => ({
-                        value: String(repo.repoId),
-                        label: repo.fullName,
-                        icon: (
-                          <img
-                            src={repo.ownerAvatarUrl}
-                            alt=""
-                            aria-hidden="true"
-                            className="h-4 w-4 rounded-full object-cover"
-                            onError={(event) => {
-                              event.currentTarget.src = "/Github%20logo.svg";
-                              event.currentTarget.classList.remove("rounded-full");
-                            }}
-                          />
-                        ),
-                      })),
-                    ]}
-                    renderValue={(option) => (
-                      <span className="inline-flex items-center gap-2">
-                        {option?.icon ?? null}
-                        <span className="truncate">{option?.label ?? "Select repository"}</span>
-                      </span>
-                    )}
-                    renderOption={(option) => (
-                      <span className="inline-flex items-center gap-2">
-                        {option.icon ?? null}
-                        <span className="truncate">{option.label}</span>
-                      </span>
-                    )}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="fn-githubBranch">Branch</Label>
-                  <UiCustomSelect
-                    id="fn-githubBranch"
-                    value={selectedBranch}
-                    onChange={(nextValue) => setSelectedBranch(nextValue)}
-                    disabled={selectedRepoId === ""}
-                    options={[
-                      {
-                        value: "",
-                        label: selectedRepoId === "" ? "Select repository first" : "Select branch",
-                      },
-                      ...branches.map((branch) => ({
-                        value: branch,
-                        label: branch,
-                        icon: <GitBranch className="h-3.5 w-3.5" />,
-                      })),
-                    ]}
-                    renderValue={(option) => (
-                      <span className="inline-flex items-center gap-2">
-                        {option?.icon ?? null}
-                        <span className="truncate">
-                          {option?.label ??
-                            (selectedRepoId === "" ? "Select repository first" : "Select branch")}
-                        </span>
-                      </span>
-                    )}
-                    renderOption={(option) => (
-                      <span className="inline-flex items-center gap-2">
-                        {option.icon ?? null}
-                        <span className="truncate">{option.label}</span>
-                      </span>
-                    )}
-                  />
-                </div>
-                <div className="grid gap-2 md:col-span-2">
-                  <Label htmlFor="fn-githubPathPrefix">Path prefix (optional)</Label>
-                  <Input
-                    id="fn-githubPathPrefix"
-                    value={pathPrefix}
-                    onChange={(event) => setPathPrefix(event.target.value)}
-                    placeholder="functions/my-function"
-                    className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
-                  />
-                </div>
-              </div>
-              {initial.github.binding ? (
-                <p className="text-sm text-[var(--color-bone-muted)]">
-                  Current binding: {initial.github.binding.repoFullName}@{initial.github.binding.branch}
-                </p>
-              ) : (
-                <p className="text-sm text-[var(--color-bone-muted)]">No binding configured yet.</p>
-              )}
-              {bindingMessage ? (
-                <p className="text-sm text-[var(--color-bone-muted)]">{bindingMessage}</p>
-              ) : null}
-            </>
-          )}
-        </SettingsCardContent>
-        <SettingsCardFooter className="flex items-center justify-end gap-2">
+          ) : null}
+          <div className="flex-1" />
           <Button
             type="button"
-            variant="outline"
-            disabled={!initial.github.connected || bindingBusy}
-            className="border-[var(--color-border)] text-[var(--color-bone)] hover:border-red-500/40 hover:bg-red-500/10"
-            onClick={async () => {
-              try {
-                setBindingBusy(true);
-                await removeFunctionGithubBindingAction(fnId);
-                setBindingMessage("GitHub binding removed.");
-                setSelectedRepoId("");
-                setSelectedBranch("");
-                setPathPrefix("");
-              } catch (error) {
-                setBindingMessage(error instanceof Error ? error.message : "Failed to remove binding.");
-              } finally {
-                setBindingBusy(false);
-              }
-            }}
-          >
-            Remove Binding
-          </Button>
-          <Button
-            type="button"
-            disabled={!initial.github.connected || selectedRepoId === "" || !selectedBranch || bindingBusy}
             variant="glass"
-            className="rounded-full px-6 disabled:opacity-70"
+            disabled={!canSave}
+            className="rounded-full px-6"
             onClick={async () => {
               if (selectedRepoId === "" || !selectedBranch) return;
+              setBusy(true);
               try {
-                setBindingBusy(true);
                 await saveFunctionGithubBindingAction({
                   fnId,
                   repoId: selectedRepoId,
                   branch: selectedBranch,
                   pathPrefix: pathPrefix.trim() || undefined,
                 });
-                setBindingMessage("GitHub binding saved.");
+                toast.success("GitHub binding saved");
+                onOpenChange(false);
               } catch (error) {
-                setBindingMessage(error instanceof Error ? error.message : "Failed to save binding.");
+                toast.error("Failed to save binding", {
+                  description: error instanceof Error ? error.message : undefined,
+                });
               } finally {
-                setBindingBusy(false);
+                setBusy(false);
               }
             }}
           >
-            {bindingBusy ? "Saving..." : "Save GitHub Binding"}
+            {busy ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save binding"
+            )}
           </Button>
-        </SettingsCardFooter>
-      </SettingsCard>
-
-      {overrideUiEnabled ? (
-        <form action={formAction} className="space-y-6">
-          <input type="hidden" name="fnId" value={fnId} />
-          <div className="grid gap-6">
-            <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/80 shadow-xl">
-              <SettingsCardHeader>
-                <SettingsCardTitle className="flex items-center gap-2 text-lg">
-                  <Sparkles className="h-4 w-4 text-[var(--color-amber)]" />
-                  AI overrides
-                </SettingsCardTitle>
-                <SettingsCardDescription>
-                  Function-level overrides for `@hostfunc/sdk/ai` and `@hostfunc/sdk/agent`. Leave
-                  provider as workspace default to inherit models and keys from the workspace.
-                </SettingsCardDescription>
-              </SettingsCardHeader>
-              <SettingsCardContent className="grid gap-4 md:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label htmlFor="fn-aiProvider">Provider</Label>
-                  <input type="hidden" id="fn-aiProvider" name="aiProvider" value={aiProvider} />
-                  <div className="relative" ref={providerMenuRef}>
-                    <button
-                      type="button"
-                      onClick={() => setProviderMenuOpen((open) => !open)}
-                      className="flex h-11 w-full items-center justify-between rounded-md border border-[var(--color-border)] bg-[var(--color-ink)] px-3 text-left text-[var(--color-bone)] transition hover:border-[var(--color-amber)]/40"
-                      aria-haspopup="listbox"
-                      aria-expanded={providerMenuOpen}
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        {aiProvider === "" ? null : <ProviderLogo provider={aiProvider} />}
-                        <span className="text-sm font-medium">{providerLabelText}</span>
-                      </span>
-                      <ChevronDown
-                        className={`h-4 w-4 text-[var(--color-bone-faint)] transition ${providerMenuOpen ? "rotate-180" : ""}`}
-                      />
-                    </button>
-                    {providerMenuOpen ? (
-                      <div className="absolute z-20 mt-2 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-ink-elevated)] p-1 shadow-xl">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAiProvider("");
-                            setAiModel("");
-                            setProviderMenuOpen(false);
-                          }}
-                          className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition ${
-                            aiProvider === ""
-                              ? "bg-[var(--color-amber)]/15 text-[var(--color-bone)]"
-                              : "text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
-                          }`}
-                        >
-                          <span>Workspace default</span>
-                          {aiProvider === "" ? (
-                            <CheckCircle2 className="h-4 w-4 text-[var(--color-amber)]" />
-                          ) : null}
-                        </button>
-                        {(["openai", "claude"] as const).map((provider) => {
-                          const isSelected = provider === aiProvider;
-                          return (
-                            <button
-                              key={provider}
-                              type="button"
-                              onClick={() => {
-                                setAiProvider(provider);
-                                const nextModels = modelsForProvider(provider);
-                                setAiModel(nextModels[0] ?? "");
-                                setProviderMenuOpen(false);
-                              }}
-                              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition ${
-                                isSelected
-                                  ? "bg-[var(--color-amber)]/15 text-[var(--color-bone)]"
-                                  : "text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
-                              }`}
-                            >
-                              <span className="inline-flex items-center gap-2">
-                                <ProviderLogo provider={provider} />
-                                <span>{providerLabel(provider)}</span>
-                              </span>
-                              {isSelected ? (
-                                <CheckCircle2 className="h-4 w-4 text-[var(--color-amber)]" />
-                              ) : null}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="fn-aiModel">Model override</Label>
-                  <select
-                    id="fn-aiModel"
-                    name="aiModel"
-                    value={aiModel}
-                    onChange={(event) => setAiModel(event.target.value)}
-                    disabled={aiProvider === ""}
-                    className="h-11 rounded-md border border-[var(--color-border)] bg-[var(--color-ink)] px-3 text-[var(--color-bone)] disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {aiProvider === "" ? (
-                      <option value="">Workspace default</option>
-                    ) : (
-                      modelOptions.map((model) => (
-                        <option key={model} value={model}>
-                          {model}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="fn-openaiApiKey">OpenAI API key</Label>
-                  <Input
-                    id="fn-openaiApiKey"
-                    name="openaiApiKey"
-                    placeholder="sk-..."
-                    className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
-                  />
-                  <p className="text-xs text-[var(--color-bone-faint)]">
-                    {initial.overrides.openAiKeyPreview
-                      ? `Current override: ${initial.overrides.openAiKeyPreview}`
-                      : initial.overrides.hasOpenAiKey
-                        ? "Current override: configured"
-                        : "Current override: not configured"}
-                  </p>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="fn-claudeApiKey">Claude API key</Label>
-                  <Input
-                    id="fn-claudeApiKey"
-                    name="claudeApiKey"
-                    placeholder="sk-ant-..."
-                    className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
-                  />
-                  <p className="text-xs text-[var(--color-bone-faint)]">
-                    {initial.overrides.claudeKeyPreview
-                      ? `Current override: ${initial.overrides.claudeKeyPreview}`
-                      : initial.overrides.hasClaudeKey
-                        ? "Current override: configured"
-                        : "Current override: not configured"}
-                  </p>
-                </div>
-              </SettingsCardContent>
-            </SettingsCard>
-          </div>
-
-          <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/80 shadow-xl">
-            <SettingsCardHeader>
-              <SettingsCardTitle className="flex items-center gap-2 text-lg">
-                <KeyRound className="h-4 w-4 text-[var(--color-amber)]" />
-                Credential health
-              </SettingsCardTitle>
-              <SettingsCardDescription>
-                Function override credential presence (not workspace keys).
-              </SettingsCardDescription>
-            </SettingsCardHeader>
-            <SettingsCardContent className="grid gap-2 md:grid-cols-2">
-              <SecretStatus
-                label="OpenAI API key override"
-                present={initial.overrides.hasOpenAiKey}
-              />
-              <SecretStatus
-                label="Claude API key override"
-                present={initial.overrides.hasClaudeKey}
-              />
-              <SecretStatus
-                label="Vector service URL override"
-                present={initial.overrides.hasVectorServiceUrl}
-              />
-              <SecretStatus
-                label="Vector DB URL override"
-                present={initial.overrides.hasVectorDatabaseUrl}
-              />
-            </SettingsCardContent>
-          </SettingsCard>
-
-          <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/80 shadow-xl">
-            <SettingsCardHeader>
-              <SettingsCardTitle className="flex items-center gap-2 text-lg">
-                <Waypoints className="h-4 w-4 text-[var(--color-amber)]" />
-                Vector backend order overrides
-              </SettingsCardTitle>
-              <SettingsCardDescription>
-                Deterministic primary/fallback routing for `@hostfunc/sdk/vector` at function scope.
-              </SettingsCardDescription>
-            </SettingsCardHeader>
-            <SettingsCardContent className="grid gap-4 md:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="fn-vectorPrimary">Primary backend</Label>
-                <CustomSelect
-                  id="fn-vectorPrimary"
-                  name="vectorPrimary"
-                  value={vectorPrimary}
-                  onChange={(value) => setVectorPrimary(value as "" | "external_http" | "postgres")}
-                  options={[
-                    { value: "", label: "Workspace default" },
-                    { value: "external_http", label: "External HTTP" },
-                    { value: "postgres", label: "Postgres URL" },
-                  ]}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="fn-vectorSecondary">Fallback backend</Label>
-                <CustomSelect
-                  id="fn-vectorSecondary"
-                  name="vectorSecondary"
-                  value={vectorSecondary}
-                  onChange={(value) =>
-                    setVectorSecondary(value as "" | "none" | "external_http" | "postgres")
-                  }
-                  options={[
-                    { value: "", label: "Workspace default" },
-                    { value: "none", label: "None" },
-                    { value: "external_http", label: "External HTTP" },
-                    { value: "postgres", label: "Postgres URL" },
-                  ]}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="fn-vectorServiceUrl">Vector service URL (optional update)</Label>
-                <Input
-                  id="fn-vectorServiceUrl"
-                  name="vectorServiceUrl"
-                  placeholder="https://vector.example.com"
-                  className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="fn-vectorDatabaseUrl">Vector database URL (optional update)</Label>
-                <Input
-                  id="fn-vectorDatabaseUrl"
-                  name="vectorDatabaseUrl"
-                  placeholder="postgres://..."
-                  className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
-                />
-              </div>
-            </SettingsCardContent>
-            <SettingsCardFooter className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-              <div className="space-y-1">
-                {hasError ? (
-                  <p className="flex items-center gap-2 text-sm text-red-300">
-                    <TriangleAlert className="h-4 w-4" />
-                    {state?.error?.form?.[0]}
-                  </p>
-                ) : null}
-                {hasSuccess ? (
-                  <p className="flex items-center gap-2 text-sm text-emerald-300">
-                    <CheckCircle2 className="h-4 w-4" />
-                    {state?.message ?? "Function integration overrides updated."}
-                  </p>
-                ) : (
-                  <p className="text-sm text-[var(--color-bone-muted)]">
-                    Empty secret fields keep existing override values. Empty select values inherit
-                    workspace defaults.
-                  </p>
-                )}
-              </div>
-              <Button
-                type="submit"
-                disabled={pending}
-                variant="glass"
-                className="rounded-full px-6 disabled:opacity-70"
-              >
-                {pending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save integration overrides"
-                )}
-              </Button>
-            </SettingsCardFooter>
-          </SettingsCard>
-        </form>
-      ) : null}
-    </div>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

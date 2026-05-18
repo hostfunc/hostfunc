@@ -20,12 +20,6 @@ import {
 import { ensureWorkspaceSdkApiKey } from "@/server/api-tokens";
 import { executor } from "@/server/executor";
 import {
-  getFunctionAssetBlob,
-  listFunctionAssets,
-  snapshotAssetsToVersion,
-  syncMarketplaceReadmeToAsset,
-} from "@/server/fn-assets";
-import {
   FnAiContextError,
   type FnAiContextRecord,
   createContext as createFnAiContextRecord,
@@ -36,6 +30,12 @@ import {
   toggleContextEnabled as toggleFnAiContextEnabled,
   updateContext as updateFnAiContextRecord,
 } from "@/server/fn-ai-context";
+import {
+  getFunctionAssetBlob,
+  listFunctionAssets,
+  snapshotAssetsToVersion,
+  syncMarketplaceReadmeToAsset,
+} from "@/server/fn-assets";
 import {
   MARKETPLACE_CATEGORIES,
   deleteSecretForFunction,
@@ -896,7 +896,9 @@ export async function updateFunctionSlugAction(formData: FormData) {
       .update(schema.fn)
       .set({ slug: nextSlug, updatedAt: new Date() })
       .where(
-        compatWhere(sql`${schema.fn.id} = ${parsed.fnId} and ${schema.fn.orgId} = ${orgId}`) as never,
+        compatWhere(
+          sql`${schema.fn.id} = ${parsed.fnId} and ${schema.fn.orgId} = ${orgId}`,
+        ) as never,
       );
   } catch (error) {
     const maybeDbError = error as { code?: string; message?: string };
@@ -984,7 +986,7 @@ export async function updateFunctionIntegrationOverridesAction(formData: FormDat
   });
   await assertOrgOwnsFunction(orgId, parsed.fnId);
 
-  const upsert = async (key: string, value?: string | null) => {
+  const writeSelect = async (key: string, value: string | null) => {
     if (!value || value === "none") {
       await deleteSecretForFunction(orgId, parsed.fnId, key);
       return;
@@ -998,14 +1000,25 @@ export async function updateFunctionIntegrationOverridesAction(formData: FormDat
     });
   };
 
-  await upsert("HF_FN_AI_PROVIDER", parsed.aiProvider || null);
-  await upsert("HF_FN_AI_MODEL", parsed.aiModel);
-  await upsert("HF_FN_OPENAI_API_KEY", parsed.openaiApiKey);
-  await upsert("HF_FN_CLAUDE_API_KEY", parsed.claudeApiKey);
-  await upsert("HF_FN_VECTOR_BACKEND_PRIMARY", parsed.vectorPrimary || null);
-  await upsert("HF_FN_VECTOR_BACKEND_SECONDARY", parsed.vectorSecondary || null);
-  await upsert("HF_FN_VECTOR_SERVICE_URL", parsed.vectorServiceUrl);
-  await upsert("HF_FN_VECTOR_DATABASE_URL", parsed.vectorDatabaseUrl);
+  const writeSecret = async (key: string, value: string | undefined) => {
+    if (value == null || value === "") return;
+    await setSecretForFunction({
+      orgId,
+      fnId: parsed.fnId,
+      key,
+      value,
+      userId: session.user.id,
+    });
+  };
+
+  await writeSelect("HF_FN_AI_PROVIDER", parsed.aiProvider || null);
+  await writeSelect("HF_FN_AI_MODEL", parsed.aiModel ?? null);
+  await writeSecret("HF_FN_OPENAI_API_KEY", parsed.openaiApiKey);
+  await writeSecret("HF_FN_CLAUDE_API_KEY", parsed.claudeApiKey);
+  await writeSelect("HF_FN_VECTOR_BACKEND_PRIMARY", parsed.vectorPrimary || null);
+  await writeSelect("HF_FN_VECTOR_BACKEND_SECONDARY", parsed.vectorSecondary || null);
+  await writeSecret("HF_FN_VECTOR_SERVICE_URL", parsed.vectorServiceUrl);
+  await writeSecret("HF_FN_VECTOR_DATABASE_URL", parsed.vectorDatabaseUrl);
 
   revalidatePath(`/dashboard/${parsed.fnId}/settings`);
 }
@@ -1024,6 +1037,33 @@ export async function updateFunctionIntegrationOverridesStateAction(
       },
     };
   }
+}
+
+const AI_OVERRIDE_KEYS = [
+  "HF_FN_AI_PROVIDER",
+  "HF_FN_AI_MODEL",
+  "HF_FN_OPENAI_API_KEY",
+  "HF_FN_CLAUDE_API_KEY",
+] as const;
+const VECTOR_OVERRIDE_KEYS = [
+  "HF_FN_VECTOR_BACKEND_PRIMARY",
+  "HF_FN_VECTOR_BACKEND_SECONDARY",
+  "HF_FN_VECTOR_SERVICE_URL",
+  "HF_FN_VECTOR_DATABASE_URL",
+] as const;
+
+export async function clearFunctionIntegrationOverridesAction(input: {
+  fnId: string;
+  scope: "ai" | "vector";
+}) {
+  const { orgId } = await requireOrgPermission("manage_secrets");
+  await assertOrgOwnsFunction(orgId, input.fnId);
+  const keys = input.scope === "ai" ? AI_OVERRIDE_KEYS : VECTOR_OVERRIDE_KEYS;
+  for (const key of keys) {
+    await deleteSecretForFunction(orgId, input.fnId, key);
+  }
+  revalidatePath(`/dashboard/${input.fnId}/settings/integrations`);
+  return { ok: true };
 }
 
 export async function listFunctionGithubRepos(fnId: string) {
@@ -1077,6 +1117,73 @@ export async function removeFunctionGithubBindingAction(fnId: string) {
   revalidatePath(`/dashboard/${fnId}/settings/integrations`);
   revalidatePath(`/dashboard/${fnId}`);
   return { ok: true };
+}
+
+function humanizeSettingsError(error: unknown, fallback: string): string {
+  const raw = error instanceof Error ? error.message : "";
+  if (raw === "slug_already_exists") return "That name is already taken in your workspace.";
+  if (raw === "private_functions_require_upgrade") {
+    return "Private functions require a Pro or Team plan.";
+  }
+  return raw || fallback;
+}
+
+export async function updateFunctionSlugStateAction(
+  _prevState: FunctionSettingsActionState,
+  formData: FormData,
+): Promise<FunctionSettingsActionState> {
+  try {
+    await updateFunctionSlugAction(formData);
+    return { ok: true, message: "Function name saved." };
+  } catch (error) {
+    return {
+      error: { form: [humanizeSettingsError(error, "Failed to save function name.")] },
+    };
+  }
+}
+
+export async function updateFunctionDescriptionStateAction(
+  _prevState: FunctionSettingsActionState,
+  formData: FormData,
+): Promise<FunctionSettingsActionState> {
+  try {
+    await updateFunctionDescriptionAction(formData);
+    return { ok: true, message: "Description saved." };
+  } catch (error) {
+    return {
+      error: { form: [humanizeSettingsError(error, "Failed to save description.")] },
+    };
+  }
+}
+
+export async function updateFunctionVisibilityStateAction(
+  _prevState: FunctionSettingsActionState,
+  formData: FormData,
+): Promise<FunctionSettingsActionState> {
+  try {
+    await updateFunctionVisibilityAction(formData);
+    const next = formData.get("visibility");
+    const label = next === "public" ? "public" : "private";
+    return { ok: true, message: `Function is now ${label}.` };
+  } catch (error) {
+    return {
+      error: { form: [humanizeSettingsError(error, "Failed to update visibility.")] },
+    };
+  }
+}
+
+export async function updateFunctionMarketplaceProfileStateAction(
+  _prevState: FunctionSettingsActionState,
+  formData: FormData,
+): Promise<FunctionSettingsActionState> {
+  try {
+    await updateFunctionMarketplaceProfileAction(formData);
+    return { ok: true, message: "Marketplace profile saved." };
+  } catch (error) {
+    return {
+      error: { form: [humanizeSettingsError(error, "Failed to save marketplace profile.")] },
+    };
+  }
 }
 
 async function purgeLookupCache(orgSlug: string, slug: string) {

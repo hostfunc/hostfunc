@@ -58,11 +58,11 @@ export default async function FunctionIntegrationsSettingsPage({
       <div className="flex flex-col justify-between gap-6 border-b border-[var(--color-border)] pb-6 md:flex-row md:items-center">
         <div>
           <h3 className="font-display text-4xl tracking-tight text-[var(--color-bone)]">
-            AI + Vector Integrations
+            Integrations
           </h3>
           <p className="mt-2 max-w-xl leading-relaxed text-[var(--color-bone-muted)]">
-            This function follows your workspace integration defaults unless you configure
-            function-level overrides.
+            AI, vector routing, and GitHub for this function. Each integration inherits your
+            workspace default until you override it.
           </p>
         </div>
       </div>
