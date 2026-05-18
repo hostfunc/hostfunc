@@ -188,7 +188,7 @@ function NewFunctionPageClient() {
   return (
     <div className="flex flex-col gap-8 lg:flex-row lg:items-center">
       {/* Left Column: Form Configuration */}
-      <div className="flex flex-1 flex-col pt-4 lg:max-w-xl">
+      <div className="flex flex-1 flex-col pt-4 lg:max-w-2xl">
         <div>
           <h1 className="mb-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
             Create new function
@@ -636,7 +636,7 @@ function NewFunctionPageClient() {
       </div>
 
       {/* Right Column: Code Preview */}
-      <div className="hidden min-h-[360px] flex-1 lg:flex lg:max-w-2xl lg:self-stretch">
+      <div className="hidden min-h-[360px] flex-1 lg:flex lg:max-w-3xl lg:self-stretch">
         <AnimatePresence mode="wait" initial={false}>
           {showPreview ? (
             <motion.div

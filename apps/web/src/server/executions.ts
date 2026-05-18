@@ -96,7 +96,8 @@ export async function listExecutions(
 
   if (filters.fnId) where.push(eq(schema.execution.fnId, filters.fnId));
   if (filters.status?.length) where.push(inArray(schema.execution.status, filters.status));
-  if (filters.triggerKind?.length) where.push(inArray(schema.execution.triggerKind, filters.triggerKind));
+  if (filters.triggerKind?.length)
+    where.push(inArray(schema.execution.triggerKind, filters.triggerKind));
   if (filters.from) where.push(gte(schema.execution.startedAt, new Date(filters.from)));
   if (filters.to) where.push(lt(schema.execution.startedAt, new Date(filters.to)));
   if (input.cursor) where.push(lt(schema.execution.startedAt, new Date(input.cursor)));
@@ -125,7 +126,7 @@ export async function listExecutions(
   const items = rows.slice(0, limit) as ExecutionListItem[];
   return {
     items,
-    nextCursor: hasMore ? items[items.length - 1]?.startedAt.toISOString() ?? null : null,
+    nextCursor: hasMore ? (items[items.length - 1]?.startedAt.toISOString() ?? null) : null,
   };
 }
 
@@ -167,7 +168,9 @@ export async function listLogsForExecution(orgId: string, executionId: string) {
       fields: schema.executionLog.fields,
     })
     .from(schema.executionLog)
-    .where(and(eq(schema.executionLog.executionId, executionId), eq(schema.executionLog.orgId, orgId)))
+    .where(
+      and(eq(schema.executionLog.executionId, executionId), eq(schema.executionLog.orgId, orgId)),
+    )
     .orderBy(asc(schema.executionLog.ts));
 }
 

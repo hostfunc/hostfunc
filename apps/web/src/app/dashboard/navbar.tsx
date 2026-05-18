@@ -354,11 +354,7 @@ export function DashboardNavbar({
             >
               Maybe later
             </Button>
-            <Button
-              asChild
-              variant="glass"
-              className="rounded-full px-6"
-            >
+            <Button asChild variant="glass" className="rounded-full px-6">
               <Link href="/dashboard/settings/billing" onClick={() => setShowUpgradeModal(false)}>
                 View plans
                 <ArrowRight className="ml-2 size-4" />

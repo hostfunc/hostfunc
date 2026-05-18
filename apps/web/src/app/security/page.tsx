@@ -31,15 +31,18 @@ export default function SecurityPage() {
         <section className="rounded-2xl border border-[var(--color-border)] bg-white/[0.02] p-6">
           <h2 className="text-xl font-semibold">Operational security</h2>
           <p className="mt-3 text-[var(--color-bone-muted)]">
-            We run key internal token rotation and secret-management procedures through production runbooks. Logging
-            and execution telemetry are designed for observability while minimizing sensitive value exposure.
+            We run key internal token rotation and secret-management procedures through production
+            runbooks. Logging and execution telemetry are designed for observability while
+            minimizing sensitive value exposure.
           </p>
         </section>
 
         <section className="rounded-2xl border border-[var(--color-border)] bg-white/[0.02] p-6">
           <h2 className="text-xl font-semibold">Known limitations</h2>
           <ul className="mt-3 list-inside list-disc space-y-2 text-[var(--color-bone-muted)]">
-            <li>Token permissions are org-scoped; route/action-level scopes are a planned improvement.</li>
+            <li>
+              Token permissions are org-scoped; route/action-level scopes are a planned improvement.
+            </li>
             <li>Some rotation and cutover workflows are still operationally manual.</li>
           </ul>
         </section>
@@ -47,7 +50,8 @@ export default function SecurityPage() {
         <section className="rounded-2xl border border-[var(--color-border)] bg-white/[0.02] p-6">
           <h2 className="text-xl font-semibold">Report a vulnerability</h2>
           <p className="mt-3 text-[var(--color-bone-muted)]">
-            Please follow the project disclosure process documented in <code className="font-mono">SECURITY.md</code>.
+            Please follow the project disclosure process documented in{" "}
+            <code className="font-mono">SECURITY.md</code>.
           </p>
         </section>
       </div>

@@ -1,8 +1,8 @@
 "use server";
 
+import { requireSession } from "@/lib/session";
 import { db, schema, sql } from "@hostfunc/db";
 import { and, desc, eq } from "drizzle-orm";
-import { requireSession } from "@/lib/session";
 
 function compatWhere<T>(value: T): T {
   return value;
@@ -80,7 +80,10 @@ export async function leaveCurrentWorkspaceAction() {
   }
 
   const currentMembership = await db.query.member.findFirst({
-    where: and(eq(schema.member.userId, session.user.id), eq(schema.member.organizationId, activeOrgId)),
+    where: and(
+      eq(schema.member.userId, session.user.id),
+      eq(schema.member.organizationId, activeOrgId),
+    ),
   });
 
   if (currentMembership) {
@@ -89,7 +92,12 @@ export async function leaveCurrentWorkspaceAction() {
     }
     await db
       .delete(schema.member)
-      .where(and(eq(schema.member.userId, session.user.id), eq(schema.member.organizationId, activeOrgId)));
+      .where(
+        and(
+          eq(schema.member.userId, session.user.id),
+          eq(schema.member.organizationId, activeOrgId),
+        ),
+      );
   }
 
   const nextMembership = await db.query.member.findFirst({

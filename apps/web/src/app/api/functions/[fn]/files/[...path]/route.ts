@@ -66,12 +66,10 @@ export async function PATCH(
     const { fn, path } = await params;
     await assertOrgOwnsFunction(orgId, fn);
     const fromPath = joinPath(path);
-    const body = (await req.json().catch(() => null)) as
-      | {
-          rename?: { toPath: string };
-          replace?: { contentText?: string; contentBase64?: string; mime?: string };
-        }
-      | null;
+    const body = (await req.json().catch(() => null)) as {
+      rename?: { toPath: string };
+      replace?: { contentText?: string; contentBase64?: string; mime?: string };
+    } | null;
     if (!body) return Response.json({ error: "invalid_body" }, { status: 400 });
     if (body.rename) {
       const summary = await renameFunctionAsset({

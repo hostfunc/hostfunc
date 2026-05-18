@@ -33,9 +33,7 @@ export function SecretsClient({
       const existing = secrets.find((item) => item.key === key.trim());
       if (existing) {
         setSecrets((prev) =>
-          prev.map((item) =>
-            item.key === key.trim() ? { ...item, updatedAt: new Date() } : item,
-          ),
+          prev.map((item) => (item.key === key.trim() ? { ...item, updatedAt: new Date() } : item)),
         );
       } else {
         setSecrets((prev) => [
@@ -76,7 +74,9 @@ export function SecretsClient({
             <KeyRound className="h-4 w-4 text-primary" />
             Function Secrets
           </div>
-          <span className="text-xs text-[var(--color-bone-faint)]">{secrets.length} configured</span>
+          <span className="text-xs text-[var(--color-bone-faint)]">
+            {secrets.length} configured
+          </span>
         </div>
 
         <div className="divide-y divide-[var(--color-border)]">
@@ -108,7 +108,9 @@ export function SecretsClient({
       </div>
 
       <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-6 shadow-xl">
-        <div className="mb-3 text-sm font-semibold text-[var(--color-bone)]">Add or update secret</div>
+        <div className="mb-3 text-sm font-semibold text-[var(--color-bone)]">
+          Add or update secret
+        </div>
         <div className="grid gap-3 md:grid-cols-[1fr_2fr_auto]">
           <Input
             value={key}

@@ -7,7 +7,8 @@ const IGNORE_SPECIFIERS = new Set(["@hostfunc/fn", "@hostfunc/sdk"]);
 
 function extractPackageName(specifier: string): string | null {
   if (!specifier) return null;
-  if (specifier.startsWith(".") || specifier.startsWith("/") || specifier.startsWith("node:")) return null;
+  if (specifier.startsWith(".") || specifier.startsWith("/") || specifier.startsWith("node:"))
+    return null;
 
   if (specifier.startsWith("@")) {
     const [scope, name] = specifier.split("/");

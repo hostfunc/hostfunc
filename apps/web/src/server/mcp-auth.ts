@@ -1,7 +1,7 @@
 import "server-only";
 
-import { env } from "@/lib/env";
 import { isApiTokenFormat } from "@/lib/api-tokens";
+import { env } from "@/lib/env";
 import { redis } from "@/lib/redis";
 import { authenticateApiToken } from "./api-tokens";
 

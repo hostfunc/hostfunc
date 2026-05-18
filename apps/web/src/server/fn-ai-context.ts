@@ -1,7 +1,7 @@
 import "server-only";
 
-import { and, desc, eq, inArray } from "drizzle-orm";
 import { db, genId, schema } from "@hostfunc/db";
+import { and, desc, eq, inArray } from "drizzle-orm";
 
 export type FnAiContextKind = "note" | "url" | "file";
 

@@ -49,7 +49,6 @@ export default async function NewWorkspaceLayout({ children }: { children: React
   return (
     <div className="relative min-h-dvh overflow-hidden bg-[var(--color-ink)] text-[var(--color-bone)]">
       <div className="gradient-radial-amber pointer-events-none absolute inset-x-0 top-0 h-[420px] opacity-70" />
-      <div className="border-grid pointer-events-none absolute inset-0 opacity-30" />
       <DashboardNavbar
         user={session.user}
         organizations={organizations}

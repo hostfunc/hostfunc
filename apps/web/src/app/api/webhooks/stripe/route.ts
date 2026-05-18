@@ -2,7 +2,11 @@ import { env } from "@/lib/env";
 import { stripe } from "@/lib/stripe";
 import { captureServerError } from "@/server/observability";
 import { enforceRateLimit } from "@/server/rate-limit";
-import { markWebhookEventFailed, markWebhookEventProcessed, recordWebhookEvent } from "@/server/webhook-events";
+import {
+  markWebhookEventFailed,
+  markWebhookEventProcessed,
+  recordWebhookEvent,
+} from "@/server/webhook-events";
 import { db, genId, schema } from "@hostfunc/db";
 import { eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
@@ -48,10 +52,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "stripe_processing_failed";
-    await markWebhookEventFailed(
-      receipt.id,
-      message,
-    );
+    await markWebhookEventFailed(receipt.id, message);
     await captureServerError({
       source: "stripe_webhook",
       message,
@@ -151,12 +152,18 @@ function fromStripeTimestamp(value: number | null | undefined): Date | null {
 
 function getSubscriptionPeriod(sub: Stripe.Subscription): { start: Date | null; end: Date | null } {
   const firstItem = sub.items.data[0];
-  const start = fromStripeTimestamp((firstItem as { current_period_start?: number })?.current_period_start);
-  const end = fromStripeTimestamp((firstItem as { current_period_end?: number })?.current_period_end);
+  const start = fromStripeTimestamp(
+    (firstItem as { current_period_start?: number })?.current_period_start,
+  );
+  const end = fromStripeTimestamp(
+    (firstItem as { current_period_end?: number })?.current_period_end,
+  );
   return { start, end };
 }
 
-function mapStripeStatus(status: Stripe.Subscription.Status): (typeof schema.subscription.$inferInsert)["status"] {
+function mapStripeStatus(
+  status: Stripe.Subscription.Status,
+): (typeof schema.subscription.$inferInsert)["status"] {
   const normalized = status === "paused" ? "past_due" : status;
   if (
     normalized === "trialing" ||

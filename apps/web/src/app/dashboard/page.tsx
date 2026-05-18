@@ -393,11 +393,7 @@ export default async function DashboardPage({
             </div>
             <div className="flex items-center gap-3">
               <RangeSwitcher current={range} />
-              <Button
-                asChild
-                variant="glass"
-                className="rounded-full"
-              >
+              <Button asChild variant="glass" className="rounded-full">
                 <Link href="/dashboard/new">Deploy a function</Link>
               </Button>
             </div>

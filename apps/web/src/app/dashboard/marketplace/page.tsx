@@ -48,7 +48,7 @@ export default async function DashboardMarketplacePage({
   });
 
   return (
-    <div className="mx-auto max-w-7xl animate-in space-y-8 fade-in duration-500">
+    <div className="mx-auto max-w-screen-2xl animate-in space-y-8 fade-in duration-500">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-[var(--color-amber)]">
@@ -63,11 +63,7 @@ export default async function DashboardMarketplacePage({
             comment, or fork any function into your active workspace.
           </p>
         </div>
-        <Button
-          asChild
-          variant="glass"
-          className="rounded-full"
-        >
+        <Button asChild variant="glass" className="rounded-full">
           <Link href="/dashboard/new">
             <Plus className="mr-2 h-4 w-4" />
             Publish a function
@@ -130,11 +126,7 @@ export default async function DashboardMarketplacePage({
                   <Link href={BASE_PATH}>Clear filters</Link>
                 </Button>
               ) : null}
-              <Button
-                asChild
-                variant="glass"
-                className="rounded-full"
-              >
+              <Button asChild variant="glass" className="rounded-full">
                 <Link href="/dashboard/new">
                   <Plus className="mr-2 h-4 w-4" />
                   Create new function
@@ -143,7 +135,9 @@ export default async function DashboardMarketplacePage({
             </div>
           </div>
         ) : (
-          <div className={view === "list" ? "space-y-4" : "grid gap-6 md:grid-cols-2 xl:grid-cols-3"}>
+          <div
+            className={view === "list" ? "space-y-4" : "grid gap-6 md:grid-cols-2 xl:grid-cols-3"}
+          >
             {marketplace.items.map((fn) => (
               <CommunityFunctionCard
                 key={fn.id}

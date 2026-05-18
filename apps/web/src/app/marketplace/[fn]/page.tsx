@@ -32,7 +32,6 @@ export default async function MarketplaceFunctionPage({
   return (
     <main className="relative min-h-screen bg-[var(--color-ink)] text-[var(--color-bone)]">
       <div className="gradient-radial-amber pointer-events-none absolute inset-x-0 top-0 h-[520px]" />
-      <div className="border-grid pointer-events-none absolute inset-0 opacity-35" />
       <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
         <div className="flex w-full items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">

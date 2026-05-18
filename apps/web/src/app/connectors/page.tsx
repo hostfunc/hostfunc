@@ -15,7 +15,6 @@ export default function ConnectorsPage() {
   return (
     <main className="relative min-h-screen bg-[var(--color-ink)] text-[var(--color-bone)]">
       <div className="gradient-radial-amber pointer-events-none absolute inset-x-0 top-0 h-[560px]" />
-      <div className="border-grid pointer-events-none absolute inset-0 opacity-35" />
 
       <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
         <div className="flex w-full items-center justify-between px-6 py-4">
@@ -98,11 +97,11 @@ export default function ConnectorsPage() {
             </div>
             <h1 className="mt-6 text-balance font-display text-5xl leading-[1.03] tracking-tight md:text-7xl">
               <span className="text-[var(--color-bone)]">Plug your tools in.</span>{" "}
-              <span className="italic text-[var(--color-amber)]">Ship automations faster.</span>
+              <span className="text-[var(--color-amber)]">Ship automations faster.</span>
             </h1>
             <p className="mx-auto mt-7 max-w-2xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
-              Connect external providers once, then let your functions and agents use those integrations
-              safely across your workspace.
+              Connect external providers once, then let your functions and agents use those
+              integrations safely across your workspace.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button
@@ -141,13 +140,8 @@ export default function ConnectorsPage() {
         <div className="w-full px-6">
           <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
             <div className="flex items-center gap-2">
-              <Hexagon
-                className="size-5 text-[var(--color-bone-faint)]"
-                strokeWidth={1.5}
-              />
-              <span className="font-display text-lg text-[var(--color-bone-muted)]">
-                hostfunc
-              </span>
+              <Hexagon className="size-5 text-[var(--color-bone-faint)]" strokeWidth={1.5} />
+              <span className="font-display text-lg text-[var(--color-bone-muted)]">hostfunc</span>
               <span className="ml-3 text-xs text-[var(--color-bone-faint)]">
                 © {new Date().getFullYear()}
               </span>

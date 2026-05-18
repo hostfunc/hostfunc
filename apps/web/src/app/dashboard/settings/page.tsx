@@ -19,7 +19,8 @@ export default async function GeneralOrgSettingsPage() {
             General Settings <ShieldCheck className="h-6 w-6 text-[var(--color-amber)]" />
           </h3>
           <p className="mt-2 max-w-xl leading-relaxed text-[var(--color-bone-muted)]">
-            Update workspace identity details used throughout your dashboard, links, and user-facing surfaces.
+            Update workspace identity details used throughout your dashboard, links, and user-facing
+            surfaces.
           </p>
         </div>
       </div>

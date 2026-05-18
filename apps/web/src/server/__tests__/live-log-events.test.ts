@@ -27,4 +27,3 @@ test("clampBackfillLimit defaults and bounds values", () => {
   assert.equal(clampBackfillLimit("-10"), 0);
   assert.equal(clampBackfillLimit("25"), 25);
 });
-

@@ -6,6 +6,7 @@ import {
   SettingsCardHeader,
   SettingsCardTitle,
 } from "@/components/settings/settings-card";
+import { SaveButton, SettingsForm } from "@/components/settings/settings-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,13 +20,13 @@ import { getEffectivePlan } from "@/server/plans";
 import { FileCode2, Globe, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MarketplaceReadmeEditor } from "./marketplace-readme-editor";
 import {
-  updateFunctionDescriptionAction,
-  updateFunctionSlugAction,
-  updateFunctionMarketplaceProfileAction,
-  updateFunctionVisibilityAction,
+  updateFunctionDescriptionStateAction,
+  updateFunctionMarketplaceProfileStateAction,
+  updateFunctionSlugStateAction,
+  updateFunctionVisibilityStateAction,
 } from "../actions";
+import { MarketplaceReadmeEditor } from "./marketplace-readme-editor";
 
 export default async function GeneralFunctionSettingsPage({
   params,
@@ -68,7 +69,7 @@ export default async function GeneralFunctionSettingsPage({
               on Pro and Team plans.
             </SettingsCardDescription>
           </SettingsCardHeader>
-          <form action={updateFunctionVisibilityAction}>
+          <SettingsForm action={updateFunctionVisibilityStateAction}>
             <SettingsCardContent>
               <input type="hidden" name="fnId" value={fn.id} />
               <input type="hidden" name="visibility" value={fn.visibility} />
@@ -109,16 +110,12 @@ export default async function GeneralFunctionSettingsPage({
                   : "This function is public and can be listed in the marketplace."}
               </p>
               {privateLocked ? (
-                <Button
-                  asChild
-                  variant="glass"
-                  className="rounded-full px-5"
-                >
+                <Button asChild variant="glass" className="rounded-full px-5">
                   <Link href="/dashboard/settings/billing">Upgrade for private</Link>
                 </Button>
               ) : null}
             </SettingsCardFooter>
-          </form>
+          </SettingsForm>
         </SettingsCard>
 
         <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/70 shadow-xl">
@@ -132,7 +129,7 @@ export default async function GeneralFunctionSettingsPage({
               they are published.
             </SettingsCardDescription>
           </SettingsCardHeader>
-          <form action={updateFunctionMarketplaceProfileAction}>
+          <SettingsForm action={updateFunctionMarketplaceProfileStateAction}>
             <SettingsCardContent className="space-y-4">
               <input type="hidden" name="fnId" value={fn.id} />
               <div className="grid gap-2">
@@ -176,22 +173,13 @@ export default async function GeneralFunctionSettingsPage({
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="marketplaceReadme">README</Label>
-                <MarketplaceReadmeEditor
-                  name="readme"
-                  initialValue={profile?.readme ?? ""}
-                />
+                <MarketplaceReadmeEditor name="readme" initialValue={profile?.readme ?? ""} />
               </div>
             </SettingsCardContent>
             <SettingsCardFooter className="justify-end">
-              <Button
-                type="submit"
-                variant="glass"
-                className="rounded-full px-5"
-              >
-                Save Marketplace Profile
-              </Button>
+              <SaveButton label="Save Marketplace Profile" className="rounded-full px-5" />
             </SettingsCardFooter>
-          </form>
+          </SettingsForm>
         </SettingsCard>
 
         <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/70 shadow-xl">
@@ -204,7 +192,7 @@ export default async function GeneralFunctionSettingsPage({
               The human-readable name of your function.
             </SettingsCardDescription>
           </SettingsCardHeader>
-          <form action={updateFunctionSlugAction}>
+          <SettingsForm action={updateFunctionSlugStateAction}>
             <SettingsCardContent>
               <input type="hidden" name="fnId" value={fn.id} />
               <div className="grid max-w-sm gap-2">
@@ -221,15 +209,9 @@ export default async function GeneralFunctionSettingsPage({
               </div>
             </SettingsCardContent>
             <SettingsCardFooter className="justify-end">
-              <Button
-                type="submit"
-                variant="glass"
-                className="rounded-full px-5"
-              >
-                Save Name
-              </Button>
+              <SaveButton label="Save Name" className="rounded-full px-5" />
             </SettingsCardFooter>
-          </form>
+          </SettingsForm>
         </SettingsCard>
 
         <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/70 shadow-xl">
@@ -239,7 +221,7 @@ export default async function GeneralFunctionSettingsPage({
               Provide a short summary of what this function does.
             </SettingsCardDescription>
           </SettingsCardHeader>
-          <form action={updateFunctionDescriptionAction}>
+          <SettingsForm action={updateFunctionDescriptionStateAction}>
             <SettingsCardContent>
               <input type="hidden" name="fnId" value={fn.id} />
               <div className="grid max-w-lg gap-2">
@@ -256,15 +238,9 @@ export default async function GeneralFunctionSettingsPage({
               </div>
             </SettingsCardContent>
             <SettingsCardFooter className="justify-end">
-              <Button
-                type="submit"
-                variant="glass"
-                className="rounded-full px-5"
-              >
-                Save Description
-              </Button>
+              <SaveButton label="Save Description" className="rounded-full px-5" />
             </SettingsCardFooter>
-          </form>
+          </SettingsForm>
         </SettingsCard>
 
         <SettingsCard className="rounded-2xl border-red-500/25 bg-red-500/10 shadow-xl">

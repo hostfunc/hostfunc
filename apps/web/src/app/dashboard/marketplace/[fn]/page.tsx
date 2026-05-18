@@ -32,7 +32,7 @@ export default async function DashboardMarketplaceFunctionPage({
   const readmeHtml = fn.readme ? renderMarketplaceReadme(fn.readme, fn.id) : "";
 
   return (
-    <div className="mx-auto max-w-7xl animate-in space-y-8 fade-in duration-500">
+    <div className="mx-auto max-w-screen-2xl animate-in space-y-8 fade-in duration-500">
       <Button
         asChild
         variant="ghost"

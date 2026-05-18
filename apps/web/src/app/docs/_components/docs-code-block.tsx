@@ -90,8 +90,7 @@ function tokenizeLine(
     typescript:
       /(\/\/.*$|"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|`(?:\\.|[^`])*`|\b(?:import|export|default|async|await|function|return|const|let|var|if|else|try|catch|throw|new|class|interface|type|extends|implements|from|as|true|false|null|undefined)\b|\b(?:number|string|boolean|unknown|void|Record|Promise|Date)\b|\b\d+(?:\.\d+)?\b|\b[A-Za-z_$][A-Za-z0-9_$]*\s*(?=\())/g,
     bash: /(#.*$|"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?|--?[A-Za-z0-9-]+|\b(?:npm|pnpm|npx|hostfunc|curl|node|export|cat|echo|cd|ls|pwd|git|docker)\b|\|\||&&|[|><])/g,
-    json:
-      /("(?:\\.|[^"])*"\s*:|"(?:\\.|[^"])*"|\b(?:true|false|null)\b|\b-?\d+(?:\.\d+)?\b|[{}\[\],:])/g,
+    json: /("(?:\\.|[^"])*"\s*:|"(?:\\.|[^"])*"|\b(?:true|false|null)\b|\b-?\d+(?:\.\d+)?\b|[{}\[\],:])/g,
   };
 
   const regex = patterns[language];
@@ -125,7 +124,8 @@ function getTokenClass(language: "typescript" | "bash" | "json", token: string):
     if (token.startsWith('"') || token.startsWith("'") || token.startsWith("`"))
       return "token string";
     if (/^[A-Za-z_$][A-Za-z0-9_$]*\s*(?=\()/.test(token)) return "token function";
-    if (/^(number|string|boolean|unknown|void|Record|Promise|Date)$/.test(token)) return "token type";
+    if (/^(number|string|boolean|unknown|void|Record|Promise|Date)$/.test(token))
+      return "token type";
     if (/^\d/.test(token)) return "token number";
     if (/^(true|false|null|undefined)$/.test(token)) return "token keyword";
     if (/^[@${}.:[\],()]+$/.test(token)) return "token punctuation";

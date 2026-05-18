@@ -68,11 +68,7 @@
   html::-webkit-scrollbar-thumb,
   body::-webkit-scrollbar-thumb,
   *::-webkit-scrollbar-thumb {
-    background: linear-gradient(
-      180deg,
-      rgba(244, 183, 62, 0.96) 0%,
-      rgba(232, 163, 23, 0.82) 100%
-    );
+    background: linear-gradient(180deg, rgba(244, 183, 62, 0.96) 0%, rgba(232, 163, 23, 0.82) 100%);
     border: 2px solid rgba(10, 9, 8, 0.65);
     border-radius: 999px;
   }
@@ -80,11 +76,7 @@
   html::-webkit-scrollbar-thumb:hover,
   body::-webkit-scrollbar-thumb:hover,
   *::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(
-      180deg,
-      rgba(250, 210, 114, 1) 0%,
-      rgba(244, 183, 62, 0.92) 100%
-    );
+    background: linear-gradient(180deg, rgba(250, 210, 114, 1) 0%, rgba(244, 183, 62, 0.92) 100%);
   }
 
   html::-webkit-scrollbar-corner,
@@ -127,25 +119,12 @@
   }
 
   .glow-amber {
-    box-shadow:
-      0 0 0 1px rgba(232, 163, 23, 0.2),
-      0 0 30px rgba(232, 163, 23, 0.08),
-      0 0 80px rgba(232, 163, 23, 0.04);
-  }
-
-  .border-grid {
-    background-image:
-      linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-    background-size: 64px 64px;
+    box-shadow: 0 0 0 1px rgba(232, 163, 23, 0.2), 0 0 30px rgba(232, 163, 23, 0.08), 0 0 80px
+      rgba(232, 163, 23, 0.04);
   }
 
   .gradient-radial-amber {
-    background: radial-gradient(
-      ellipse at 50% 0%,
-      rgba(232, 163, 23, 0.12) 0%,
-      transparent 60%
-    );
+    background: radial-gradient(ellipse at 50% 0%, rgba(232, 163, 23, 0.12) 0%, transparent 60%);
   }
 
   .docs-code .token.comment {

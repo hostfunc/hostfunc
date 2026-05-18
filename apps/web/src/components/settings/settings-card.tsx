@@ -24,7 +24,15 @@ export function SettingsCardHeader({ className, ...props }: SettingsCardHeaderPr
 interface SettingsCardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {}
 
 export function SettingsCardTitle({ className, ...props }: SettingsCardTitleProps) {
-  return <h3 className={cn("font-semibold leading-none tracking-tight text-[var(--color-bone)]", className)} {...props} />;
+  return (
+    <h3
+      className={cn(
+        "font-semibold leading-none tracking-tight text-[var(--color-bone)]",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 interface SettingsCardDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {}
@@ -42,5 +50,13 @@ export function SettingsCardContent({ className, ...props }: SettingsCardContent
 interface SettingsCardFooterProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function SettingsCardFooter({ className, ...props }: SettingsCardFooterProps) {
-  return <div className={cn("flex items-center border-t border-[var(--color-border)] bg-white/[0.02] p-6", className)} {...props} />;
+  return (
+    <div
+      className={cn(
+        "flex items-center border-t border-[var(--color-border)] bg-white/[0.02] p-6",
+        className,
+      )}
+      {...props}
+    />
+  );
 }

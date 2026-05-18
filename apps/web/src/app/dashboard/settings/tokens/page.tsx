@@ -1,6 +1,6 @@
+import { KeyRound } from "lucide-react";
 import { getTokens } from "./actions";
 import { TokensClient } from "./tokens-client";
-import { KeyRound } from "lucide-react";
 
 export default async function TokensSettingsPage() {
   const tokens = await getTokens();

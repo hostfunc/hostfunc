@@ -20,7 +20,10 @@ export function UsageStatusBar({
   alerts: UsageAlert[];
 }) {
   const pathname = usePathname();
-  const storageKey = useMemo(() => `hostfunc:usagebar:dismissed:${pathname ?? "dashboard"}`, [pathname]);
+  const storageKey = useMemo(
+    () => `hostfunc:usagebar:dismissed:${pathname ?? "dashboard"}`,
+    [pathname],
+  );
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
@@ -84,7 +87,12 @@ export function UsageStatusBar({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 text-[var(--color-bone)]">Plan: {planName}</Badge>
+            <Badge
+              variant="secondary"
+              className="border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 text-[var(--color-bone)]"
+            >
+              Plan: {planName}
+            </Badge>
             <span className="inline-flex items-center gap-1 text-xs text-[var(--color-bone-muted)]">
               <TrendingUp className="h-3.5 w-3.5" />
               Executions today: {executionsToday.toLocaleString()}

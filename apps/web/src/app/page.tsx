@@ -2,15 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
+import { assertMarketingContent, marketingContent } from "@/lib/marketing-content";
 import { motion } from "framer-motion";
 import {
-  assertMarketingContent,
-  marketingContent,
-} from "@/lib/marketing-content";
-import {
   Activity,
-  ArrowUpRight,
   ArrowRight,
+  ArrowUpRight,
   Calendar,
   Check,
   Code,
@@ -21,6 +18,7 @@ import {
   Lock,
   PlugZap,
   Server,
+  ShieldCheck,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -65,9 +63,7 @@ export default function HomePage() {
         <div className="flex w-full items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
             <Hexagon className="size-5 text-[var(--color-amber)]" strokeWidth={1.5} />
-            <span className="font-display text-xl text-[var(--color-bone)]">
-              hostfunc
-            </span>
+            <span className="font-display text-xl text-[var(--color-bone)]">hostfunc</span>
           </Link>
           <nav className="hidden items-center gap-7 md:flex">
             {marketingContent.navLinks.map((link) => (
@@ -157,7 +153,7 @@ export default function HomePage() {
             <h1 className="mt-10 text-balance font-display text-5xl leading-[1.02] tracking-tight text-[var(--color-bone)] md:text-7xl lg:text-[88px]">
               {marketingContent.headlineLead}{" "}
               <em className="not-italic text-[var(--color-amber)]">
-                <span className="italic">{marketingContent.headlineEmphasis}</span>
+                {marketingContent.headlineEmphasis}
               </em>{" "}
               <span className="text-[var(--color-bone-muted)]">
                 {marketingContent.headlineTail}
@@ -224,9 +220,7 @@ export default function HomePage() {
               {marketingContent.agentPitch.eyebrow}
             </div>
             <h2 className="mt-4 text-balance font-display text-4xl leading-[1.05] text-[var(--color-bone)] md:text-6xl">
-              <span className="italic">
-                {marketingContent.agentPitch.headline}
-              </span>
+              {marketingContent.agentPitch.headline}
             </h2>
             <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
               {marketingContent.agentPitch.body}
@@ -250,9 +244,7 @@ export default function HomePage() {
                 key={pillar.title}
                 className="rounded-xl border border-[var(--color-border)] bg-white/[0.02] p-6"
               >
-                <h3 className="font-display text-xl text-[var(--color-bone)]">
-                  {pillar.title}
-                </h3>
+                <h3 className="font-display text-xl text-[var(--color-bone)]">{pillar.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-[var(--color-bone-muted)]">
                   {pillar.body}
                 </p>
@@ -269,10 +261,7 @@ export default function HomePage() {
             eyebrow="Triggers"
             title={
               <>
-                Four ways in.{" "}
-                <span className="italic text-[var(--color-bone-muted)]">
-                  All unified.
-                </span>
+                Four ways in. <span className="text-[var(--color-bone-muted)]">All unified.</span>
               </>
             }
             body="HTTP for webhooks, cron for schedules, email for inbound mail, MCP for agents. Every trigger flows through the same dispatch path — same secrets, same observability, same egress control."
@@ -288,7 +277,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-screen-2xl px-6">
           <SectionHeader
             eyebrow={marketingContent.composition.eyebrow}
-            title={<span className="italic">{marketingContent.composition.headline}</span>}
+            title={marketingContent.composition.headline}
             body={marketingContent.composition.body}
           />
           <div className="mt-16 grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-center">
@@ -315,7 +304,7 @@ export default function HomePage() {
                 {marketingContent.cli.eyebrow}
               </div>
               <h2 className="mt-4 text-balance font-display text-4xl leading-[1.05] text-[var(--color-bone)] md:text-5xl">
-                <span className="italic">{marketingContent.cli.headline}</span>
+                {marketingContent.cli.headline}
               </h2>
               <p className="mt-6 max-w-md text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
                 {marketingContent.cli.body}
@@ -332,11 +321,10 @@ export default function HomePage() {
 
       {/* ────────────────────────── ARCHITECTURE ──────────────────────────────── */}
       <section className="relative overflow-hidden border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
-        <div className="border-grid pointer-events-none absolute inset-0 opacity-50" />
         <div className="mx-auto max-w-screen-2xl px-6">
           <SectionHeader
             eyebrow={marketingContent.architecture.eyebrow}
-            title={<span className="italic">{marketingContent.architecture.headline}</span>}
+            title={marketingContent.architecture.headline}
             body={marketingContent.architecture.body}
           />
           <div className="mt-20">
@@ -353,7 +341,7 @@ export default function HomePage() {
             title={
               <>
                 One-click OAuth.{" "}
-                <span className="italic text-[var(--color-bone-muted)]">
+                <span className="text-[var(--color-bone-muted)]">
                   Tokens stored, secrets shared.
                 </span>
               </>
@@ -371,12 +359,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-screen-2xl px-6 text-center">
           <SectionHeader
             eyebrow="Templates"
-            title={
-              <>
-                Don't start from blank.{" "}
-                <span className="italic">Fork it.</span>
-              </>
-            }
+            title={<>Don't start from blank. Fork it.</>}
             body="A curated gallery of starting points with secrets and triggers pre-wired. One click, you're in your editor with working code."
             center
           />
@@ -394,9 +377,7 @@ export default function HomePage() {
             title={
               <>
                 Everything you need.{" "}
-                <span className="italic text-[var(--color-bone-muted)]">
-                  Nothing you don't.
-                </span>
+                <span className="text-[var(--color-bone-muted)]">Nothing you don't.</span>
               </>
             }
             body="The bundle of capabilities you actually use to ship — without the kitchen-sink platform tax."
@@ -409,10 +390,7 @@ export default function HomePage() {
                   key={feature.title}
                   className="group relative bg-[var(--color-ink)] p-7 transition-colors hover:bg-[var(--color-ink-elevated)]"
                 >
-                  <Icon
-                    className="size-5 text-[var(--color-amber)]"
-                    strokeWidth={1.5}
-                  />
+                  <Icon className="size-5 text-[var(--color-amber)]" strokeWidth={1.5} />
                   <h3 className="mt-5 font-display text-xl text-[var(--color-bone)]">
                     {feature.title}
                   </h3>
@@ -434,7 +412,7 @@ export default function HomePage() {
             title={
               <>
                 {marketingContent.pricing.headline.split(".")[0]}.{" "}
-                <span className="italic text-[var(--color-bone-muted)]">
+                <span className="text-[var(--color-bone-muted)]">
                   {marketingContent.pricing.headline.split(".").slice(1).join(".").trim()}
                 </span>
               </>
@@ -457,9 +435,13 @@ export default function HomePage() {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-[var(--color-bone-faint)]">{plan.name}</p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-[var(--color-bone-faint)]">
+                      {plan.name}
+                    </p>
                     <div className="mt-3 flex items-baseline gap-1">
-                      <span className="font-display text-4xl leading-none text-[var(--color-bone)]">{plan.priceMonthly}</span>
+                      <span className="font-display text-4xl leading-none text-[var(--color-bone)]">
+                        {plan.priceMonthly}
+                      </span>
                       <span className="text-sm text-[var(--color-bone-muted)]">/month</span>
                     </div>
                   </div>
@@ -470,15 +452,22 @@ export default function HomePage() {
                   ) : null}
                 </div>
 
-                <p className="mt-4 text-sm leading-relaxed text-[var(--color-bone-muted)]">{plan.description}</p>
+                <p className="mt-4 text-sm leading-relaxed text-[var(--color-bone-muted)]">
+                  {plan.description}
+                </p>
 
                 <div className="mt-6 space-y-3">
-                  {[plan.executionsPerDay, plan.workspaces, plan.teamMembers, plan.runtime].map((item) => (
-                    <div key={`${plan.slug}-${item}`} className="flex items-center gap-2 text-sm text-[var(--color-bone)]">
-                      <Check className="size-4 text-[var(--color-amber)]" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
+                  {[plan.executionsPerDay, plan.workspaces, plan.teamMembers, plan.runtime].map(
+                    (item) => (
+                      <div
+                        key={`${plan.slug}-${item}`}
+                        className="flex items-center gap-2 text-sm text-[var(--color-bone)]"
+                      >
+                        <Check className="size-4 text-[var(--color-amber)]" />
+                        <span>{item}</span>
+                      </div>
+                    ),
+                  )}
                 </div>
 
                 <Button
@@ -510,9 +499,7 @@ export default function HomePage() {
                 {marketingContent.community.eyebrow}
               </div>
               <h2 className="mt-4 text-balance font-display text-4xl leading-[1.05] text-[var(--color-bone)] md:text-5xl">
-                <span className="italic">
-                  {marketingContent.community.headline}
-                </span>
+                {marketingContent.community.headline}
               </h2>
               <p className="mt-6 text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
                 {marketingContent.community.body}
@@ -525,6 +512,9 @@ export default function HomePage() {
                   className="rounded-full border-[var(--color-border-strong)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]"
                 >
                   <Link href="https://github.com/hostfunc/hostfunc">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
+                      <path d="M12 .5C5.65.5.5 5.65.5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56l-.01-1.98c-3.2.7-3.88-1.37-3.88-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.15.08 1.76 1.2 1.76 1.2 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.72-1.53-2.56-.3-5.24-1.28-5.24-5.7 0-1.26.45-2.3 1.2-3.1-.12-.3-.52-1.5.11-3.12 0 0 .98-.32 3.2 1.19a10.9 10.9 0 0 1 5.82 0c2.22-1.5 3.2-1.19 3.2-1.19.63 1.62.23 2.82.11 3.12.75.8 1.2 1.84 1.2 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.08.78 2.18l-.01 3.23c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z" />
+                    </svg>
                     Star on GitHub
                   </Link>
                 </Button>
@@ -534,22 +524,85 @@ export default function HomePage() {
                   size="lg"
                   className="rounded-full text-[var(--color-bone-muted)] hover:bg-white/[0.04] hover:text-[var(--color-bone)]"
                 >
-                  <Link href="https://discord.gg/hostfunc">Join Discord</Link>
+                  <Link href="https://discord.gg/hostfunc">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
+                      <path d="M20.317 4.369A19.79 19.79 0 0 0 16.558 3.2a.07.07 0 0 0-.073.035c-.211.375-.444.864-.608 1.249a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.249.072.072 0 0 0-.073-.035 19.736 19.736 0 0 0-3.76 1.169.067.067 0 0 0-.03.027C2.533 8.043 1.872 11.612 2.197 15.138a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.029.073.073 0 0 0 .079-.026c.461-.63.873-1.295 1.226-1.994a.07.07 0 0 0-.038-.097 13.1 13.1 0 0 1-1.872-.892.072.072 0 0 1-.007-.119c.126-.094.252-.192.372-.291a.07.07 0 0 1 .073-.01c3.928 1.793 8.18 1.793 12.061 0a.07.07 0 0 1 .074.009c.12.099.246.198.373.292a.072.072 0 0 1-.006.119 12.3 12.3 0 0 1-1.873.891.072.072 0 0 0-.038.098c.36.699.772 1.364 1.225 1.993a.071.071 0 0 0 .079.027 19.84 19.84 0 0 0 6.002-3.029.072.072 0 0 0 .031-.055c.389-4.077-.652-7.616-2.759-10.741a.057.057 0 0 0-.029-.028ZM8.02 12.99c-1.182 0-2.157-1.085-2.157-2.419 0-1.333.956-2.418 2.157-2.418 1.21 0 2.176 1.094 2.157 2.418 0 1.334-.957 2.419-2.157 2.419Zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.176 1.094 2.157 2.418 0 1.334-.946 2.419-2.157 2.419Z" />
+                    </svg>
+                    Join Discord
+                  </Link>
                 </Button>
               </div>
             </div>
             <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink)] p-8">
               <dl className="grid gap-6 sm:grid-cols-2">
-                {marketingContent.community.facts.map((fact) => (
-                  <div key={fact.label}>
-                    <dt className="text-xs uppercase tracking-widest text-[var(--color-bone-faint)]">
-                      {fact.label}
-                    </dt>
-                    <dd className="mt-2 font-display text-2xl italic text-[var(--color-bone)]">
-                      {fact.value}
-                    </dd>
-                  </div>
-                ))}
+                <div>
+                  <dt className="text-xs uppercase tracking-widest text-[var(--color-bone-faint)]">
+                    License
+                  </dt>
+                  <dd className="mt-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 font-mono text-sm font-medium text-emerald-200">
+                      <ShieldCheck className="size-3.5" />
+                      AGPL-3.0
+                    </span>
+                  </dd>
+                </div>
+
+                <div>
+                  <dt className="text-xs uppercase tracking-widest text-[var(--color-bone-faint)]">
+                    Status
+                  </dt>
+                  <dd className="mt-3">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/35 bg-amber-500/12 px-3 py-1.5 text-sm font-medium text-amber-200">
+                      <span className="relative flex size-2">
+                        <span className="absolute inline-flex size-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                        <span className="relative inline-flex size-2 rounded-full bg-amber-400" />
+                      </span>
+                      Alpha
+                    </span>
+                  </dd>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <dt className="text-xs uppercase tracking-widest text-[var(--color-bone-faint)]">
+                    Stack
+                  </dt>
+                  <dd className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-[#3178C6]/40 bg-[#3178C6]/12 px-3 py-1.5 text-sm font-medium text-[#7CB7F0]">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-[#3178C6]">
+                        <rect width="24" height="24" rx="3" />
+                        <path
+                          d="M9.506 12.104h2.86v7.62h1.808v-7.62h2.861v-1.566H9.506v1.566zm12.092 4.66c-.083-.119-.207-.243-.373-.374a5.597 5.597 0 0 0-.807-.444 27.72 27.72 0 0 0-1.007-.436c-.918-.383-1.602-.852-2.053-1.405-.45-.553-.676-1.222-.676-2.005 0-.614.123-1.141.369-1.582.246-.441.58-.804 1.004-1.089a4.494 4.494 0 0 1 1.47-.629 7.536 7.536 0 0 1 1.77-.201c.612 0 1.154.037 1.627.111a6.38 6.38 0 0 1 1.306.34v2.458a3.95 3.95 0 0 0-.643-.361 5.093 5.093 0 0 0-.717-.26 5.453 5.453 0 0 0-1.426-.2c-.3 0-.573.028-.819.086a2.1 2.1 0 0 0-.623.242c-.17.104-.3.229-.393.374a.888.888 0 0 0-.14.49c0 .196.053.373.156.529.104.156.252.304.443.444.191.14.423.276.696.41.273.135.582.274.926.416.47.197.892.407 1.266.628.374.222.695.473.963.753.268.279.472.598.614.957.142.359.214.776.214 1.253 0 .657-.125 1.21-.373 1.656a3.033 3.033 0 0 1-1.012 1.085 4.38 4.38 0 0 1-1.487.596c-.566.12-1.163.18-1.79.18a9.916 9.916 0 0 1-1.84-.164 5.544 5.544 0 0 1-1.512-.493v-2.63a5.033 5.033 0 0 0 3.237 1.2c.333 0 .624-.03.872-.09.249-.06.456-.144.623-.25.166-.108.29-.234.373-.38a1.023 1.023 0 0 0-.074-1.089z"
+                          fill="#fff"
+                        />
+                      </svg>
+                      TypeScript
+                    </span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] px-3 py-1.5 text-sm font-medium text-[var(--color-bone)]">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
+                        <path d="M11.572 0c-.176 0-.31.001-.358.007a19.76 19.76 0 0 1-.364.033C7.443.346 4.25 2.185 2.228 5.012a11.875 11.875 0 0 0-2.119 5.243c-.096.659-.108.854-.108 1.747s.012 1.089.108 1.748c.652 4.506 3.86 8.292 8.209 9.695.779.25 1.6.422 2.534.525.363.04 1.935.04 2.299 0 1.611-.178 2.977-.577 4.323-1.264.207-.106.247-.134.219-.158-.02-.013-.9-1.193-1.955-2.62l-1.919-2.592-2.404-3.558a338.739 338.739 0 0 0-2.422-3.556c-.009-.002-.018 1.579-.023 3.51-.007 3.38-.01 3.515-.052 3.595a.426.426 0 0 1-.206.214c-.075.037-.14.044-.495.044H7.81l-.108-.068a.438.438 0 0 1-.157-.171l-.05-.105.005-4.704.007-4.706.073-.092a.645.645 0 0 1 .174-.143c.096-.047.134-.051.54-.051.478 0 .558.018.682.154.035.038 1.337 1.999 2.895 4.361a10760.433 10760.433 0 0 0 4.735 7.17l1.9 2.879.096-.063a12.317 12.317 0 0 0 2.466-2.163 11.944 11.944 0 0 0 2.824-6.134c.096-.66.108-.854.108-1.748 0-.893-.012-1.088-.108-1.747-.652-4.506-3.859-8.292-8.208-9.695a12.597 12.597 0 0 0-2.499-.523A33.119 33.119 0 0 0 11.573 0zm4.069 7.217c.347 0 .408.005.486.047a.473.473 0 0 1 .237.277c.018.06.023 1.365.018 4.304l-.006 4.218-.744-1.14-.746-1.14v-3.066c0-1.982.01-3.097.023-3.15a.478.478 0 0 1 .233-.296c.096-.05.13-.054.5-.054z" />
+                      </svg>
+                      Next.js 16
+                    </span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-[#F38020]/40 bg-[#F38020]/12 px-3 py-1.5 text-sm font-medium text-[#F4B47A]">
+                      <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-[#F38020]">
+                        <path d="M16.5088 16.8447l.1607-.5555c.1916-.6611.1196-1.2691-.2036-1.7167-.297-.4119-.7925-.6535-1.395-.6834l-11.41-.1448a.2255.2255 0 0 1-.1797-.0952.2273.2273 0 0 1-.0235-.2056.305.305 0 0 1 .2683-.2026l11.515-.1457c1.3666-.0623 2.8461-1.1681 3.3637-2.5159l.6571-1.711a.4.4 0 0 0 .0247-.2059A7.4083 7.4083 0 0 0 11.7164 4.5538a7.4081 7.4081 0 0 0-6.9656 4.6722 3.3308 3.3308 0 0 0-2.3322-.6443A3.3527 3.3527 0 0 0 .0185 12.1842 3.3517 3.3517 0 0 0 .0095 12.2754c0 .1685.0142.3361.0265.5028.0029.0419.0345.0758.0762.0758H15.945c.001 0 .0019-.0004.0026-.0008.013-.0017.0244-.0091.0317-.0202l.5295-1.0083zm3.4477-6.4938c-.1027 0-.2055.0029-.3084.0084a.1297.1297 0 0 0-.1162.0911l-.4502 1.5511c-.1916.6611-.1196 1.2691.2036 1.7167.297.4119.7925.6535 1.395.6834l2.434.1448a.2253.2253 0 0 1 .1782.0922c.0367.0511.0476.1175.0263.1788a.3057.3057 0 0 1-.2683.203l-2.5318.1457c-1.373.0623-2.8461 1.1681-3.3637 2.5159l-.1828.4727a.0892.0892 0 0 0 .0794.1207h8.7115a.1304.1304 0 0 0 .1262-.0918 6.3017 6.3017 0 0 0 .2342-1.708c0-3.4855-2.8249-6.3104-6.3104-6.3104z" />
+                      </svg>
+                      Cloudflare
+                    </span>
+                  </dd>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <dt className="text-xs uppercase tracking-widest text-[var(--color-bone-faint)]">
+                    Self-host
+                  </dt>
+                  <dd className="mt-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-sm font-medium text-sky-200">
+                      <Server className="size-3.5" />
+                      Docker Compose
+                    </span>
+                  </dd>
+                </div>
               </dl>
             </div>
           </div>
@@ -561,7 +614,7 @@ export default function HomePage() {
         <div className="gradient-radial-amber pointer-events-none absolute inset-x-0 bottom-0 top-0" />
         <div className="relative mx-auto max-w-4xl px-6 text-center">
           <h2 className="text-balance font-display text-5xl leading-[1.02] text-[var(--color-bone)] md:text-7xl">
-            <span className="italic">{marketingContent.closer.headline}</span>
+            {marketingContent.closer.headline}
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
             {marketingContent.closer.body}
@@ -586,13 +639,8 @@ export default function HomePage() {
         <div className="w-full px-6">
           <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
             <div className="flex items-center gap-2">
-              <Hexagon
-                className="size-5 text-[var(--color-bone-faint)]"
-                strokeWidth={1.5}
-              />
-              <span className="font-display text-lg text-[var(--color-bone-muted)]">
-                hostfunc
-              </span>
+              <Hexagon className="size-5 text-[var(--color-bone-faint)]" strokeWidth={1.5} />
+              <span className="font-display text-lg text-[var(--color-bone-muted)]">hostfunc</span>
               <span className="ml-3 text-xs text-[var(--color-bone-faint)]">
                 © {new Date().getFullYear()}
               </span>
@@ -633,9 +681,7 @@ function SectionHeader({
 }) {
   return (
     <div className={center ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
-      <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-amber)]">
-        {eyebrow}
-      </div>
+      <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-amber)]">{eyebrow}</div>
       <h2 className="mt-4 text-balance font-display text-4xl leading-[1.05] text-[var(--color-bone)] md:text-5xl">
         {title}
       </h2>

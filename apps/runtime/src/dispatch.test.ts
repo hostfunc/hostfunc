@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeLookup } from "./dispatch";
+import { normalizeLookup, securityHeaders } from "./dispatch";
 
 test("normalizeLookup defaults missing httpRequireAuth to false", () => {
   const normalized = normalizeLookup({
@@ -33,4 +33,9 @@ test("normalizeLookup preserves explicit httpRequireAuth=true", () => {
     throw new Error("expected lookup result");
   }
   assert.equal(normalized.httpRequireAuth, true);
+});
+
+test("securityHeaders includes 1-year HSTS with includeSubDomains and no preload", () => {
+  const headers = securityHeaders();
+  assert.equal(headers["strict-transport-security"], "max-age=31536000; includeSubDomains");
 });

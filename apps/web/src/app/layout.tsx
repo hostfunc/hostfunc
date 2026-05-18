@@ -11,8 +11,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning
-    className={`${geist.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${geist.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}
+    >
       <body>
         <Providers>{children}</Providers>
       </body>

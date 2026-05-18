@@ -85,6 +85,20 @@
       "when": 1777561200000,
       "tag": "0011_public_http_default",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1778025600000,
+      "tag": "0012_enable_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1778025700000,
+      "tag": "0013_fk_indexes",
+      "breakpoints": true
     }
   ]
 }

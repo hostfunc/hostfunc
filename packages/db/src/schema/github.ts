@@ -1,4 +1,14 @@
-import { boolean, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { user } from "./auth.js";
 import { fn } from "./functions.js";
 import { organization } from "./organizations.js";
@@ -52,7 +62,10 @@ export const githubRepoAccess = pgTable(
     defaultBranch: text("default_branch").notNull(),
     isPrivate: boolean("is_private").notNull().default(false),
     isArchived: boolean("is_archived").notNull().default(false),
-    permissionsJson: jsonb("permissions_json").$type<Record<string, boolean>>().notNull().default({}),
+    permissionsJson: jsonb("permissions_json")
+      .$type<Record<string, boolean>>()
+      .notNull()
+      .default({}),
     lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }).notNull().defaultNow(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

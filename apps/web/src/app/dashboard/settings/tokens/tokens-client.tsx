@@ -2,8 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createToken, revokeToken } from "./actions";
 import { useState, useTransition } from "react";
+import { createToken, revokeToken } from "./actions";
 
 interface TokenRow {
   id: string;
@@ -66,10 +66,15 @@ export function TokensClient({ initialTokens }: { initialTokens: TokenRow[] }) {
             <div className="p-6 text-sm text-[var(--color-bone-muted)]">No tokens yet.</div>
           ) : (
             tokens.map((token) => (
-              <div key={token.id} className="flex items-center justify-between px-6 py-4 text-sm text-[var(--color-bone)]">
+              <div
+                key={token.id}
+                className="flex items-center justify-between px-6 py-4 text-sm text-[var(--color-bone)]"
+              >
                 <div>
                   <p className="font-medium text-[var(--color-bone)]">{token.name}</p>
-                  <p className="font-mono text-xs text-[var(--color-bone-faint)]">{token.prefix}...</p>
+                  <p className="font-mono text-xs text-[var(--color-bone-faint)]">
+                    {token.prefix}...
+                  </p>
                 </div>
                 <Button
                   variant="outline"

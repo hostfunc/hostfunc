@@ -25,8 +25,9 @@ export default async function FunctionLineagePage({
       <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-5">
         <h1 className="font-display text-2xl text-[var(--color-bone)]">Execution Lineage</h1>
         <p className="mt-2 text-sm text-[var(--color-bone-muted)]">
-          Ancestor/descendant call-chain for <span className="font-mono text-[var(--color-bone)]">{fn.slug}</span>.
-          Select a root execution to inspect edge weights, error paths, and call depth.
+          Ancestor/descendant call-chain for{" "}
+          <span className="font-mono text-[var(--color-bone)]">{fn.slug}</span>. Select a root
+          execution to inspect edge weights, error paths, and call depth.
         </p>
       </div>
       <ExecutionLineageGraph

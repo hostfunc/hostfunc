@@ -596,7 +596,7 @@ export function FileTree({
               {node.children.map((child) => renderNode(child, depth + 1))}
               {node.children.length === 0 && !(pending && pending.parent === node.path) ? (
                 <div
-                  className="px-2 py-[5px] text-[10px] italic text-slate-500"
+                  className="px-2 py-[5px] text-[10px] text-slate-500"
                   style={{ paddingLeft: `${(depth + 1) * 14 + 6}px` }}
                 >
                   empty folder

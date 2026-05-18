@@ -4,6 +4,7 @@ import { deployFunction } from "@/app/dashboard/[fn]/actions";
 import { Button } from "@/components/ui/button";
 import { isQuotaLimitError, openUpgradeModal } from "@/lib/upgrade-modal";
 import { Cloud, Copy } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -18,6 +19,7 @@ type DeployState =
 
 export function DeployButton({ fnId, onDeploy }: { fnId: string; onDeploy: () => Promise<void> }) {
   const [state, setState] = useState<DeployState>({ phase: "idle" });
+  const router = useRouter();
 
   async function handleClick() {
     try {
@@ -37,6 +39,15 @@ export function DeployButton({ fnId, onDeploy }: { fnId: string; onDeploy: () =>
       });
       toast.success("Deployed", {
         description: result.versionId.slice(0, 16),
+      });
+      toast.warning("Heads up: don't ship secrets in code", {
+        description:
+          "Your source is bundled to the edge. Use Environment Variables for API keys and tokens.",
+        duration: 8000,
+        action: {
+          label: "Open secrets",
+          onClick: () => router.push(`/dashboard/${fnId}/settings/secrets`),
+        },
       });
     } catch (e) {
       const reason = e instanceof Error ? e.message : "unknown error";
@@ -101,9 +112,7 @@ export function DeployButton({ fnId, onDeploy }: { fnId: string; onDeploy: () =>
   );
 }
 
-function parseDeployPlanLimit(
-  reason: string,
-): { maxActiveFunctions: number } | null {
+function parseDeployPlanLimit(reason: string): { maxActiveFunctions: number } | null {
   const match = reason.match(/^plan_limit_exceeded:max_active_functions:(\d+)$/);
   if (!match) return null;
   const maxActiveFunctions = Number.parseInt(match[1] ?? "", 10);

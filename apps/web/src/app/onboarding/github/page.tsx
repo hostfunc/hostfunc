@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
 import { GithubOauthConnectButton } from "@/components/github/oauth-connect-button";
+import { Button } from "@/components/ui/button";
 import { getGithubConsentState } from "@/lib/session";
 import { getGithubInstallationStatus } from "@/server/github-integrations";
 import { CheckCircle2, ShieldCheck } from "lucide-react";
@@ -29,7 +29,10 @@ export default async function GithubOnboardingPage({
             Your workspace now has GitHub repository access. Continue to your dashboard.
           </p>
           <div className="mt-6">
-            <Button asChild className="bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]">
+            <Button
+              asChild
+              className="bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
+            >
               <Link href="/dashboard">Continue to dashboard</Link>
             </Button>
           </div>
@@ -50,13 +53,17 @@ export default async function GithubOnboardingPage({
               className="h-5 w-5 object-contain"
             />
           </div>
-          <h1 className="text-2xl font-semibold text-[var(--color-bone)]">Connect GitHub to continue</h1>
+          <h1 className="text-2xl font-semibold text-[var(--color-bone)]">
+            Connect GitHub to continue
+          </h1>
         </div>
         <p className="text-sm text-[var(--color-bone-muted)]">
-          You signed in with GitHub. To enable repository and branch integration for functions, approve GitHub access for your workspace.
+          You signed in with GitHub. To enable repository and branch integration for functions,
+          approve GitHub access for your workspace.
         </p>
         <p className="mt-2 text-xs text-[var(--color-bone-faint)]">
-          You can skip for now and continue to the dashboard, but GitHub repo/branch actions will stay limited until you connect.
+          You can skip for now and continue to the dashboard, but GitHub repo/branch actions will
+          stay limited until you connect.
         </p>
         <div className="mt-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-ink)]/50 p-3 text-sm text-[var(--color-bone-muted)]">
           <div className="flex items-center gap-2">
@@ -75,7 +82,11 @@ export default async function GithubOnboardingPage({
             label="Connect GitHub"
             className="bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
           />
-          <Button asChild variant="outline" className="border-[var(--color-border)] text-[var(--color-bone)] hover:bg-white/[0.04]">
+          <Button
+            asChild
+            variant="outline"
+            className="border-[var(--color-border)] text-[var(--color-bone)] hover:bg-white/[0.04]"
+          >
             <Link href="/dashboard/settings/integrations">Manage in settings</Link>
           </Button>
           <form action="/api/onboarding/github/skip" method="post">

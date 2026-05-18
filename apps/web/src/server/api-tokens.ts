@@ -1,7 +1,7 @@
 import "server-only";
 
-import { decryptSecret, encryptSecret } from "@/lib/crypto";
 import { generateApiToken, hashApiToken, verifyApiToken } from "@/lib/api-tokens";
+import { decryptSecret, encryptSecret } from "@/lib/crypto";
 import { db, genId, schema } from "@hostfunc/db";
 import { and, eq } from "drizzle-orm";
 
@@ -91,7 +91,10 @@ export async function authenticateApiToken(token: string): Promise<{
   return null;
 }
 
-export async function ensureWorkspaceSdkApiKey(input: { orgId: string; userId: string }): Promise<string> {
+export async function ensureWorkspaceSdkApiKey(input: {
+  orgId: string;
+  userId: string;
+}): Promise<string> {
   const existing = await getWorkspaceSdkApiKey(input.orgId);
   if (existing) return existing;
 
@@ -159,5 +162,8 @@ async function persistWorkspaceSdkApiKey(orgId: string, token: string): Promise<
     },
   };
 
-  await db.update(schema.organization).set({ metadata: JSON.stringify(next) }).where(eq(schema.organization.id, orgId));
+  await db
+    .update(schema.organization)
+    .set({ metadata: JSON.stringify(next) })
+    .where(eq(schema.organization.id, orgId));
 }

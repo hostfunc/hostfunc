@@ -1,8 +1,8 @@
 import "server-only";
 
-import { CloudflareExecutor } from "@hostfunc/executor-cloudflare";
-import { LocalExecutor, type ExecutorBackend } from "@hostfunc/executor-core";
 import { env } from "@/lib/env";
+import { CloudflareExecutor } from "@hostfunc/executor-cloudflare";
+import { type ExecutorBackend, LocalExecutor } from "@hostfunc/executor-core";
 
 declare global {
   var __hostfunc_executor__: ExecutorBackend | undefined;

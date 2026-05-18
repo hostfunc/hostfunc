@@ -58,7 +58,9 @@ export default async function FunctionSettingsExecutionsPage({
     <div className="animate-in space-y-8 fade-in duration-500 pb-10">
       <div className="flex flex-col justify-between gap-6 border-b border-[var(--color-border)] pb-6 md:flex-row md:items-center">
         <div>
-          <h3 className="font-display text-4xl tracking-tight text-[var(--color-bone)]">Executions</h3>
+          <h3 className="font-display text-4xl tracking-tight text-[var(--color-bone)]">
+            Executions
+          </h3>
           <p className="mt-2 max-w-xl leading-relaxed text-[var(--color-bone-muted)]">
             Review recent runs without leaving function settings.
           </p>
@@ -80,7 +82,9 @@ export default async function FunctionSettingsExecutionsPage({
 
       {items.length === 0 ? (
         <div className="grid place-items-center rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-ink-elevated)]/45 py-16 text-center">
-          <h3 className="text-base font-medium text-[var(--color-bone)]">No executions match these filters</h3>
+          <h3 className="text-base font-medium text-[var(--color-bone)]">
+            No executions match these filters
+          </h3>
           <p className="mt-1 text-sm text-[var(--color-bone-muted)]">
             Try removing one or more filters to see recent activity.
           </p>
@@ -99,18 +103,25 @@ export default async function FunctionSettingsExecutionsPage({
             </thead>
             <tbody>
               {items.map((exec) => (
-                <tr key={exec.id} className="border-t border-[var(--color-border)] transition hover:bg-white/[0.03]">
+                <tr
+                  key={exec.id}
+                  className="border-t border-[var(--color-border)] transition hover:bg-white/[0.03]"
+                >
                   <td className="px-4 py-3">
                     <StatusBadge status={exec.status} />
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-[var(--color-bone-faint)]">{exec.triggerKind}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-[var(--color-bone-faint)]">
+                    {exec.triggerKind}
+                  </td>
                   <td className="px-4 py-3 tabular-nums">
                     <div className="flex items-center gap-2">
                       <Clock className="size-3 text-[var(--color-bone-faint)]" />
                       {formatDuration(exec.wallMs)}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-xs text-[var(--color-bone-faint)]">{formatRelative(exec.startedAt)}</td>
+                  <td className="px-4 py-3 text-xs text-[var(--color-bone-faint)]">
+                    {formatRelative(exec.startedAt)}
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <Link
                       href={`/dashboard/${fnId}/executions/${exec.id}`}

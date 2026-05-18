@@ -42,6 +42,9 @@ ENV = "staging"
 WORKERS_SUBDOMAIN = "staging-run.hostfunc.io"
 LOOKUP_API_URL = "https://staging.hostfunc.io"
 RUNTIME_PUBLIC_URL = "https://staging-run.hostfunc.io"
+# Keep this key present at env scope to avoid non-inherited top-level vars warning.
+# Real value should still be managed as a Wrangler secret for staging.
+RUNTIME_INVOKE_TOKEN = "set-via-wrangler-secret"
 
 [[env.staging.kv_namespaces]]
 binding = "FN_INDEX"

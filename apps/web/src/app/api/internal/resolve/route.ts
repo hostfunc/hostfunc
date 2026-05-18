@@ -1,5 +1,5 @@
-import { authenticateCallback } from "@/server/exec-registry";
 import { authenticateApiToken } from "@/server/api-tokens";
+import { authenticateCallback } from "@/server/exec-registry";
 import { db, schema } from "@hostfunc/db";
 import { and, eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";

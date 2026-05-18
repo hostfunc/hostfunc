@@ -100,7 +100,9 @@ export async function upsertGithubInstallationForOrg(input: {
   userId: string;
   oauthCode: string;
 }) {
-  const redirectUri = (env.GITHUB_INTEGRATIONS_REDIRECT_URI ?? env.GITHUB_OAUTH_REDIRECT_URI)?.trim();
+  const redirectUri = (
+    env.GITHUB_INTEGRATIONS_REDIRECT_URI ?? env.GITHUB_OAUTH_REDIRECT_URI
+  )?.trim();
   const accessToken = await exchangeGithubOauthCodeForToken({
     code: input.oauthCode,
     ...(redirectUri ? { redirectUri } : {}),
@@ -109,7 +111,10 @@ export async function upsertGithubInstallationForOrg(input: {
   await storeGithubOauthToken(input.orgId, accessToken);
   await setGithubOnboardingSkipped({ orgId: input.orgId, userId: input.userId, skipped: false });
   const existing = await db.query.githubInstallation.findFirst({
-    where: and(eq(schema.githubInstallation.orgId, input.orgId), eq(schema.githubInstallation.status, "active")),
+    where: and(
+      eq(schema.githubInstallation.orgId, input.orgId),
+      eq(schema.githubInstallation.status, "active"),
+    ),
   });
   if (existing) {
     await db
@@ -144,7 +149,10 @@ export async function syncGithubInstallationRepos(input: {
   const repos = await listGithubInstallationRepos(input.accessToken);
   for (const repo of repos) {
     const existing = await db.query.githubRepoAccess.findFirst({
-      where: and(eq(schema.githubRepoAccess.orgId, input.orgId), eq(schema.githubRepoAccess.repoId, repo.id)),
+      where: and(
+        eq(schema.githubRepoAccess.orgId, input.orgId),
+        eq(schema.githubRepoAccess.repoId, repo.id),
+      ),
       columns: { id: true },
     });
     if (existing) {
@@ -154,7 +162,8 @@ export async function syncGithubInstallationRepos(input: {
           githubInstallationId: 0,
           owner: repo.owner.login,
           ownerAvatarUrl:
-            repo.owner.avatar_url ?? `https://github.com/${encodeURIComponent(repo.owner.login)}.png?size=64`,
+            repo.owner.avatar_url ??
+            `https://github.com/${encodeURIComponent(repo.owner.login)}.png?size=64`,
           name: repo.name,
           fullName: repo.full_name,
           defaultBranch: repo.default_branch,
@@ -174,7 +183,8 @@ export async function syncGithubInstallationRepos(input: {
       repoId: repo.id,
       owner: repo.owner.login,
       ownerAvatarUrl:
-        repo.owner.avatar_url ?? `https://github.com/${encodeURIComponent(repo.owner.login)}.png?size=64`,
+        repo.owner.avatar_url ??
+        `https://github.com/${encodeURIComponent(repo.owner.login)}.png?size=64`,
       name: repo.name,
       fullName: repo.full_name,
       defaultBranch: repo.default_branch,
@@ -210,7 +220,9 @@ export async function setGithubSelectedRepoIdsForOrg(input: { orgId: string; rep
     columns: { metadata: true },
   });
   const parsed = parseOrgMetadata(org?.metadata ?? null);
-  const nextRepoIds = [...new Set(input.repoIds.filter((value) => Number.isInteger(value) && value > 0))];
+  const nextRepoIds = [
+    ...new Set(input.repoIds.filter((value) => Number.isInteger(value) && value > 0)),
+  ];
   const next: OrgMetadataShape = {
     ...parsed,
     integrations: {
@@ -246,7 +258,10 @@ export async function listGithubBranchesForRepo(input: { orgId: string; repoId: 
     throw new Error("github_repo_not_selected");
   }
   const repo = await db.query.githubRepoAccess.findFirst({
-    where: and(eq(schema.githubRepoAccess.orgId, input.orgId), eq(schema.githubRepoAccess.repoId, input.repoId)),
+    where: and(
+      eq(schema.githubRepoAccess.orgId, input.orgId),
+      eq(schema.githubRepoAccess.repoId, input.repoId),
+    ),
   });
   if (!repo) throw new Error("github_repo_not_found");
   const token = await getGithubOauthToken(input.orgId);
@@ -259,7 +274,10 @@ export async function getGithubInstallationStatus(orgId: string) {
   try {
     const selectedRepoIds = await getGithubSelectedRepoIdsForOrg(orgId);
     const installation = await db.query.githubInstallation.findFirst({
-      where: and(eq(schema.githubInstallation.orgId, orgId), eq(schema.githubInstallation.status, "active")),
+      where: and(
+        eq(schema.githubInstallation.orgId, orgId),
+        eq(schema.githubInstallation.status, "active"),
+      ),
       orderBy: (t, { desc: d }) => [d(t.updatedAt)],
     });
     if (!installation) {
@@ -297,7 +315,12 @@ export async function disconnectGithubForOrg(input: { orgId: string; userId: str
   await db
     .update(schema.githubInstallation)
     .set({ status: "disconnected", updatedAt: new Date() })
-    .where(and(eq(schema.githubInstallation.orgId, input.orgId), eq(schema.githubInstallation.status, "active")));
+    .where(
+      and(
+        eq(schema.githubInstallation.orgId, input.orgId),
+        eq(schema.githubInstallation.status, "active"),
+      ),
+    );
   await db.delete(schema.githubRepoAccess).where(eq(schema.githubRepoAccess.orgId, input.orgId));
   await clearGithubOauthToken(input.orgId);
   await setGithubSelectedRepoIdsForOrg({ orgId: input.orgId, repoIds: [] });
@@ -319,7 +342,10 @@ export async function saveFunctionGithubBinding(input: {
   pathPrefix?: string | null;
 }) {
   const repo = await db.query.githubRepoAccess.findFirst({
-    where: and(eq(schema.githubRepoAccess.orgId, input.orgId), eq(schema.githubRepoAccess.repoId, input.repoId)),
+    where: and(
+      eq(schema.githubRepoAccess.orgId, input.orgId),
+      eq(schema.githubRepoAccess.repoId, input.repoId),
+    ),
   });
   if (!repo) throw new Error("github_repo_not_found");
   const selectedRepoIds = await getGithubSelectedRepoIdsForOrg(input.orgId);
@@ -368,7 +394,11 @@ export async function getGithubOnboardingSkipState(input: { orgId: string; userI
   return Boolean(parsed.integrations?.githubOnboardingSkipByUserId?.[input.userId]);
 }
 
-export async function setGithubOnboardingSkipped(input: { orgId: string; userId: string; skipped: boolean }) {
+export async function setGithubOnboardingSkipped(input: {
+  orgId: string;
+  userId: string;
+  skipped: boolean;
+}) {
   const org = await db.query.organization.findFirst({
     where: eq(schema.organization.id, input.orgId),
     columns: { metadata: true },

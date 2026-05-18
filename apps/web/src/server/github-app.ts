@@ -61,7 +61,9 @@ export function buildGithubAppInstallUrl(state: string): string {
   const { clientId } = requireGithubOauthEnv();
   const url = new URL("https://github.com/login/oauth/authorize");
   const scopes = env.GITHUB_OAUTH_SCOPES?.trim() || "repo read:org";
-  const redirectUri = (env.GITHUB_INTEGRATIONS_REDIRECT_URI ?? env.GITHUB_OAUTH_REDIRECT_URI)?.trim();
+  const redirectUri = (
+    env.GITHUB_INTEGRATIONS_REDIRECT_URI ?? env.GITHUB_OAUTH_REDIRECT_URI
+  )?.trim();
   url.searchParams.set("state", state);
   url.searchParams.set("client_id", clientId);
   if (redirectUri) url.searchParams.set("redirect_uri", redirectUri);

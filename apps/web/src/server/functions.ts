@@ -8,7 +8,6 @@ import { getEffectivePlan } from "@/server/plans";
 import { db, genId, schema, sql } from "@hostfunc/db";
 const DEFAULT_NODE_TYPES = "@types/node";
 
-
 type DbInsertExecutor = Pick<typeof db, "insert">;
 
 function compat<T>(value: T): T {
@@ -789,7 +788,10 @@ export async function searchMarketplaceFunctions(input: {
   const limit = Math.min(Math.max(input.limit ?? 12, 1), 48);
   const offset = decodeOffsetCursor(input.cursor);
   const sort = input.sort ?? "featured";
-  const conditions: ReturnType<typeof sql>[] = [sql`${schema.fn.visibility} = 'public'`];
+  const conditions: ReturnType<typeof sql>[] = [
+    sql`${schema.fn.visibility} = 'public'`,
+    sql`${schema.fn.currentVersionId} is not null`,
+  ];
   const category = normalizeMarketplaceCategory(input.category);
 
   if (input.query?.trim()) {

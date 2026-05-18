@@ -1,10 +1,10 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
 import { Line } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { useMemo, useRef } from "react";
-import * as THREE from "three";
+import type * as THREE from "three";
 
 const NODE_COUNT = 14;
 const RADIUS = 3.2;
@@ -60,18 +60,25 @@ function Network({ nodes, edges }: { nodes: NodeDef[]; edges: EdgeDef[] }) {
   return (
     <group ref={groupRef}>
       {nodes.map((node, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: deterministic static set built once at mount
         <HexagonNode key={i} node={node} />
       ))}
-      {edges.map(({ from, to, weight }, i) => (
-        <Line
-          key={i}
-          points={[nodes[from]!.position, nodes[to]!.position]}
-          color="#e8a317"
-          lineWidth={weight * 1.4}
-          transparent
-          opacity={0.18 + weight * 0.18}
-        />
-      ))}
+      {edges.map(({ from, to, weight }, i) => {
+        const fromNode = nodes[from];
+        const toNode = nodes[to];
+        if (!fromNode || !toNode) return null;
+        return (
+          <Line
+            // biome-ignore lint/suspicious/noArrayIndexKey: deterministic static set built once at mount
+            key={i}
+            points={[fromNode.position, toNode.position]}
+            color="#e8a317"
+            lineWidth={weight * 1.4}
+            transparent
+            opacity={0.18 + weight * 0.18}
+          />
+        );
+      })}
     </group>
   );
 }
@@ -99,13 +106,13 @@ function buildNetwork(): { nodes: NodeDef[]; edges: EdgeDef[] } {
   // Edges: each node connects to its 2 nearest neighbors
   const edges: EdgeDef[] = [];
   for (let i = 0; i < nodes.length; i++) {
+    const self = nodes[i];
+    if (!self) continue;
+    const [sx, sy, sz] = self.position;
     const distances = nodes
       .map((n, j) => ({
         j,
-        d:
-          (n.position[0] - nodes[i]!.position[0]) ** 2 +
-          (n.position[1] - nodes[i]!.position[1]) ** 2 +
-          (n.position[2] - nodes[i]!.position[2]) ** 2,
+        d: (n.position[0] - sx) ** 2 + (n.position[1] - sy) ** 2 + (n.position[2] - sz) ** 2,
       }))
       .filter((x) => x.j !== i)
       .sort((a, b) => a.d - b.d);
@@ -134,12 +141,7 @@ export function HeroScene() {
       <directionalLight position={[-5, -3, -4]} intensity={0.25} color="#7dd3fc" />
       <Network nodes={network.nodes} edges={network.edges} />
       <EffectComposer>
-        <Bloom
-          intensity={0.95}
-          luminanceThreshold={0.35}
-          luminanceSmoothing={0.4}
-          mipmapBlur
-        />
+        <Bloom intensity={0.95} luminanceThreshold={0.35} luminanceSmoothing={0.4} mipmapBlur />
       </EffectComposer>
     </Canvas>
   );

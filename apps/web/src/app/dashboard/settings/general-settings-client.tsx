@@ -23,8 +23,14 @@ type Props = {
 const initialState = null;
 
 export function GeneralSettingsClient({ initialName, initialSlug }: Props) {
-  const [nameState, nameAction, namePending] = useActionState(updateWorkspaceNameAction, initialState);
-  const [slugState, slugAction, slugPending] = useActionState(updateWorkspaceSlugAction, initialState);
+  const [nameState, nameAction, namePending] = useActionState(
+    updateWorkspaceNameAction,
+    initialState,
+  );
+  const [slugState, slugAction, slugPending] = useActionState(
+    updateWorkspaceSlugAction,
+    initialState,
+  );
 
   return (
     <>

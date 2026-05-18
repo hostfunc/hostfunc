@@ -51,11 +51,7 @@ async function fetchHostSnippet(host: string, query: string): Promise<string | n
     return cached.value;
   }
 
-  const candidateUrls = [
-    `https://${host}`,
-    `https://${host}/docs`,
-    `https://${host}/developers`,
-  ];
+  const candidateUrls = [`https://${host}`, `https://${host}/docs`, `https://${host}/developers`];
   for (const url of candidateUrls) {
     try {
       const controller = new AbortController();
@@ -96,4 +92,3 @@ export async function fetchExternalDocsContext(input: {
 
   return snippets.filter(Boolean).join("\n\n---\n\n");
 }
-

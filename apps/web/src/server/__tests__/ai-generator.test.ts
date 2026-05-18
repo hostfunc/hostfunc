@@ -1,14 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildGeneratorMessages, extractJsonObject, validateGeneratedCode } from "../ai-generator";
 import { fetchExternalDocsContext } from "../ai-docs";
+import { buildGeneratorMessages, extractJsonObject, validateGeneratedCode } from "../ai-generator";
 
 test("buildGeneratorMessages includes hostfunc sdk guidance", () => {
   const messages = buildGeneratorMessages({
     userPrompt: "create function",
     currentCode: "export async function main() { return { ok: true }; }",
     fnSlug: "my-fn",
-    packages: [{ name: "@hostfunc/sdk", source: "default", version: "0.1.0", updatedAt: new Date().toISOString() }],
+    packages: [
+      {
+        name: "@hostfunc/sdk",
+        source: "default",
+        version: "0.1.0",
+        updatedAt: new Date().toISOString(),
+      },
+    ],
     externalDocsContext: "",
   });
 
@@ -43,7 +50,6 @@ test("fetchExternalDocsContext ignores non-allowlisted hosts", async () => {
 });
 
 test("extractJsonObject returns fenced JSON body", () => {
-  const extracted = extractJsonObject("```json\n{\n  \"name\": \"demo\"\n}\n```");
+  const extracted = extractJsonObject('```json\n{\n  "name": "demo"\n}\n```');
   assert.equal(extracted, '{\n  "name": "demo"\n}');
 });
-

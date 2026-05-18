@@ -50,4 +50,3 @@ test("parsePayloadCandidate rejects malformed payload JSON", () => {
   assert.equal(result.ok, false);
   assert.equal(result.reason, "invalid_json");
 });
-

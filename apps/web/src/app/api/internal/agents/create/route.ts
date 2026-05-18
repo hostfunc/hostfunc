@@ -20,7 +20,10 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     if (error instanceof IntegrationConfigError) {
-      return Response.json({ error: error.code, message: error.message, detail: error.detail }, { status: 400 });
+      return Response.json(
+        { error: error.code, message: error.message, detail: error.detail },
+        { status: 400 },
+      );
     }
     return Response.json({ error: "agent_create_failed" }, { status: 500 });
   }

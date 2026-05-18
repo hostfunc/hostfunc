@@ -1,9 +1,9 @@
 import "server-only";
 
 import { type ExecTokenPayload, signExecToken, verifyExecToken } from "@/lib/exec-token";
+import { redis } from "@/lib/redis";
 import { db, schema } from "@hostfunc/db";
 import { and, eq, gte, sql } from "drizzle-orm";
-import { redis } from "@/lib/redis";
 import { getOrgPlan } from "./plan";
 import { shouldBlockMonthlyWallUsage } from "./quota";
 
@@ -46,7 +46,9 @@ export async function registerExecution(input: RegisterExecutionInput): Promise<
   const executionsToday = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(schema.execution)
-    .where(and(eq(schema.execution.orgId, input.orgId), gte(schema.execution.startedAt, dayStartUtc)))
+    .where(
+      and(eq(schema.execution.orgId, input.orgId), gte(schema.execution.startedAt, dayStartUtc)),
+    )
     .limit(1);
   const todayCount = executionsToday[0]?.count ?? 0;
   if (todayCount >= maxExecutionsPerDay) {
@@ -59,7 +61,9 @@ export async function registerExecution(input: RegisterExecutionInput): Promise<
   const monthlyWallUsage = await db
     .select({ wallMs: sql<number>`coalesce(sum(${schema.execution.wallMs}), 0)::int` })
     .from(schema.execution)
-    .where(and(eq(schema.execution.orgId, input.orgId), gte(schema.execution.startedAt, monthStartUtc)))
+    .where(
+      and(eq(schema.execution.orgId, input.orgId), gte(schema.execution.startedAt, monthStartUtc)),
+    )
     .limit(1);
   const monthWallMs = monthlyWallUsage[0]?.wallMs ?? 0;
   if (shouldBlockMonthlyWallUsage(monthWallMs, maxWallMsPerMonth)) {

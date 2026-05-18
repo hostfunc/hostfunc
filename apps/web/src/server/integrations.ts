@@ -27,8 +27,7 @@ export interface ResolvedAiConfig {
 
 export interface ResolvedVectorConfig {
   backends: Array<
-    | { kind: "external_http"; serviceUrl: string }
-    | { kind: "postgres"; databaseUrl: string }
+    { kind: "external_http"; serviceUrl: string } | { kind: "postgres"; databaseUrl: string }
   >;
 }
 
@@ -85,8 +84,11 @@ export async function getWorkspaceIntegrations(orgId: string): Promise<{
         model: parsed.integrations?.config?.ai?.model ?? DEFAULT_WORKSPACE_CONFIG.ai.model,
       },
       vector: {
-        primary: parsed.integrations?.config?.vector?.primary ?? DEFAULT_WORKSPACE_CONFIG.vector.primary,
-        secondary: parsed.integrations?.config?.vector?.secondary ?? DEFAULT_WORKSPACE_CONFIG.vector.secondary,
+        primary:
+          parsed.integrations?.config?.vector?.primary ?? DEFAULT_WORKSPACE_CONFIG.vector.primary,
+        secondary:
+          parsed.integrations?.config?.vector?.secondary ??
+          DEFAULT_WORKSPACE_CONFIG.vector.secondary,
       },
     },
     encrypted,
@@ -100,7 +102,9 @@ export async function getWorkspaceIntegrations(orgId: string): Promise<{
 export async function updateWorkspaceIntegrations(input: {
   orgId: string;
   config: WorkspaceIntegrationConfig;
-  plaintextSecrets: Partial<Record<"openaiApiKey" | "claudeApiKey" | "vectorServiceUrl" | "vectorDatabaseUrl", string>>;
+  plaintextSecrets: Partial<
+    Record<"openaiApiKey" | "claudeApiKey" | "vectorServiceUrl" | "vectorDatabaseUrl", string>
+  >;
 }) {
   const current = await getWorkspaceIntegrations(input.orgId);
   const encrypted = { ...current.encrypted };
@@ -122,25 +126,47 @@ export async function updateWorkspaceIntegrations(input: {
     .where(eq(schema.organization.id, input.orgId));
 }
 
-export async function resolveAiConfig(params: { orgId: string; fnId: string }): Promise<ResolvedAiConfig> {
+export async function resolveAiConfig(params: {
+  orgId: string;
+  fnId: string;
+}): Promise<ResolvedAiConfig> {
   const workspace = await getWorkspaceIntegrations(params.orgId);
-  const overrideProvider = await getSecretValueForFunction(params.orgId, params.fnId, "HF_FN_AI_PROVIDER");
-  const overrideModel = await getSecretValueForFunction(params.orgId, params.fnId, "HF_FN_AI_MODEL");
+  const overrideProvider = await getSecretValueForFunction(
+    params.orgId,
+    params.fnId,
+    "HF_FN_AI_PROVIDER",
+  );
+  const overrideModel = await getSecretValueForFunction(
+    params.orgId,
+    params.fnId,
+    "HF_FN_AI_MODEL",
+  );
   const provider = (overrideProvider as AiProvider | null) ?? workspace.config.ai.provider;
   const model = overrideModel ?? workspace.config.ai.model;
 
-  const fnOpenAi = await getSecretValueForFunction(params.orgId, params.fnId, "HF_FN_OPENAI_API_KEY");
-  const fnClaude = await getSecretValueForFunction(params.orgId, params.fnId, "HF_FN_CLAUDE_API_KEY");
+  const fnOpenAi = await getSecretValueForFunction(
+    params.orgId,
+    params.fnId,
+    "HF_FN_OPENAI_API_KEY",
+  );
+  const fnClaude = await getSecretValueForFunction(
+    params.orgId,
+    params.fnId,
+    "HF_FN_CLAUDE_API_KEY",
+  );
   const orgOpenAi = decryptMaybe(workspace.encrypted.openaiApiKey);
   const orgClaude = decryptMaybe(workspace.encrypted.claudeApiKey);
-  const apiKey = provider === "openai" ? fnOpenAi ?? orgOpenAi : fnClaude ?? orgClaude;
+  const apiKey = provider === "openai" ? (fnOpenAi ?? orgOpenAi) : (fnClaude ?? orgClaude);
   if (!apiKey) {
     throw new IntegrationConfigError(
       "missing_secret",
       `Missing ${provider} API key for AI integration`,
       {
         provider,
-        key: provider === "openai" ? "HF_FN_OPENAI_API_KEY or workspace openaiApiKey" : "HF_FN_CLAUDE_API_KEY or workspace claudeApiKey",
+        key:
+          provider === "openai"
+            ? "HF_FN_OPENAI_API_KEY or workspace openaiApiKey"
+            : "HF_FN_CLAUDE_API_KEY or workspace claudeApiKey",
       },
     );
   }
@@ -155,11 +181,19 @@ export async function resolveAiConfigForGeneration(params: {
   model: string;
 }): Promise<ResolvedAiConfig> {
   const workspace = await getWorkspaceIntegrations(params.orgId);
-  const fnOpenAi = await getSecretValueForFunction(params.orgId, params.fnId, "HF_FN_OPENAI_API_KEY");
-  const fnClaude = await getSecretValueForFunction(params.orgId, params.fnId, "HF_FN_CLAUDE_API_KEY");
+  const fnOpenAi = await getSecretValueForFunction(
+    params.orgId,
+    params.fnId,
+    "HF_FN_OPENAI_API_KEY",
+  );
+  const fnClaude = await getSecretValueForFunction(
+    params.orgId,
+    params.fnId,
+    "HF_FN_CLAUDE_API_KEY",
+  );
   const orgOpenAi = decryptMaybe(workspace.encrypted.openaiApiKey);
   const orgClaude = decryptMaybe(workspace.encrypted.claudeApiKey);
-  const apiKey = params.provider === "openai" ? fnOpenAi ?? orgOpenAi : fnClaude ?? orgClaude;
+  const apiKey = params.provider === "openai" ? (fnOpenAi ?? orgOpenAi) : (fnClaude ?? orgClaude);
   if (!apiKey) {
     throw new IntegrationConfigError(
       "missing_secret",
@@ -185,8 +219,11 @@ export async function resolveVectorConfig(params: {
     (await getSecretValueForFunction(params.orgId, params.fnId, "HF_FN_VECTOR_BACKEND_PRIMARY")) ??
     workspace.config.vector.primary;
   const secondary =
-    (await getSecretValueForFunction(params.orgId, params.fnId, "HF_FN_VECTOR_BACKEND_SECONDARY")) ??
-    workspace.config.vector.secondary;
+    (await getSecretValueForFunction(
+      params.orgId,
+      params.fnId,
+      "HF_FN_VECTOR_BACKEND_SECONDARY",
+    )) ?? workspace.config.vector.secondary;
 
   const serviceUrl =
     (await getSecretValueForFunction(params.orgId, params.fnId, "HF_FN_VECTOR_SERVICE_URL")) ??

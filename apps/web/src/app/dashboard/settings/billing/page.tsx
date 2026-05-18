@@ -1,6 +1,6 @@
 import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { requireOrgPermission } from "@/lib/session";
+import { cn } from "@/lib/utils";
 import { getEffectivePlan } from "@/server/plans";
 import { db, schema } from "@hostfunc/db";
 import { and, asc, eq, gt, gte, isNotNull, sql } from "drizzle-orm";
@@ -46,7 +46,8 @@ export default async function BillingSettingsPage() {
   const executionCount = usage[0]?.executions ?? 0;
   const wallMs = usage[0]?.wallMs ?? 0;
   const rawMonthlyWallLimit =
-    typeof plan.limits.maxWallMsPerMonth === "number" && Number.isFinite(plan.limits.maxWallMsPerMonth)
+    typeof plan.limits.maxWallMsPerMonth === "number" &&
+    Number.isFinite(plan.limits.maxWallMsPerMonth)
       ? plan.limits.maxWallMsPerMonth
       : plan.limits.maxWallMs;
   const maxWallMsPerMonth = Math.max(rawMonthlyWallLimit, 1);

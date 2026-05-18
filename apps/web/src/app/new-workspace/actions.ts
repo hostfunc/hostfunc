@@ -1,11 +1,11 @@
 "use server";
 
+import { requireSession } from "@/lib/session";
+import { trackServerEvent } from "@/server/analytics";
 import { db, genId, schema, sql } from "@hostfunc/db";
 import { and, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireSession } from "@/lib/session";
-import { trackServerEvent } from "@/server/analytics";
 
 const createWorkspaceSchema = z.object({
   name: z.string().min(2, "Workspace name must be at least 2 characters").max(64),
