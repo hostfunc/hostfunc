@@ -1,12 +1,4 @@
-import {
-  boolean,
-  index,
-  integer,
-  pgEnum,
-  pgTable,
-  text,
-  timestamp,
-} from "drizzle-orm/pg-core";
+import { boolean, index, integer, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { user } from "./auth.js";
 import { fn } from "./functions.js";
 import { organization } from "./organizations.js";

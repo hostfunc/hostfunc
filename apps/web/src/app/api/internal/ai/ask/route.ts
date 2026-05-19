@@ -13,9 +13,11 @@ export async function POST(req: NextRequest) {
   const auth = await requireInternalExec(req);
   if (!auth.ok) return auth.response;
 
-  const body = (await req.json().catch(() => null)) as
-    | { prompt?: string; messages?: Array<{ role: string; content: string }>; options?: { model?: string } }
-    | null;
+  const body = (await req.json().catch(() => null)) as {
+    prompt?: string;
+    messages?: Array<{ role: string; content: string }>;
+    options?: { model?: string };
+  } | null;
   if (!body?.prompt && !body?.messages?.length) {
     return Response.json({ error: "invalid_body" }, { status: 400 });
   }
@@ -32,26 +34,24 @@ export async function POST(req: NextRequest) {
         },
         body: JSON.stringify({
           model,
-          messages:
-            body.messages ??
-            [
-              {
-                role: "user",
-                content: body.prompt ?? "",
-              },
-            ],
+          messages: body.messages ?? [
+            {
+              role: "user",
+              content: body.prompt ?? "",
+            },
+          ],
         }),
       });
       const json = await response.json().catch(() => null);
-      if (!response.ok) return Response.json({ error: "provider_error", detail: json }, { status: 502 });
+      if (!response.ok)
+        return Response.json({ error: "provider_error", detail: json }, { status: 502 });
       const text = json?.choices?.[0]?.message?.content ?? "";
       return Response.json({ text, raw: json, provider: ai.provider, model });
     }
 
-    const sourceMessages =
-      body.messages?.length
-        ? body.messages
-        : [{ role: "user", content: body.prompt ?? "" }];
+    const sourceMessages = body.messages?.length
+      ? body.messages
+      : [{ role: "user", content: body.prompt ?? "" }];
     const systemParts = sourceMessages
       .filter((m) => m.role === "system")
       .map((m) => m.content)
@@ -80,7 +80,10 @@ export async function POST(req: NextRequest) {
           model: modelName,
           max_tokens: 1024,
           ...(systemParts.length > 0 ? { system: systemParts.join("\n\n") } : {}),
-          messages: anthropicMessages.length > 0 ? anthropicMessages : [{ role: "user", content: body.prompt ?? "" }],
+          messages:
+            anthropicMessages.length > 0
+              ? anthropicMessages
+              : [{ role: "user", content: body.prompt ?? "" }],
         }),
       });
       const json = await response.json().catch(() => null);
@@ -92,15 +95,19 @@ export async function POST(req: NextRequest) {
       lastDetail = json;
       const raw = JSON.stringify(json);
       const modelNotFound =
-        response.status === 404 ||
-        raw.includes("not_found_error") ||
-        raw.includes('"model:');
+        response.status === 404 || raw.includes("not_found_error") || raw.includes('"model:');
       if (!modelNotFound) break;
     }
-    return Response.json({ error: "provider_error", detail: lastDetail }, { status: lastStatus === 400 ? 400 : 502 });
+    return Response.json(
+      { error: "provider_error", detail: lastDetail },
+      { status: lastStatus === 400 ? 400 : 502 },
+    );
   } catch (error) {
     if (error instanceof IntegrationConfigError) {
-      return Response.json({ error: error.code, message: error.message, detail: error.detail }, { status: 400 });
+      return Response.json(
+        { error: error.code, message: error.message, detail: error.detail },
+        { status: 400 },
+      );
     }
     return Response.json({ error: "ai_ask_failed" }, { status: 500 });
   }

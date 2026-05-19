@@ -1,5 +1,5 @@
-import { requireActiveOrg } from "@/lib/session";
 import { listSecrets } from "@/app/dashboard/[fn]/actions";
+import { requireActiveOrg } from "@/lib/session";
 import { KeyRound } from "lucide-react";
 import { SecretsClient } from "./secrets-client";
 

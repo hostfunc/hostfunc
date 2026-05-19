@@ -1,16 +1,14 @@
 import { verifyExecToken } from "@/lib/exec-token";
-import { AssetError, getVersionAssetBlob } from "@/server/fn-assets";
 import { authenticateApiToken } from "@/server/api-tokens";
 import { authenticateCallback } from "@/server/exec-registry";
+import { AssetError, getVersionAssetBlob } from "@/server/fn-assets";
 import type { NextRequest } from "next/server";
 
 export const runtime = "nodejs";
 
 export async function GET(
   req: NextRequest,
-  {
-    params,
-  }: { params: Promise<{ fnId: string; versionId: string; path: string[] }> },
+  { params }: { params: Promise<{ fnId: string; versionId: string; path: string[] }> },
 ) {
   const auth = req.headers.get("authorization");
   if (!auth?.startsWith("Bearer ")) {

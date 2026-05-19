@@ -119,23 +119,23 @@ export function TerminalDemo({ sequence }: Props) {
                 const count = (seen.get(line) ?? 0) + 1;
                 seen.set(line, count);
                 return (
-              <motion.div
-                key={`${frame.command}-${line}-${count}`}
-                initial={{ opacity: 0, x: -4 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.18, delay: count * 0.06 }}
-                className={`pl-3 ${
-                  line.startsWith("✓")
-                    ? "text-[var(--color-emerald)]"
-                    : line.startsWith("?")
-                      ? "text-[var(--color-bone-muted)]"
-                      : line.startsWith("{")
-                        ? "text-[var(--color-syntax-string)]"
-                        : "text-[var(--color-bone-muted)]"
-                }`}
-              >
-                {line}
-              </motion.div>
+                  <motion.div
+                    key={`${frame.command}-${line}-${count}`}
+                    initial={{ opacity: 0, x: -4 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.18, delay: count * 0.06 }}
+                    className={`pl-3 ${
+                      line.startsWith("✓")
+                        ? "text-[var(--color-emerald)]"
+                        : line.startsWith("?")
+                          ? "text-[var(--color-bone-muted)]"
+                          : line.startsWith("{")
+                            ? "text-[var(--color-syntax-string)]"
+                            : "text-[var(--color-bone-muted)]"
+                    }`}
+                  >
+                    {line}
+                  </motion.div>
                 );
               });
             })()}

@@ -25,13 +25,11 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "rate_limited" }, { status: 429 });
   }
 
-  const body = (await req.json().catch(() => null)) as
-    | {
-        event?: string;
-        distinctId?: string;
-        props?: Record<string, unknown>;
-      }
-    | null;
+  const body = (await req.json().catch(() => null)) as {
+    event?: string;
+    distinctId?: string;
+    props?: Record<string, unknown>;
+  } | null;
   if (!body?.event) {
     return Response.json({ error: "invalid_body" }, { status: 400 });
   }

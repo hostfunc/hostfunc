@@ -6,9 +6,7 @@ export async function trackClientEvent(
 ): Promise<void> {
   const distinctId =
     typeof window !== "undefined"
-      ? (window.localStorage.getItem("hostfunc_anon_id") ??
-        window.crypto?.randomUUID?.() ??
-        "anon")
+      ? (window.localStorage.getItem("hostfunc_anon_id") ?? window.crypto?.randomUUID?.() ?? "anon")
       : "anon";
 
   if (typeof window !== "undefined" && !window.localStorage.getItem("hostfunc_anon_id")) {

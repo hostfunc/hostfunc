@@ -27,10 +27,13 @@ export default async function FunctionSettingsLineagePage({
     <div className="animate-in space-y-8 fade-in duration-500 pb-10">
       <div className="flex flex-col justify-between gap-6 border-b border-[var(--color-border)] pb-6 md:flex-row md:items-center">
         <div>
-          <h3 className="font-display text-4xl tracking-tight text-[var(--color-bone)]">Execution Lineage</h3>
+          <h3 className="font-display text-4xl tracking-tight text-[var(--color-bone)]">
+            Execution Lineage
+          </h3>
           <p className="mt-2 max-w-2xl leading-relaxed text-[var(--color-bone-muted)]">
-            Ancestor/descendant call-chain for <span className="font-mono text-[var(--color-bone)]">{fn.slug}</span>.
-            Select a root execution to inspect edge weights, error paths, and call depth.
+            Ancestor/descendant call-chain for{" "}
+            <span className="font-mono text-[var(--color-bone)]">{fn.slug}</span>. Select a root
+            execution to inspect edge weights, error paths, and call depth.
           </p>
         </div>
         <Button

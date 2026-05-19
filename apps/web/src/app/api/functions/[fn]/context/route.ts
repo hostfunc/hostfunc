@@ -33,10 +33,7 @@ function isAllowedFile(name: string, type: string | null): boolean {
   return ALLOWED_MIME_PREFIXES.some((prefix) => type.toLowerCase().startsWith(prefix));
 }
 
-export async function GET(
-  _req: NextRequest,
-  ctx: { params: Promise<{ fn: string }> },
-) {
+export async function GET(_req: NextRequest, ctx: { params: Promise<{ fn: string }> }) {
   const { fn: fnId } = await ctx.params;
   const { orgId } = await requireOrgPermission("view_workspace");
   await assertOrgOwnsFunction(orgId, fnId);
@@ -56,10 +53,7 @@ export async function GET(
   });
 }
 
-export async function POST(
-  req: NextRequest,
-  ctx: { params: Promise<{ fn: string }> },
-) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ fn: string }> }) {
   const { fn: fnId } = await ctx.params;
   const { orgId, session } = await requireOrgPermission("edit_draft");
   try {

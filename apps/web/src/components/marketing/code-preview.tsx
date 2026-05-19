@@ -1,21 +1,28 @@
 interface CodePreviewProps {
   code: string;
   compact?: boolean;
+  /** When true, the code block stretches to fill its parent's vertical space. */
+  fill?: boolean;
   className?: string;
 }
 
-export function CodePreview({ code, compact = false, className = "" }: CodePreviewProps) {
+export function CodePreview({
+  code,
+  compact = false,
+  fill = false,
+  className = "",
+}: CodePreviewProps) {
   const language = inferLanguage(code);
   return (
     <div
-      className={`overflow-hidden rounded-lg border border-[var(--color-border)] bg-black/35 ${className}`}
+      className={`flex w-full min-w-0 flex-col overflow-hidden rounded-lg border border-[var(--color-border)] bg-black/35 ${className}`}
     >
       <div className="border-b border-[var(--color-border)] px-3 py-1.5 text-[10px] uppercase tracking-[0.15em] text-[var(--color-bone-faint)]">
         {language}
       </div>
       <pre
         className={`whitespace-pre-wrap break-words p-3 font-mono text-[11px] leading-relaxed ${
-          compact ? "h-56" : "min-h-56 max-h-96"
+          fill ? "min-h-56 flex-1" : compact ? "h-56" : "min-h-56 max-h-96"
         } overflow-hidden`}
       >
         <code>

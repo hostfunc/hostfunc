@@ -8,7 +8,9 @@ export const runtime = "nodejs";
 
 function isAuthorized(req: NextRequest): boolean {
   const auth = req.headers.get("authorization");
-  return auth === `Bearer ${env.RUNTIME_LOOKUP_TOKEN}` || auth === `Bearer ${env.RUNTIME_INGEST_TOKEN}`;
+  return (
+    auth === `Bearer ${env.RUNTIME_LOOKUP_TOKEN}` || auth === `Bearer ${env.RUNTIME_INGEST_TOKEN}`
+  );
 }
 
 export async function GET(req: NextRequest) {
@@ -27,9 +29,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   if (!isAuthorized(req)) return Response.json({ error: "unauthorized" }, { status: 401 });
-  const body = (await req.json().catch(() => null)) as
-    | { executionId?: string; message?: string }
-    | null;
+  const body = (await req.json().catch(() => null)) as {
+    executionId?: string;
+    message?: string;
+  } | null;
   const executionId = body?.executionId?.trim();
   if (!executionId) return Response.json({ error: "executionId_required" }, { status: 400 });
 
@@ -68,4 +71,3 @@ export async function POST(req: NextRequest) {
 
   return Response.json({ ok: true, executionId, published: true, line });
 }
-

@@ -42,8 +42,8 @@ export function ConnectorsShowcase({
           </div>
           <h3 className="font-display text-2xl text-[var(--color-bone)]">One-click auth flows</h3>
           <p className="mt-3 text-sm leading-relaxed text-[var(--color-bone-muted)]">
-            OAuth flows are handled by the control plane, so you can connect providers without custom
-            redirect-handling boilerplate.
+            OAuth flows are handled by the control plane, so you can connect providers without
+            custom redirect-handling boilerplate.
           </p>
         </div>
         <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 p-6">
@@ -62,8 +62,8 @@ export function ConnectorsShowcase({
           </div>
           <h3 className="font-display text-2xl text-[var(--color-bone)]">Org-wide control</h3>
           <p className="mt-3 text-sm leading-relaxed text-[var(--color-bone-muted)]">
-            Access is scoped to your workspace and managed through settings, giving teams one place to
-            rotate and monitor integrations.
+            Access is scoped to your workspace and managed through settings, giving teams one place
+            to rotate and monitor integrations.
           </p>
         </div>
       </section>

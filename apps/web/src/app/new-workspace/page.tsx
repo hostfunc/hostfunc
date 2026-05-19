@@ -55,7 +55,9 @@ export default function NewWorkspacePage() {
         <div className="mb-4 rounded-2xl border border-[var(--color-amber)]/30 bg-[var(--color-amber)]/12 p-3">
           <FolderPlus className="h-6 w-6 text-[var(--color-amber)]" />
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-[var(--color-bone)]">Create Workspace</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--color-bone)]">
+          Create Workspace
+        </h1>
         <p className="mt-2 text-sm text-[var(--color-bone-muted)]">
           Deploy serverless infrastructure in seconds.
         </p>
@@ -206,7 +208,9 @@ export default function NewWorkspacePage() {
                     </div>
                     <div className="overflow-hidden">
                       <p className="truncate font-semibold text-[var(--color-bone)]">{name}</p>
-                      <p className="truncate text-xs text-[var(--color-bone-faint)]">hostfunc.io/{slug}</p>
+                      <p className="truncate text-xs text-[var(--color-bone-faint)]">
+                        hostfunc.io/{slug}
+                      </p>
                     </div>
                   </div>
 
@@ -228,7 +232,8 @@ export default function NewWorkspacePage() {
                       <span className="relative z-10 flex items-center justify-center whitespace-nowrap px-2 text-center">
                         {isPending ? (
                           <>
-                            <Loader2 className="mr-2 h-5 w-5 shrink-0 animate-spin" /> Creating Workspace...
+                            <Loader2 className="mr-2 h-5 w-5 shrink-0 animate-spin" /> Creating
+                            Workspace...
                           </>
                         ) : (
                           <>Create Workspace</>

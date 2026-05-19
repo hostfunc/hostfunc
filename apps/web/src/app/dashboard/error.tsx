@@ -112,10 +112,12 @@ export default function DashboardError({
         <AlertTriangle className="h-3.5 w-3.5" />
         Access changed
       </div>
-      <h2 className="mt-3 font-display text-2xl tracking-tight">Your workspace permissions were updated</h2>
+      <h2 className="mt-3 font-display text-2xl tracking-tight">
+        Your workspace permissions were updated
+      </h2>
       <p className="mt-2 text-sm text-[var(--color-bone-muted)]">
-        You no longer have access to this workspace view. You can request access again, or remove this
-        workspace from your list.
+        You no longer have access to this workspace view. You can request access again, or remove
+        this workspace from your list.
       </p>
 
       <div className="mt-5 flex flex-wrap gap-3">

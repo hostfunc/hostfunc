@@ -29,7 +29,8 @@ export function DocsSearch() {
     if (!q) return allRecords.slice(0, 8);
     return allRecords
       .map((record) => {
-        const haystack = `${record.title} ${record.summary} ${record.sectionTitles.join(" ")}`.toLowerCase();
+        const haystack =
+          `${record.title} ${record.summary} ${record.sectionTitles.join(" ")}`.toLowerCase();
         const score =
           (record.title.toLowerCase().includes(q) ? 3 : 0) +
           (record.summary.toLowerCase().includes(q) ? 2 : 0) +
@@ -161,7 +162,9 @@ export function DocsSearch() {
         >
           <div ref={listRef} className="max-h-[340px] overflow-y-auto p-1">
             {results.length === 0 ? (
-              <div className="px-3 py-5 text-sm text-[var(--color-bone-faint)]">No matches found.</div>
+              <div className="px-3 py-5 text-sm text-[var(--color-bone-faint)]">
+                No matches found.
+              </div>
             ) : (
               results.map((result, idx) => (
                 <button
@@ -178,7 +181,9 @@ export function DocsSearch() {
                       : "border-l-2 border-transparent hover:bg-white/[0.04]",
                   )}
                 >
-                  <span className="text-sm font-medium text-[var(--color-bone)]">{result.title}</span>
+                  <span className="text-sm font-medium text-[var(--color-bone)]">
+                    {result.title}
+                  </span>
                   <span className="line-clamp-2 text-xs leading-relaxed text-[var(--color-bone-faint)]">
                     {result.summary}
                   </span>
@@ -192,7 +197,9 @@ export function DocsSearch() {
               <CornerDownLeft className="h-3 w-3" />
               to navigate
             </span>
-            <span>{results.length} result{results.length === 1 ? "" : "s"}</span>
+            <span>
+              {results.length} result{results.length === 1 ? "" : "s"}
+            </span>
           </div>
         </div>
       ) : null}

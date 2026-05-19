@@ -43,7 +43,9 @@ export async function POST(req: NextRequest) {
   });
 
   const contentType = runRes.headers.get("content-type") ?? "";
-  const result = contentType.includes("application/json") ? await runRes.json() : await runRes.text();
+  const result = contentType.includes("application/json")
+    ? await runRes.json()
+    : await runRes.text();
   return Response.json({
     ok: runRes.ok,
     status: runRes.status,

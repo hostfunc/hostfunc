@@ -18,7 +18,9 @@ export async function GET(req: NextRequest) {
     })
     .from(schema.member)
     .innerJoin(schema.organization, eq(schema.organization.id, schema.member.organizationId))
-    .where(and(eq(schema.member.userId, actor.userId), eq(schema.member.organizationId, actor.orgId)));
+    .where(
+      and(eq(schema.member.userId, actor.userId), eq(schema.member.organizationId, actor.orgId)),
+    );
 
   return Response.json({
     ok: true,

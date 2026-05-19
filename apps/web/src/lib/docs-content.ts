@@ -147,8 +147,7 @@ hostfunc logs --executionId <execution_id>`,
       },
       {
         title: "4. Connect MCP clients when needed",
-        description:
-          "Use `/api/mcp` with bearer token auth for AI/editor tool access.",
+        description: "Use `/api/mcp` with bearer token auth for AI/editor tool access.",
         bullets: [
           "Methods implemented: `initialize`, `tools/list`, `tools/call`, `ping`.",
           "Tools implemented: `functions.*`, `executions.*`.",
@@ -209,8 +208,7 @@ hostfunc logs --executionId <execution_id>`,
               description: "JSON payload forwarded to downstream `main()` input.",
             },
           ],
-          returns:
-            "Parsed JSON returned by the downstream function.",
+          returns: "Parsed JSON returned by the downstream function.",
           throws: [
             "FN_NOT_FOUND if slug is malformed or function is unavailable.",
             "FN_CALL_DEPTH when call-depth protection triggers.",
@@ -224,8 +222,7 @@ hostfunc logs --executionId <execution_id>`,
         {
           name: "secret.get",
           signature: "await secret.get(key: string): Promise<string | null>",
-          description:
-            "Fetches an optional secret configured for the current function.",
+          description: "Fetches an optional secret configured for the current function.",
           args: [
             {
               name: "key",
@@ -304,8 +301,7 @@ export async function main(input: { customerId: string }) {
     guideSections: [
       {
         title: "Trigger schema",
-        description:
-          "Each function keeps at most one row per trigger kind (`fnId + kind`).",
+        description: "Each function keeps at most one row per trigger kind (`fnId + kind`).",
         bullets: [
           "http: `{ requireAuth: boolean }` (defaults to false for new functions)",
           "cron: `{ schedule: string, timezone?: string }`",
@@ -342,8 +338,7 @@ export async function main(input: { customerId: string }) {
       },
       {
         title: "MCP-related triggering",
-        description:
-          "MCP tool calls execute through `/api/mcp` handlers and are audited.",
+        description: "MCP tool calls execute through `/api/mcp` handlers and are audited.",
         bullets: [
           "MCP tools include function execution operations.",
           "MCP trigger config exists in trigger model for function-level metadata.",

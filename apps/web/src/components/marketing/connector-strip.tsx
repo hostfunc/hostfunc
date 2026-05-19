@@ -1,7 +1,7 @@
 "use client";
 
-import { CheckCircle2, Clock } from "lucide-react";
 import type { MarketingContent } from "@/lib/marketing-content";
+import { CheckCircle2, Clock } from "lucide-react";
 
 interface Props {
   connectors: MarketingContent["connectors"];
@@ -89,6 +89,6 @@ function ConnectorBrandIcon({ slug }: { slug: string }) {
         </svg>
       );
     default:
-      return <span className="font-display text-lg italic">{slug.slice(0, 1).toUpperCase()}</span>;
+      return <span className="font-display text-lg">{slug.slice(0, 1).toUpperCase()}</span>;
   }
 }

@@ -127,7 +127,14 @@ export function MarketplaceReadmeEditor({
         )}
       >
         {viewMode !== "preview" ? (
-          <div className={cn("min-h-[280px]", viewMode === "split" ? "border-b border-[var(--color-border)] lg:border-b-0 lg:border-r" : "")}>
+          <div
+            className={cn(
+              "min-h-[280px]",
+              viewMode === "split"
+                ? "border-b border-[var(--color-border)] lg:border-b-0 lg:border-r"
+                : "",
+            )}
+          >
             <textarea
               id="marketplaceReadme"
               value={content}

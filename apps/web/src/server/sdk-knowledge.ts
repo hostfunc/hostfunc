@@ -53,13 +53,7 @@ function formatCodeExamples(entries: DocsPageContent["sdkGuide"]): string {
   const parts: string[] = [];
   for (const example of entries.codeExamples) {
     parts.push(
-      [
-        `### ${example.title}`,
-        example.description,
-        "```ts",
-        example.code,
-        "```",
-      ].join("\n"),
+      [`### ${example.title}`, example.description, "```ts", example.code, "```"].join("\n"),
     );
   }
   return parts.join("\n\n");
@@ -123,9 +117,9 @@ export function buildSdkKnowledgeBlock(): string {
   sections.push(
     [
       "## Composition rules",
-      "- Chain functions with `await fn.executeFunction(\"orgSlug/fnSlug\", payload)`.",
-      "- Read required credentials with `await secret.getRequired(\"KEY\")`; optional ones with `await secret.get(\"KEY\")`.",
-      "- Emit structured logs with `fn.log(\"info\", message, fields)`; they appear in execution logs.",
+      '- Chain functions with `await fn.executeFunction("orgSlug/fnSlug", payload)`.',
+      '- Read required credentials with `await secret.getRequired("KEY")`; optional ones with `await secret.get("KEY")`.',
+      '- Emit structured logs with `fn.log("info", message, fields)`; they appear in execution logs.',
       "- When vendor SDKs are required (Discord, Slack, AWS, Stripe, OpenAI, etc.), import them normally — the packages list is managed by the editor and deploy pipeline.",
       "- Prefer small, idempotent functions composed with `fn.executeFunction` over single monolithic handlers.",
     ].join("\n"),

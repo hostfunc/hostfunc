@@ -106,10 +106,7 @@ export async function updateWorkspaceSlugAction(
   try {
     const { orgId } = await requireOrgPermission("manage_workspace_settings");
     const existing = await db.query.organization.findFirst({
-      where: and(
-        eq(schema.organization.slug, parsed.data.slug),
-        ne(schema.organization.id, orgId),
-      ),
+      where: and(eq(schema.organization.slug, parsed.data.slug), ne(schema.organization.id, orgId)),
       columns: { id: true },
     });
     if (existing) {

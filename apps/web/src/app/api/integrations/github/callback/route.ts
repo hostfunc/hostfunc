@@ -29,7 +29,10 @@ export async function GET(request: Request) {
       userId: session.user.id,
       oauthCode: code,
     });
-    const repoCount = await syncGithubInstallationRepos({ orgId, accessToken: install.accessToken });
+    const repoCount = await syncGithubInstallationRepos({
+      orgId,
+      accessToken: install.accessToken,
+    });
     await recordGithubConnectionAudit({
       orgId,
       userId: session.user.id,

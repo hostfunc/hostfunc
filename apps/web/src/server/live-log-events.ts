@@ -38,4 +38,3 @@ export function clampBackfillLimit(value: string | null | undefined): number {
   if (!Number.isFinite(parsed)) return 120;
   return Math.max(0, Math.min(500, Math.round(parsed)));
 }
-

@@ -20,10 +20,14 @@ export async function GET(req: NextRequest) {
     to?: string;
   } = { fnId };
   if (status) {
-    filters.status = status.split(",") as Array<"ok" | "fn_error" | "limit_exceeded" | "infra_error">;
+    filters.status = status.split(",") as Array<
+      "ok" | "fn_error" | "limit_exceeded" | "infra_error"
+    >;
   }
   if (trigger) {
-    filters.triggerKind = trigger.split(",") as Array<"http" | "cron" | "email" | "mcp" | "fn_call">;
+    filters.triggerKind = trigger.split(",") as Array<
+      "http" | "cron" | "email" | "mcp" | "fn_call"
+    >;
   }
   if (from) filters.from = from;
   if (to) filters.to = to;

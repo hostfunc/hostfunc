@@ -3,10 +3,7 @@ import "server-only";
 import { HOSTFUNC_TYPES_DTS } from "@/components/editor/hostfunc-types";
 import type { FunctionPackageRecord } from "@/lib/function-packages";
 import type { FnAiContextKind } from "@/server/fn-ai-context";
-import {
-  HOSTFUNC_FILE_SKELETON,
-  buildSdkKnowledgeBlock,
-} from "@/server/sdk-knowledge";
+import { HOSTFUNC_FILE_SKELETON, buildSdkKnowledgeBlock } from "@/server/sdk-knowledge";
 
 export interface GeneratorAttachment {
   id: string;
@@ -230,7 +227,7 @@ export function enforceMainAndSdkImport(rawCode: string): string {
     return `${HOSTFUNC_DEFAULT_IMPORT}\n\nexport async function main(input: unknown) {\n  return { ok: true };\n}\n`;
   }
 
-  const code = rawCode.replace(/(["'])@hostfunc\/fn\1/g, '$1@hostfunc/sdk$1');
+  const code = rawCode.replace(/(["'])@hostfunc\/fn\1/g, "$1@hostfunc/sdk$1");
 
   const lines = code.split("\n");
   const importLines: string[] = [];
@@ -243,8 +240,12 @@ export function enforceMainAndSdkImport(rawCode: string): string {
         importLines.push(line);
         continue;
       }
-      if (trimmed.startsWith("import ") || trimmed.startsWith("import{") ||
-          trimmed.startsWith("\"use ") || trimmed.startsWith("'use ")) {
+      if (
+        trimmed.startsWith("import ") ||
+        trimmed.startsWith("import{") ||
+        trimmed.startsWith('"use ') ||
+        trimmed.startsWith("'use ")
+      ) {
         importLines.push(line);
         continue;
       }
@@ -283,9 +284,7 @@ export function enforceMainAndSdkImport(rawCode: string): string {
       // Fallback: wrap non-import body into a main function.
       const wrapped = [
         "export async function main(input: unknown) {",
-        ...body
-          .split("\n")
-          .map((line) => (line.length > 0 ? `  ${line}` : line)),
+        ...body.split("\n").map((line) => (line.length > 0 ? `  ${line}` : line)),
         "  return { ok: true };",
         "}",
       ].join("\n");

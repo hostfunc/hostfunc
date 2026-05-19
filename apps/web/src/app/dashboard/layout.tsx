@@ -6,6 +6,9 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { DashboardNavbar } from "./navbar";
 
+/** Session and org context must never be served from a static shell (avoids stale RSC on reload). */
+export const dynamic = "force-dynamic";
+
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const setup = getSetupState();
   if (!setup.complete) {
@@ -63,13 +66,12 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   return (
     <div className="relative min-h-dvh overflow-hidden bg-[var(--color-ink)] text-[var(--color-bone)]">
       <div className="gradient-radial-amber pointer-events-none absolute inset-x-0 top-0 h-[420px] opacity-70" />
-      <div className="border-grid pointer-events-none absolute inset-0 opacity-30" />
       <DashboardNavbar
         user={baseSession.user}
         organizations={organizations}
         activeOrganizationId={orgId}
       />
-      <main className="relative mx-auto max-w-7xl px-6 py-8">
+      <main className="relative mx-auto max-w-screen-2xl px-6 py-8">
         {/* <UsageStatusBar
           planName={usage.planName}
           executionsToday={usage.usage.executionsToday}

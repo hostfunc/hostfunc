@@ -229,12 +229,7 @@ function InviteMemberDialog() {
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={pending || !email}
-              variant="glass"
-              className="px-6"
-            >
+            <Button type="submit" disabled={pending || !email} variant="glass" className="px-6">
               {pending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />

@@ -34,48 +34,57 @@ export default function PrivacyPage() {
         <section className="rounded-2xl border border-[var(--color-border)] bg-white/[0.02] p-6">
           <h2 className="text-xl font-semibold">3. Processors and sharing</h2>
           <p className="mt-3 text-[var(--color-bone-muted)]">
-            hostfunc uses infrastructure and service providers (for hosting/runtime, databases, authentication, and
-            billing) to deliver the product. We do not sell personal data.
+            hostfunc uses infrastructure and service providers (for hosting/runtime, databases,
+            authentication, and billing) to deliver the product. We do not sell personal data.
           </p>
         </section>
 
         <section className="rounded-2xl border border-[var(--color-border)] bg-white/[0.02] p-6">
           <h2 className="text-xl font-semibold">4. Data retention</h2>
           <p className="mt-3 text-[var(--color-bone-muted)]">
-            We retain operational and account data for as long as needed to provide the service and satisfy legal,
-            security, and billing obligations. Specific retention windows may evolve as platform policies mature.
+            We retain operational and account data for as long as needed to provide the service and
+            satisfy legal, security, and billing obligations. Specific retention windows may evolve
+            as platform policies mature.
           </p>
         </section>
 
         <section className="rounded-2xl border border-[var(--color-border)] bg-white/[0.02] p-6">
           <h2 className="text-xl font-semibold">5. Security measures</h2>
           <p className="mt-3 text-[var(--color-bone-muted)]">
-            We apply layered controls including authenticated machine routes, secret protection, and runtime/network
-            safeguards. See the <Link href="/security" className="underline">Security page</Link> for current control
-            summaries and disclosure guidance.
+            We apply layered controls including authenticated machine routes, secret protection, and
+            runtime/network safeguards. See the{" "}
+            <Link href="/security" className="underline">
+              Security page
+            </Link>{" "}
+            for current control summaries and disclosure guidance.
           </p>
         </section>
 
         <section className="rounded-2xl border border-[var(--color-border)] bg-white/[0.02] p-6">
           <h2 className="text-xl font-semibold">6. Your rights and requests</h2>
           <p className="mt-3 text-[var(--color-bone-muted)]">
-            You can request access, correction, export, or deletion of personal data associated with your account,
-            subject to legal and operational constraints.
+            You can request access, correction, export, or deletion of personal data associated with
+            your account, subject to legal and operational constraints.
           </p>
         </section>
 
         <section className="rounded-2xl border border-[var(--color-border)] bg-white/[0.02] p-6">
           <h2 className="text-xl font-semibold">7. International processing and policy changes</h2>
           <p className="mt-3 text-[var(--color-bone-muted)]">
-            Data may be processed in regions where our providers operate. We may update this policy as product and
-            legal requirements evolve; material updates will include a revised effective date.
+            Data may be processed in regions where our providers operate. We may update this policy
+            as product and legal requirements evolve; material updates will include a revised
+            effective date.
           </p>
         </section>
 
         <section className="rounded-2xl border border-[var(--color-border)] bg-white/[0.02] p-6">
           <h2 className="text-xl font-semibold">8. Related terms</h2>
           <p className="mt-3 text-[var(--color-bone-muted)]">
-            Use of hostfunc is also governed by our <Link href="/terms" className="underline">Terms of Service</Link>.
+            Use of hostfunc is also governed by our{" "}
+            <Link href="/terms" className="underline">
+              Terms of Service
+            </Link>
+            .
           </p>
         </section>
       </div>

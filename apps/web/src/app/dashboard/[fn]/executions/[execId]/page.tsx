@@ -1,9 +1,9 @@
+import { LiveLogs } from "@/components/logs/live-logs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireActiveOrg } from "@/lib/session";
 import { getExecution, listLogsForExecution } from "@/server/executions";
 import { notFound } from "next/navigation";
-import { LiveLogs } from "@/components/logs/live-logs";
 
 export default async function ExecutionDetailPage({
   params,

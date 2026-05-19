@@ -162,7 +162,10 @@ export default {
     }
 
     if (req.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: corsHeaders() });
+      return new Response(null, {
+        status: 204,
+        headers: { ...corsHeaders(), ...securityHeaders() },
+      });
     }
 
     let lookup: FnLookup | FnLookupError;
@@ -338,6 +341,9 @@ export default {
       const out = new Response(bodyForClient, upstream);
       out.headers.set("x-hostfunc-wall-ms", String(Date.now() - start));
       out.headers.set("x-hostfunc-exec-id", execId);
+      for (const [name, value] of Object.entries(securityHeaders())) {
+        out.headers.set(name, value);
+      }
       ctx.waitUntil(
         ingestExecution(env, {
           executionId: execId,
@@ -669,7 +675,7 @@ function parseCallChain(raw: string | null): CallChainFrame[] {
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json", ...corsHeaders() },
+    headers: { "content-type": "application/json", ...corsHeaders(), ...securityHeaders() },
   });
 }
 
@@ -679,5 +685,15 @@ function corsHeaders(): Record<string, string> {
     "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
     "access-control-allow-headers":
       "content-type,authorization,x-hostfunc-call-chain,x-hostfunc-parent-exec,x-hostfunc-debug,x-hostfunc-invocation-kind",
+  };
+}
+
+export function securityHeaders(): Record<string, string> {
+  // HSTS only — no preload (preload removal takes 12+ months). When applied to
+  // upstream user-function responses we use `.set()` not `.append()`: the
+  // platform owns the TLS posture for `*.hostfunc.io` and a user function must
+  // not be able to downgrade it.
+  return {
+    "strict-transport-security": "max-age=31536000; includeSubDomains",
   };
 }

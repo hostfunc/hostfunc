@@ -27,7 +27,11 @@ async function externalCall(baseUrl: string, path: string, body: unknown) {
   return json;
 }
 
-export async function vectorUpsert(config: ResolvedVectorConfig, namespace: string, vectors: VectorRecord[]) {
+export async function vectorUpsert(
+  config: ResolvedVectorConfig,
+  namespace: string,
+  vectors: VectorRecord[],
+) {
   const errors: string[] = [];
   for (const backend of config.backends) {
     try {

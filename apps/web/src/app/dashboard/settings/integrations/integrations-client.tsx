@@ -1,33 +1,46 @@
 "use client";
 
-import {
-  SettingsCard,
-  SettingsCardContent,
-  SettingsCardDescription,
-  SettingsCardFooter,
-  SettingsCardHeader,
-  SettingsCardTitle,
-} from "@/components/settings/settings-card";
 import { GithubOauthConnectButton } from "@/components/github/oauth-connect-button";
-import { Badge } from "@/components/ui/badge";
+import { IntegrationRow } from "@/components/settings/integration-row";
+import type { IntegrationStatus } from "@/components/settings/integration-status-badge";
 import { Button } from "@/components/ui/button";
+import { CustomSelect } from "@/components/ui/custom-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  ArrowRight,
-  CheckCircle2,
-  ChevronDown,
-  Database,
-  ExternalLink,
-  KeyRound,
-  Loader2,
-  PlugZap,
-  TriangleAlert,
-  Waypoints,
-} from "lucide-react";
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Check, Database, Loader2, RefreshCw, Search, Sparkles } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { updateWorkspaceIntegrationsAction } from "../actions";
+
+type GithubStatus =
+  | { connected: false }
+  | {
+      connected: true;
+      installationId: number;
+      accountLogin: string;
+      accountType: string;
+      repoCount: number;
+      selectedRepoCount: number;
+      updatedAt: Date;
+    };
+
+type GithubRepo = {
+  repoId: number;
+  fullName: string;
+  defaultBranch: string;
+  private: boolean;
+  archived: boolean;
+};
 
 type Props = {
   initial: {
@@ -41,29 +54,18 @@ type Props = {
     claudeKeyPreview: string | null;
     hasVectorServiceUrl: boolean;
     hasVectorDatabaseUrl: boolean;
-    github:
-      | { connected: false }
-      | {
-          connected: true;
-          installationId: number;
-          accountLogin: string;
-          accountType: string;
-          repoCount: number;
-          selectedRepoCount: number;
-          updatedAt: Date;
-        };
-    githubRepos: Array<{
-      repoId: number;
-      fullName: string;
-      defaultBranch: string;
-      private: boolean;
-      archived: boolean;
-    }>;
+    github: GithubStatus;
+    githubRepos: GithubRepo[];
     githubSelectedRepoIds: number[];
   };
 };
 
-const initialState = null;
+type ActionState = {
+  ok?: boolean;
+  message?: string;
+  error?: { form?: string[] };
+} | null;
+
 const OPENAI_MODELS = [
   "gpt-4.1",
   "gpt-4.1-mini",
@@ -91,816 +93,694 @@ function modelsForProvider(provider: "openai" | "claude"): readonly string[] {
   return provider === "openai" ? OPENAI_MODELS : CLAUDE_MODELS;
 }
 
-function SecretStatus({ label, present }: { label: string; present: boolean }) {
+function providerLabel(provider: "openai" | "claude"): string {
+  return provider === "openai" ? "OpenAI" : "Claude";
+}
+
+function vectorBackendLabel(value: "external_http" | "postgres" | "none"): string {
+  if (value === "external_http") return "External HTTP";
+  if (value === "postgres") return "Postgres";
+  return "None";
+}
+
+function ProviderIcon({ provider }: { provider: "openai" | "claude" }) {
+  const src = provider === "openai" ? "/ChatGPT%20logo.svg" : "/Claude%20logo.svg";
   return (
-    <div className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-ink)]/70 px-3 py-2">
-      <span className="text-sm text-[var(--color-bone-muted)]">{label}</span>
-      <Badge
-        variant="outline"
-        className={
-          present
-            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-            : "border-amber-500/40 bg-amber-500/10 text-amber-200"
-        }
-      >
-        {present ? "Configured" : "Missing"}
-      </Badge>
+    <span className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-white">
+      <img src={src} alt="" className="h-full w-full object-cover" />
+    </span>
+  );
+}
+
+function GithubIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className ?? "h-5 w-5 text-[var(--color-bone)]"}
+      fill="currentColor"
+    >
+      <path d="M12 0.5C5.65 0.5 0.5 5.65 0.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-.99-.02-1.95-3.2.7-3.87-1.54-3.87-1.54-.52-1.33-1.27-1.69-1.27-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.95 10.95 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.58.23 2.75.11 3.04.73.81 1.18 1.84 1.18 3.1 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.07.78 2.16 0 1.56-.01 2.81-.01 3.19 0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12c0-6.35-5.15-11.5-11.5-11.5z" />
+    </svg>
+  );
+}
+
+type SheetKey = "ai" | "vector" | "github" | null;
+
+export function IntegrationsClient({ initial }: Props) {
+  const searchParams = useSearchParams();
+  const [openSheet, setOpenSheet] = useState<SheetKey>(null);
+
+  useEffect(() => {
+    const githubState = searchParams.get("github");
+    const githubReason = searchParams.get("reason");
+    if (githubState === "connected") {
+      toast.success("GitHub connected");
+    } else if (githubState === "error") {
+      toast.error("GitHub connection failed", {
+        description: githubReason ?? undefined,
+      });
+    }
+  }, [searchParams]);
+
+  const aiStatus: IntegrationStatus =
+    initial.hasOpenAiKey || initial.hasClaudeKey ? "configured" : "unconfigured";
+  const vectorStatus: IntegrationStatus =
+    initial.hasVectorServiceUrl || initial.hasVectorDatabaseUrl ? "configured" : "unconfigured";
+  const githubStatus: IntegrationStatus = initial.github.connected ? "connected" : "disconnected";
+
+  const configuredCount =
+    (initial.hasOpenAiKey || initial.hasClaudeKey ? 1 : 0) +
+    (initial.hasVectorServiceUrl || initial.hasVectorDatabaseUrl ? 1 : 0) +
+    (initial.github.connected ? 1 : 0);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-[var(--color-bone-muted)]">
+          {configuredCount === 3
+            ? "All workspace integrations are configured."
+            : `${configuredCount} of 3 workspace integrations configured.`}
+        </p>
+        <p className="text-xs text-[var(--color-bone-faint)]">
+          These defaults apply to every function in this workspace.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <IntegrationRow
+          icon={<ProviderIcon provider={initial.aiProvider} />}
+          title="AI Model"
+          description={`${providerLabel(initial.aiProvider)} · ${initial.aiModel}`}
+          helperText={
+            initial.hasOpenAiKey && initial.hasClaudeKey
+              ? "OpenAI and Claude keys configured"
+              : initial.hasOpenAiKey
+                ? "OpenAI key configured"
+                : initial.hasClaudeKey
+                  ? "Claude key configured"
+                  : "No API keys configured"
+          }
+          status={aiStatus}
+          onClick={() => setOpenSheet("ai")}
+        />
+        <IntegrationRow
+          icon={<Database className="h-5 w-5 text-[var(--color-amber)]" />}
+          title="Vector Backend"
+          description={`${vectorBackendLabel(initial.vectorPrimary)} → ${vectorBackendLabel(initial.vectorSecondary)}`}
+          helperText={
+            initial.hasVectorServiceUrl && initial.hasVectorDatabaseUrl
+              ? "Service URL and database URL set"
+              : initial.hasVectorServiceUrl
+                ? "Service URL set"
+                : initial.hasVectorDatabaseUrl
+                  ? "Database URL set"
+                  : "No endpoints configured"
+          }
+          status={vectorStatus}
+          onClick={() => setOpenSheet("vector")}
+        />
+        <IntegrationRow
+          icon={<GithubIcon className="h-5 w-5 text-[var(--color-bone)]" />}
+          title="GitHub"
+          description={
+            initial.github.connected
+              ? `Connected as ${initial.github.accountLogin}`
+              : "Not connected"
+          }
+          helperText={
+            initial.github.connected
+              ? `${initial.github.selectedRepoCount} of ${initial.github.repoCount} repositories selected`
+              : "Connect to bind functions to repositories"
+          }
+          status={githubStatus}
+          onClick={() => setOpenSheet("github")}
+        />
+      </div>
+
+      <AiConfigSheet
+        open={openSheet === "ai"}
+        onOpenChange={(open) => setOpenSheet(open ? "ai" : null)}
+        initial={initial}
+      />
+      <VectorConfigSheet
+        open={openSheet === "vector"}
+        onOpenChange={(open) => setOpenSheet(open ? "vector" : null)}
+        initial={initial}
+      />
+      <GithubConnectSheet
+        open={openSheet === "github"}
+        onOpenChange={(open) => setOpenSheet(open ? "github" : null)}
+        initial={initial}
+      />
     </div>
   );
 }
 
-function ProviderLogo({ provider }: { provider: "openai" | "claude" }) {
-  const src = provider === "openai" ? "/ChatGPT%20logo.svg" : "/Claude%20logo.svg";
-  const fallbackLabel = provider === "openai" ? "O" : "C";
-  return (
-    <span
-      className="inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full border border-[var(--color-border)] bg-white"
-      aria-hidden="true"
-    >
-      <img
-        src={src}
-        alt=""
-        className="h-full w-full object-cover"
-        onError={(event) => {
-          event.currentTarget.style.display = "none";
-          const container = event.currentTarget.parentElement;
-          if (!container || container.textContent?.trim()) return;
-          container.classList.add(
-            provider === "openai" ? "text-emerald-400" : "text-violet-400",
-            "bg-[var(--color-ink)]",
-            "text-[10px]",
-            "font-bold",
-          );
-          container.textContent = fallbackLabel;
-        }}
-      />
-    </span>
-  );
-}
-
-function ConnectorLogo({
-  src,
-  fallback,
+function AiConfigSheet({
+  open,
+  onOpenChange,
+  initial,
 }: {
-  src?: string | undefined;
-  fallback: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  initial: Props["initial"];
 }) {
-  if (!src) {
-    return (
-      <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-ink)] text-xs font-semibold text-[var(--color-bone-muted)]">
-        {fallback}
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-[var(--color-border)] bg-white">
-      <img src={src} alt="" aria-hidden="true" className="h-full w-full object-cover" />
-    </span>
+  const [state, formAction, pending] = useActionState<ActionState, FormData>(
+    updateWorkspaceIntegrationsAction,
+    null,
   );
-}
-
-function ConnectorCard({
-  title,
-  subtitle,
-  logoSrc,
-  fallback,
-  connected,
-  active,
-  onOpen,
-}: {
-  title: string;
-  subtitle: string;
-  logoSrc?: string;
-  fallback: string;
-  connected: boolean;
-  active: boolean;
-  onOpen: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className={`group w-full rounded-xl border p-4 text-left transition ${
-        active
-          ? "border-[var(--color-amber)]/50 bg-[var(--color-amber)]/10"
-          : "border-[var(--color-border)] bg-[var(--color-ink)]/50 hover:border-[var(--color-amber)]/35"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <ConnectorLogo src={logoSrc} fallback={fallback} />
-          <div>
-            <p className="text-sm font-medium text-[var(--color-bone)]">{title}</p>
-            <p className="text-xs text-[var(--color-bone-faint)]">{subtitle}</p>
-          </div>
-        </div>
-        <Badge
-          variant="outline"
-          className={
-            connected
-              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-              : "border-amber-500/40 bg-amber-500/10 text-amber-200"
-          }
-        >
-          {connected ? "Connected" : "Needs key"}
-        </Badge>
-      </div>
-      <div className="mt-3 flex items-center justify-between text-xs text-[var(--color-bone-muted)]">
-        <span>{connected ? "Edit credentials" : "Connect provider"}</span>
-        <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
-      </div>
-    </button>
-  );
-}
-
-function CustomSelect({
-  id,
-  name,
-  value,
-  onChange,
-  options,
-}: {
-  id: string;
-  name: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: Array<{ value: string; label: string }>;
-}) {
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const selectedLabel = options.find((option) => option.value === value)?.label ?? value;
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: MouseEvent) => {
-      if (!menuRef.current) return;
-      if (!menuRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("mousedown", onPointerDown);
-    window.addEventListener("keydown", onEscape);
-    return () => {
-      window.removeEventListener("mousedown", onPointerDown);
-      window.removeEventListener("keydown", onEscape);
-    };
-  }, [open]);
-
-  return (
-    <>
-      <input type="hidden" id={id} name={name} value={value} />
-      <div className="relative" ref={menuRef}>
-        <button
-          type="button"
-          onClick={() => setOpen((prev) => !prev)}
-          className="flex h-11 w-full items-center justify-between rounded-md border border-[var(--color-border)] bg-[var(--color-ink)] px-3 text-left text-[var(--color-bone)] transition hover:border-[var(--color-amber)]/40"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-        >
-          <span className="text-sm font-medium">{selectedLabel}</span>
-          <ChevronDown
-            className={`h-4 w-4 text-[var(--color-bone-faint)] transition ${open ? "rotate-180" : ""}`}
-          />
-        </button>
-        {open ? (
-          <div className="absolute z-20 mt-2 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-ink-elevated)] p-1 shadow-xl">
-            {options.map((option) => {
-              const isSelected = option.value === value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => {
-                    onChange(option.value);
-                    setOpen(false);
-                  }}
-                  className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition ${
-                    isSelected
-                      ? "bg-[var(--color-amber)]/15 text-[var(--color-bone)]"
-                      : "text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
-                  }`}
-                >
-                  <span>{option.label}</span>
-                  {isSelected ? <CheckCircle2 className="h-4 w-4 text-[var(--color-amber)]" /> : null}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-      </div>
-    </>
-  );
-}
-
-export function IntegrationsClient({ initial }: Props) {
-  const searchParams = useSearchParams();
-  const [state, formAction, pending] = useActionState(updateWorkspaceIntegrationsAction, initialState);
   const [aiProvider, setAiProvider] = useState<"openai" | "claude">(initial.aiProvider);
   const [aiModel, setAiModel] = useState(initial.aiModel);
-  const [vectorPrimary, setVectorPrimary] = useState<"external_http" | "postgres">(initial.vectorPrimary);
+
+  useEffect(() => {
+    if (open) {
+      setAiProvider(initial.aiProvider);
+      setAiModel(initial.aiModel);
+    }
+  }, [open, initial.aiProvider, initial.aiModel]);
+
+  useEffect(() => {
+    if (!state) return;
+    if (state.ok) {
+      toast.success("AI defaults saved", { description: state.message });
+      onOpenChange(false);
+    } else if (state.error?.form?.length) {
+      toast.error("Failed to save AI defaults", {
+        description: state.error.form.join("\n"),
+      });
+    }
+  }, [state, onOpenChange]);
+
+  const modelOptions = useMemo(() => {
+    const base = modelsForProvider(aiProvider);
+    return base.includes(aiModel) ? [...base] : [aiModel, ...base];
+  }, [aiProvider, aiModel]);
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-[var(--color-amber)]" />
+            AI Model
+          </SheetTitle>
+          <SheetDescription>
+            Pick the default provider and model for `@hostfunc/sdk/ai` and `@hostfunc/sdk/agent`.
+            Empty key fields keep existing values.
+          </SheetDescription>
+        </SheetHeader>
+        <form action={formAction} className="flex flex-1 flex-col">
+          <SheetBody className="space-y-5">
+            {/* Preserve vector settings on this save */}
+            <input type="hidden" name="vectorPrimary" value={initial.vectorPrimary} />
+            <input type="hidden" name="vectorSecondary" value={initial.vectorSecondary} />
+
+            <div className="grid gap-2">
+              <Label htmlFor="ws-aiProvider">Provider</Label>
+              <CustomSelect
+                id="ws-aiProvider"
+                name="aiProvider"
+                value={aiProvider}
+                onChange={(value) => {
+                  const next = value as "openai" | "claude";
+                  setAiProvider(next);
+                  const nextModels = modelsForProvider(next);
+                  if (!nextModels.includes(aiModel)) setAiModel(nextModels[0] ?? "");
+                }}
+                options={[
+                  {
+                    value: "openai",
+                    label: "OpenAI",
+                    icon: <ProviderIcon provider="openai" />,
+                  },
+                  {
+                    value: "claude",
+                    label: "Claude",
+                    icon: <ProviderIcon provider="claude" />,
+                  },
+                ]}
+                renderValue={(option) => (
+                  <span className="inline-flex items-center gap-2">
+                    {option?.icon ?? null}
+                    <span>{option?.label ?? "Select provider"}</span>
+                  </span>
+                )}
+                renderOption={(option) => (
+                  <span className="inline-flex items-center gap-2">
+                    {option.icon ?? null}
+                    <span>{option.label}</span>
+                  </span>
+                )}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="ws-aiModel">Default model</Label>
+              <CustomSelect
+                id="ws-aiModel"
+                name="aiModel"
+                value={aiModel}
+                onChange={(value) => setAiModel(value)}
+                options={modelOptions.map((model) => ({ value: model, label: model }))}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="ws-openaiApiKey">OpenAI API key</Label>
+              <Input
+                id="ws-openaiApiKey"
+                name="openaiApiKey"
+                type="password"
+                autoComplete="off"
+                placeholder={initial.openAiKeyPreview ?? "sk-..."}
+                className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
+              />
+              <p className="text-xs text-[var(--color-bone-faint)]">
+                {initial.openAiKeyPreview
+                  ? `Stored key: ${initial.openAiKeyPreview} · leave empty to keep`
+                  : "No key on file."}
+              </p>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="ws-claudeApiKey">Claude API key</Label>
+              <Input
+                id="ws-claudeApiKey"
+                name="claudeApiKey"
+                type="password"
+                autoComplete="off"
+                placeholder={initial.claudeKeyPreview ?? "sk-ant-..."}
+                className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
+              />
+              <p className="text-xs text-[var(--color-bone-faint)]">
+                {initial.claudeKeyPreview
+                  ? `Stored key: ${initial.claudeKeyPreview} · leave empty to keep`
+                  : "No key on file."}
+              </p>
+            </div>
+          </SheetBody>
+          <SheetFooter>
+            <Button type="submit" variant="glass" disabled={pending} className="rounded-full px-6">
+              {pending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save changes"
+              )}
+            </Button>
+          </SheetFooter>
+        </form>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function VectorConfigSheet({
+  open,
+  onOpenChange,
+  initial,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  initial: Props["initial"];
+}) {
+  const [state, formAction, pending] = useActionState<ActionState, FormData>(
+    updateWorkspaceIntegrationsAction,
+    null,
+  );
+  const [vectorPrimary, setVectorPrimary] = useState<"external_http" | "postgres">(
+    initial.vectorPrimary,
+  );
   const [vectorSecondary, setVectorSecondary] = useState<"external_http" | "postgres" | "none">(
     initial.vectorSecondary,
   );
-  const [providerMenuOpen, setProviderMenuOpen] = useState(false);
-  const providerMenuRef = useRef<HTMLDivElement | null>(null);
-  const [activeAiConnector, setActiveAiConnector] = useState<"openai" | "claude">(
-    initial.aiProvider,
+
+  useEffect(() => {
+    if (open) {
+      setVectorPrimary(initial.vectorPrimary);
+      setVectorSecondary(initial.vectorSecondary);
+    }
+  }, [open, initial.vectorPrimary, initial.vectorSecondary]);
+
+  useEffect(() => {
+    if (!state) return;
+    if (state.ok) {
+      toast.success("Vector defaults saved", { description: state.message });
+      onOpenChange(false);
+    } else if (state.error?.form?.length) {
+      toast.error("Failed to save vector defaults", {
+        description: state.error.form.join("\n"),
+      });
+    }
+  }, [state, onOpenChange]);
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5 text-[var(--color-amber)]" />
+            Vector Backend
+          </SheetTitle>
+          <SheetDescription>
+            Set deterministic primary and fallback routing for `@hostfunc/sdk/vector`. Empty URL
+            fields keep stored values.
+          </SheetDescription>
+        </SheetHeader>
+        <form action={formAction} className="flex flex-1 flex-col">
+          <SheetBody className="space-y-5">
+            {/* Preserve AI settings on this save */}
+            <input type="hidden" name="aiProvider" value={initial.aiProvider} />
+            <input type="hidden" name="aiModel" value={initial.aiModel} />
+
+            <div className="grid gap-2">
+              <Label htmlFor="ws-vectorPrimary">Primary backend</Label>
+              <CustomSelect
+                id="ws-vectorPrimary"
+                name="vectorPrimary"
+                value={vectorPrimary}
+                onChange={(value) => setVectorPrimary(value as "external_http" | "postgres")}
+                options={[
+                  { value: "external_http", label: "External HTTP" },
+                  { value: "postgres", label: "Postgres" },
+                ]}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="ws-vectorSecondary">Fallback backend</Label>
+              <CustomSelect
+                id="ws-vectorSecondary"
+                name="vectorSecondary"
+                value={vectorSecondary}
+                onChange={(value) =>
+                  setVectorSecondary(value as "external_http" | "postgres" | "none")
+                }
+                options={[
+                  { value: "none", label: "None" },
+                  { value: "external_http", label: "External HTTP" },
+                  { value: "postgres", label: "Postgres" },
+                ]}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="ws-vectorServiceUrl">Vector service URL</Label>
+              <Input
+                id="ws-vectorServiceUrl"
+                name="vectorServiceUrl"
+                placeholder={initial.hasVectorServiceUrl ? "On file" : "https://vector.example.com"}
+                className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
+              />
+              <p className="text-xs text-[var(--color-bone-faint)]">
+                {initial.hasVectorServiceUrl
+                  ? "URL on file · leave empty to keep"
+                  : "Not yet configured."}
+              </p>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="ws-vectorDatabaseUrl">Vector database URL</Label>
+              <Input
+                id="ws-vectorDatabaseUrl"
+                name="vectorDatabaseUrl"
+                placeholder={initial.hasVectorDatabaseUrl ? "On file" : "postgres://..."}
+                className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
+              />
+              <p className="text-xs text-[var(--color-bone-faint)]">
+                {initial.hasVectorDatabaseUrl
+                  ? "URL on file · leave empty to keep"
+                  : "Not yet configured."}
+              </p>
+            </div>
+          </SheetBody>
+          <SheetFooter>
+            <Button type="submit" variant="glass" disabled={pending} className="rounded-full px-6">
+              {pending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save changes"
+              )}
+            </Button>
+          </SheetFooter>
+        </form>
+      </SheetContent>
+    </Sheet>
   );
-  const [showAiConfig, setShowAiConfig] = useState(false);
-  const [showVectorConfig, setShowVectorConfig] = useState(false);
-  const modelOptions = useMemo(() => {
-    const base = modelsForProvider(aiProvider);
-    return base.includes(aiModel) ? base : [aiModel, ...base];
-  }, [aiProvider, aiModel]);
-  const hasError = Boolean(state?.error?.form?.[0]);
-  const hasSuccess = Boolean(state?.ok);
-  const githubState = searchParams.get("github");
-  const githubReason = searchParams.get("reason");
-  const providerLabel = aiProvider === "openai" ? "OpenAI" : "Claude";
+}
+
+function GithubConnectSheet({
+  open,
+  onOpenChange,
+  initial,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  initial: Props["initial"];
+}) {
   const [repoSearch, setRepoSearch] = useState("");
   const [selectedRepoIds, setSelectedRepoIds] = useState<number[]>(initial.githubSelectedRepoIds);
-  const [repoSaveBusy, setRepoSaveBusy] = useState(false);
-  const [repoActionMessage, setRepoActionMessage] = useState<string | null>(null);
-  const filteredGithubRepos = useMemo(() => {
+  const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setSelectedRepoIds(initial.githubSelectedRepoIds);
+      setRepoSearch("");
+    }
+  }, [open, initial.githubSelectedRepoIds]);
+
+  const filteredRepos = useMemo(() => {
     const query = repoSearch.trim().toLowerCase();
     if (!query) return initial.githubRepos;
     return initial.githubRepos.filter((repo) => repo.fullName.toLowerCase().includes(query));
   }, [initial.githubRepos, repoSearch]);
-  const health = useMemo(() => {
-    const connectedCount = [
-      initial.hasOpenAiKey,
-      initial.hasClaudeKey,
-      initial.hasVectorServiceUrl,
-      initial.hasVectorDatabaseUrl,
-    ].filter(Boolean).length;
-    return { connectedCount, total: 4 };
-  }, [initial]);
 
-  useEffect(() => {
-    if (!providerMenuOpen) return;
-    const onPointerDown = (event: MouseEvent) => {
-      if (!providerMenuRef.current) return;
-      if (!providerMenuRef.current.contains(event.target as Node)) {
-        setProviderMenuOpen(false);
-      }
-    };
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setProviderMenuOpen(false);
-    };
-    window.addEventListener("mousedown", onPointerDown);
-    window.addEventListener("keydown", onEscape);
-    return () => {
-      window.removeEventListener("mousedown", onPointerDown);
-      window.removeEventListener("keydown", onEscape);
-    };
-  }, [providerMenuOpen]);
+  const selectionDirty = useMemo(() => {
+    if (selectedRepoIds.length !== initial.githubSelectedRepoIds.length) return true;
+    const sortedNew = [...selectedRepoIds].sort();
+    const sortedOld = [...initial.githubSelectedRepoIds].sort();
+    return sortedNew.some((id, idx) => id !== sortedOld[idx]);
+  }, [selectedRepoIds, initial.githubSelectedRepoIds]);
 
   return (
-    <form action={formAction} className="space-y-6">
-      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-sm font-medium text-[var(--color-bone)]">Integration Hub</p>
-            <p className="mt-1 text-xs text-[var(--color-bone-faint)]">
-              OAuth-style connect UX with secure key-backed credentials.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-[var(--color-border)] text-[var(--color-bone-muted)]">
-              {health.connectedCount}/{health.total} configured
-            </Badge>
-            <Badge variant="outline" className="border-[var(--color-border)] text-[var(--color-bone-muted)]">
-              Workspace defaults
-            </Badge>
-          </div>
-        </div>
-      </div>
-
-      <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/80 shadow-xl">
-        <SettingsCardHeader>
-          <SettingsCardTitle className="flex items-center gap-2 text-lg">
-            <PlugZap className="h-4 w-4 text-[var(--color-amber)]" />
-            GitHub OAuth Integration
-          </SettingsCardTitle>
-          <SettingsCardDescription>
-            Connect GitHub once for this workspace to allow function-level repo and branch selection.
-          </SettingsCardDescription>
-        </SettingsCardHeader>
-        <SettingsCardContent className="space-y-4">
-          {githubState === "connected" ? (
-            <p className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
-              GitHub connected successfully.
-            </p>
-          ) : null}
-          {githubState === "error" ? (
-            <p className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-              GitHub connection failed{githubReason ? `: ${githubReason}` : "."}
-            </p>
-          ) : null}
-          <div className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-ink)]/60 p-4">
-            <div className="space-y-1">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="sm:max-w-[560px]">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <GithubIcon className="h-5 w-5 text-[var(--color-bone)]" />
+            GitHub
+          </SheetTitle>
+          <SheetDescription>
+            Connect your workspace to GitHub and choose which repositories functions can bind to.
+          </SheetDescription>
+        </SheetHeader>
+        <SheetBody className="space-y-5">
+          <div className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-ink)]/60 px-4 py-3">
+            <div>
               <p className="text-sm font-medium text-[var(--color-bone)]">
                 {initial.github.connected
-                  ? `Connected to ${initial.github.accountLogin}`
-                  : "Not connected to GitHub"}
+                  ? `Connected as ${initial.github.accountLogin}`
+                  : "Not connected"}
               </p>
-              <p className="text-xs text-[var(--color-bone-faint)]">
+              <p className="mt-0.5 text-xs text-[var(--color-bone-faint)]">
                 {initial.github.connected
-                  ? `${initial.github.repoCount} repositories synced · ${
-                      initial.github.selectedRepoCount
-                    } selected`
-                  : "Connect to authorize repository and branch access."}
+                  ? `${initial.github.repoCount} repositories visible to the install`
+                  : "Authorize the GitHub app to manage repos."}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge
+            {initial.github.connected ? (
+              <Button
+                type="button"
                 variant="outline"
-                className={
-                  initial.github.connected
-                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-                    : "border-amber-500/40 bg-amber-500/10 text-amber-200"
-                }
+                disabled={disconnecting}
+                className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-200"
+                onClick={async () => {
+                  setDisconnecting(true);
+                  try {
+                    const response = await fetch("/api/integrations/github/disconnect", {
+                      method: "POST",
+                    });
+                    if (!response.ok) {
+                      toast.error("Failed to disconnect");
+                      return;
+                    }
+                    toast.success("GitHub disconnected");
+                    window.location.href = "/dashboard/settings/integrations";
+                  } finally {
+                    setDisconnecting(false);
+                  }
+                }}
               >
-                {initial.github.connected ? "Connected" : "Disconnected"}
-              </Badge>
-              {initial.github.connected ? (
-                <>
-                  <GithubOauthConnectButton
-                    returnTo="/dashboard/settings/integrations"
-                    label="Update permissions"
-                    className="border border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]"
-                    onClick={async () => {
-                      await fetch("/api/integrations/github/disconnect", { method: "POST" });
-                      window.location.href = "/dashboard/settings/integrations";
-                    }}
-                  >
-                    Disconnect
-                  </Button>
-                </>
-              ) : (
-                <GithubOauthConnectButton
-                  returnTo="/dashboard/settings/integrations"
-                  label="Connect GitHub"
-                  variant="glass"
-                />
-              )}
-            </div>
+                {disconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Disconnect
+              </Button>
+            ) : (
+              <GithubOauthConnectButton
+                returnTo="/dashboard/settings/integrations"
+                label="Connect GitHub"
+                variant="glass"
+                className="rounded-full px-5"
+              />
+            )}
           </div>
+
           {initial.github.connected ? (
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-ink)]/60 p-4">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-medium text-[var(--color-bone)]">Repository Access Manager</p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]"
-                    onClick={async () => {
-                      setRepoActionMessage(null);
-                      setRepoSaveBusy(true);
-                      const response = await fetch("/api/integrations/github/refresh", { method: "POST" });
+            <div className="space-y-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-medium text-[var(--color-bone)]">Repository access</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={refreshing}
+                  className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]"
+                  onClick={async () => {
+                    setRefreshing(true);
+                    try {
+                      const response = await fetch("/api/integrations/github/refresh", {
+                        method: "POST",
+                      });
                       const json = (await response.json().catch(() => ({}))) as {
                         ok?: boolean;
                         error?: string;
                         syncedCount?: number;
                       };
-                      setRepoSaveBusy(false);
                       if (!response.ok || !json.ok) {
-                        setRepoActionMessage(json.error ?? "Refresh failed.");
+                        toast.error("Refresh failed", { description: json.error });
                         return;
                       }
-                      setRepoActionMessage(`Synced ${json.syncedCount ?? 0} repositories from GitHub.`);
+                      toast.success(`Synced ${json.syncedCount ?? 0} repositories`);
                       window.location.reload();
-                    }}
-                  >
-                    Refresh from GitHub
-                  </Button>
-                </div>
+                    } finally {
+                      setRefreshing(false);
+                    }
+                  }}
+                >
+                  {refreshing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Refresh
+                </Button>
               </div>
-              <div className="mb-3">
+
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-bone-faint)]" />
                 <Input
                   value={repoSearch}
                   onChange={(event) => setRepoSearch(event.target.value)}
                   placeholder="Search repositories..."
-                  className="h-10 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
+                  className="h-10 pl-9 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
                 />
               </div>
-              <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-                {filteredGithubRepos.map((repo) => {
-                  const checked = selectedRepoIds.includes(repo.repoId);
-                  return (
-                    <label
-                      key={repo.repoId}
-                      className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-ink)]/60 px-3 py-2"
-                    >
-                      <span className="text-sm text-[var(--color-bone)]">{repo.fullName}</span>
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(event) => {
+
+              <div className="max-h-[320px] space-y-1.5 overflow-y-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-ink)]/40 p-2">
+                {filteredRepos.length === 0 ? (
+                  <p className="px-3 py-6 text-center text-sm text-[var(--color-bone-faint)]">
+                    {repoSearch
+                      ? "No repositories match this search."
+                      : "No repositories visible to the install."}
+                  </p>
+                ) : (
+                  filteredRepos.map((repo) => {
+                    const checked = selectedRepoIds.includes(repo.repoId);
+                    return (
+                      <button
+                        key={repo.repoId}
+                        type="button"
+                        onClick={() => {
                           setSelectedRepoIds((prev) =>
-                            event.target.checked
-                              ? [...prev, repo.repoId]
-                              : prev.filter((id) => id !== repo.repoId),
+                            checked
+                              ? prev.filter((id) => id !== repo.repoId)
+                              : [...prev, repo.repoId],
                           );
                         }}
-                        className="h-4 w-4 accent-[var(--color-amber)]"
-                      />
-                    </label>
-                  );
-                })}
-                {filteredGithubRepos.length === 0 ? (
-                  <p className="text-sm text-[var(--color-bone-faint)]">No repositories match this search.</p>
-                ) : null}
-              </div>
-              <div className="mt-3 flex items-center justify-between">
-                <p className="text-xs text-[var(--color-bone-faint)]">
-                  {selectedRepoIds.length === 0
-                    ? "No repos selected. Repo pickers will stay empty until you select at least one."
-                    : `${selectedRepoIds.length} repositories selected.`}
-                </p>
-                <Button
-                  type="button"
-                  disabled={repoSaveBusy}
-                  variant="glass"
-                  className="rounded-full px-5"
-                  onClick={async () => {
-                    setRepoActionMessage(null);
-                    setRepoSaveBusy(true);
-                    const response = await fetch("/api/integrations/github/selection", {
-                      method: "POST",
-                      headers: { "content-type": "application/json" },
-                      body: JSON.stringify({ repoIds: selectedRepoIds }),
-                    });
-                    const json = (await response.json().catch(() => ({}))) as {
-                      ok?: boolean;
-                      error?: string;
-                    };
-                    setRepoSaveBusy(false);
-                    if (!response.ok || !json.ok) {
-                      setRepoActionMessage(json.error ?? "Failed to save selected repositories.");
-                      return;
-                    }
-                    setRepoActionMessage("Selected repositories saved.");
-                    window.location.reload();
-                  }}
-                >
-                  {repoSaveBusy ? "Saving..." : "Save selected repositories"}
-                </Button>
-              </div>
-              {repoActionMessage ? (
-                <p className="mt-2 text-xs text-[var(--color-bone-muted)]">{repoActionMessage}</p>
-              ) : null}
-            </div>
-          ) : null}
-        </SettingsCardContent>
-      </SettingsCard>
-
-      <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/80 shadow-xl">
-        <SettingsCardHeader>
-          <SettingsCardTitle className="flex items-center gap-2 text-lg">
-            <PlugZap className="h-4 w-4 text-[var(--color-amber)]" />
-            AI Integrations
-          </SettingsCardTitle>
-          <SettingsCardDescription>
-            Choose a default AI provider/model and manage provider credentials.
-          </SettingsCardDescription>
-        </SettingsCardHeader>
-        <SettingsCardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-2">
-            <ConnectorCard
-              title="OpenAI"
-              subtitle="ChatGPT models"
-              logoSrc="/ChatGPT%20logo.svg"
-              fallback="O"
-              connected={initial.hasOpenAiKey}
-              active={activeAiConnector === "openai"}
-              onOpen={() => {
-                setActiveAiConnector("openai");
-                setAiProvider("openai");
-                const nextModels = modelsForProvider("openai");
-                if (!nextModels.includes(aiModel)) setAiModel(nextModels[0] ?? "");
-                setShowAiConfig(true);
-              }}
-            />
-            <ConnectorCard
-              title="Claude"
-              subtitle="Anthropic models"
-              logoSrc="/Claude%20logo.svg"
-              fallback="C"
-              connected={initial.hasClaudeKey}
-              active={activeAiConnector === "claude"}
-              onOpen={() => {
-                setActiveAiConnector("claude");
-                setAiProvider("claude");
-                const nextModels = modelsForProvider("claude");
-                if (!nextModels.includes(aiModel)) setAiModel(nextModels[0] ?? "");
-                setShowAiConfig(true);
-              }}
-            />
-          </div>
-
-          <div className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-ink)]/50 px-4 py-3">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-[var(--color-bone)]">Provider configuration</p>
-              <p className="text-xs text-[var(--color-bone-faint)]">
-                Simulated OAuth connect flow. Credentials are stored securely after save.
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]"
-              onClick={() => setShowAiConfig((prev) => !prev)}
-            >
-              {showAiConfig ? "Hide Config" : "Connect / Edit"}
-            </Button>
-          </div>
-
-          {showAiConfig ? (
-            <div className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink)]/60 p-4 md:grid-cols-2">
-              <input type="hidden" id="aiProvider" name="aiProvider" value={aiProvider} />
-              <div className="grid gap-2">
-                <Label htmlFor="aiProviderMenu">Provider</Label>
-                <div className="relative" ref={providerMenuRef}>
-                  <button
-                    id="aiProviderMenu"
-                    type="button"
-                    onClick={() => setProviderMenuOpen((open) => !open)}
-                    className="flex h-11 w-full items-center justify-between rounded-md border border-[var(--color-border)] bg-[var(--color-ink)] px-3 text-left text-[var(--color-bone)] transition hover:border-[var(--color-amber)]/40"
-                    aria-haspopup="listbox"
-                    aria-expanded={providerMenuOpen}
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <ProviderLogo provider={aiProvider} />
-                      <span className="text-sm font-medium">{providerLabel}</span>
-                    </span>
-                    <ChevronDown
-                      className={`h-4 w-4 text-[var(--color-bone-faint)] transition ${providerMenuOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                  {providerMenuOpen ? (
-                    <div className="absolute z-20 mt-2 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-ink-elevated)] p-1 shadow-xl">
-                      {(["openai", "claude"] as const).map((provider) => {
-                        const isSelected = provider === aiProvider;
-                        return (
-                          <button
-                            key={provider}
-                            type="button"
-                            onClick={() => {
-                              setAiProvider(provider);
-                              setActiveAiConnector(provider);
-                              const nextModels = modelsForProvider(provider);
-                              setAiModel(nextModels[0] ?? "");
-                              setProviderMenuOpen(false);
-                            }}
-                            className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition ${
-                              isSelected
-                                ? "bg-[var(--color-amber)]/15 text-[var(--color-bone)]"
-                                : "text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
-                            }`}
-                          >
-                            <span className="inline-flex items-center gap-2">
-                              <ProviderLogo provider={provider} />
-                              <span>{provider === "openai" ? "OpenAI" : "Claude"}</span>
+                        className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition ${
+                          checked
+                            ? "bg-[var(--color-amber)]/12 text-[var(--color-bone)]"
+                            : "text-[var(--color-bone-muted)] hover:bg-white/[0.04] hover:text-[var(--color-bone)]"
+                        }`}
+                      >
+                        <span className="inline-flex items-center gap-2 truncate">
+                          <span className="truncate font-medium">{repo.fullName}</span>
+                          {repo.private ? (
+                            <span className="rounded border border-[var(--color-border)] px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-[var(--color-bone-faint)]">
+                              private
                             </span>
-                            {isSelected ? <CheckCircle2 className="h-4 w-4 text-[var(--color-amber)]" /> : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                </div>
+                          ) : null}
+                          {repo.archived ? (
+                            <span className="rounded border border-[var(--color-border)] px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-[var(--color-bone-faint)]">
+                              archived
+                            </span>
+                          ) : null}
+                        </span>
+                        {checked ? (
+                          <Check className="h-4 w-4 shrink-0 text-[var(--color-amber)]" />
+                        ) : null}
+                      </button>
+                    );
+                  })
+                )}
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="aiModel">Default model</Label>
-                <select
-                  id="aiModel"
-                  name="aiModel"
-                  value={aiModel}
-                  onChange={(event) => setAiModel(event.target.value)}
-                  className="h-11 rounded-md border border-[var(--color-border)] bg-[var(--color-ink)] px-3 text-[var(--color-bone)]"
-                >
-                  {modelOptions.map((model) => (
-                    <option key={model} value={model}>
-                      {model}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="openaiApiKey">OpenAI API key</Label>
-                <Input
-                  id="openaiApiKey"
-                  name="openaiApiKey"
-                  placeholder="sk-..."
-                  className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
-                />
-                <p className="text-xs text-[var(--color-bone-faint)]">
-                  {initial.openAiKeyPreview ? `Current: ${initial.openAiKeyPreview}` : "Current: not configured"}
-                </p>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="claudeApiKey">Claude API key</Label>
-                <Input
-                  id="claudeApiKey"
-                  name="claudeApiKey"
-                  placeholder="sk-ant-..."
-                  className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
-                />
-                <p className="text-xs text-[var(--color-bone-faint)]">
-                  {initial.claudeKeyPreview ? `Current: ${initial.claudeKeyPreview}` : "Current: not configured"}
-                </p>
-              </div>
-            </div>
-          ) : null}
-        </SettingsCardContent>
-      </SettingsCard>
-
-      <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/80 shadow-xl">
-        <SettingsCardHeader>
-          <SettingsCardTitle className="flex items-center gap-2 text-lg">
-            <Database className="h-4 w-4 text-[var(--color-amber)]" />
-            Vector Integrations
-          </SettingsCardTitle>
-          <SettingsCardDescription>
-            Configure vector backend routing and connection endpoints.
-          </SettingsCardDescription>
-        </SettingsCardHeader>
-        <SettingsCardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-2">
-            <ConnectorCard
-              title="Vector Service"
-              subtitle="External HTTP endpoint"
-              fallback="VS"
-              connected={initial.hasVectorServiceUrl}
-              active={showVectorConfig}
-              onOpen={() => setShowVectorConfig(true)}
-            />
-            <ConnectorCard
-              title="Vector Database"
-              subtitle="Postgres-backed storage"
-              fallback="DB"
-              connected={initial.hasVectorDatabaseUrl}
-              active={showVectorConfig}
-              onOpen={() => setShowVectorConfig(true)}
-            />
-          </div>
-          <div className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-ink)]/50 px-4 py-3">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-[var(--color-bone)]">Routing and endpoint configuration</p>
               <p className="text-xs text-[var(--color-bone-faint)]">
-                Define deterministic primary/fallback order and endpoint URLs.
+                {selectedRepoIds.length === 0
+                  ? "Nothing selected. Function repo pickers will be empty."
+                  : `${selectedRepoIds.length} repository${selectedRepoIds.length === 1 ? "" : "ies"} selected.`}
               </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]"
-              onClick={() => setShowVectorConfig((prev) => !prev)}
-            >
-              {showVectorConfig ? "Hide Config" : "Connect / Edit"}
-            </Button>
-          </div>
-          {showVectorConfig ? (
-            <div className="grid gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-ink)]/60 p-4 md:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="vectorPrimary">Primary backend</Label>
-                <CustomSelect
-                  id="vectorPrimary"
-                  name="vectorPrimary"
-                  value={vectorPrimary}
-                  onChange={(value) => setVectorPrimary(value as "external_http" | "postgres")}
-                  options={[
-                    { value: "external_http", label: "External HTTP" },
-                    { value: "postgres", label: "Postgres URL" },
-                  ]}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="vectorSecondary">Fallback backend</Label>
-                <CustomSelect
-                  id="vectorSecondary"
-                  name="vectorSecondary"
-                  value={vectorSecondary}
-                  onChange={(value) =>
-                    setVectorSecondary(value as "external_http" | "postgres" | "none")
-                  }
-                  options={[
-                    { value: "none", label: "None" },
-                    { value: "external_http", label: "External HTTP" },
-                    { value: "postgres", label: "Postgres URL" },
-                  ]}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="vectorServiceUrl">Vector service URL (optional update)</Label>
-                <Input
-                  id="vectorServiceUrl"
-                  name="vectorServiceUrl"
-                  placeholder="https://vector.example.com"
-                  className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="vectorDatabaseUrl">Vector database URL (optional update)</Label>
-                <Input
-                  id="vectorDatabaseUrl"
-                  name="vectorDatabaseUrl"
-                  placeholder="postgres://..."
-                  className="h-11 border-[var(--color-border)] bg-[var(--color-ink)]/70 text-[var(--color-bone)]"
-                />
-              </div>
             </div>
           ) : null}
-        </SettingsCardContent>
-      </SettingsCard>
-
-      <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/80 shadow-xl">
-        <SettingsCardHeader>
-          <SettingsCardTitle className="flex items-center gap-2 text-lg">
-            <KeyRound className="h-4 w-4 text-[var(--color-amber)]" />
-            Credential Health
-          </SettingsCardTitle>
-          <SettingsCardDescription>Current workspace credential presence.</SettingsCardDescription>
-        </SettingsCardHeader>
-        <SettingsCardContent className="grid gap-2 md:grid-cols-2">
-          <SecretStatus label="OpenAI API key" present={initial.hasOpenAiKey} />
-          <SecretStatus label="Claude API key" present={initial.hasClaudeKey} />
-          <SecretStatus label="Vector service URL" present={initial.hasVectorServiceUrl} />
-          <SecretStatus label="Vector DB URL" present={initial.hasVectorDatabaseUrl} />
-        </SettingsCardContent>
-      </SettingsCard>
-
-      <SettingsCard className="sticky bottom-3 rounded-2xl border-[var(--color-border)] bg-[var(--color-ink-elevated)]/95 shadow-2xl backdrop-blur">
-        <SettingsCardHeader>
-          <SettingsCardTitle className="flex items-center gap-2 text-base">
-            <Waypoints className="h-4 w-4 text-[var(--color-amber)]" />
-            Save Integration Defaults
-          </SettingsCardTitle>
-          <SettingsCardDescription>Apply all connector and routing changes for this workspace.</SettingsCardDescription>
-        </SettingsCardHeader>
-        <SettingsCardFooter className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-          <div className="space-y-1">
-            {hasError ? (
-              <p className="flex items-center gap-2 text-sm text-red-300">
-                <TriangleAlert className="h-4 w-4" />
-                {state?.error?.form?.[0]}
-              </p>
-            ) : null}
-            {hasSuccess ? (
-              <p className="flex items-center gap-2 text-sm text-emerald-300">
-                <CheckCircle2 className="h-4 w-4" />
-                {state?.message ?? "Integration defaults updated."}
-              </p>
-            ) : (
-              <p className="text-sm text-[var(--color-bone-muted)]">
-                Empty secret fields keep existing stored values.
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
+        </SheetBody>
+        {initial.github.connected ? (
+          <SheetFooter>
             <Button
               type="button"
-              variant="outline"
-              className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]"
-              onClick={() => {
-                setShowAiConfig(true);
-                setShowVectorConfig(true);
+              variant="glass"
+              disabled={saving || !selectionDirty}
+              className="rounded-full px-6"
+              onClick={async () => {
+                setSaving(true);
+                try {
+                  const response = await fetch("/api/integrations/github/selection", {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ repoIds: selectedRepoIds }),
+                  });
+                  const json = (await response.json().catch(() => ({}))) as {
+                    ok?: boolean;
+                    error?: string;
+                  };
+                  if (!response.ok || !json.ok) {
+                    toast.error("Failed to save selection", { description: json.error });
+                    return;
+                  }
+                  toast.success("Selected repositories saved");
+                  window.location.reload();
+                } finally {
+                  setSaving(false);
+                }
               }}
             >
-              Review All Fields
-              <ExternalLink className="ml-2 h-4 w-4" />
-            </Button>
-            <Button
-              type="submit"
-              disabled={pending}
-              variant="glass"
-              className="rounded-full px-6 disabled:opacity-70"
-            >
-              {pending ? (
+              {saving ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Saving...
                 </>
               ) : (
-                "Save Integration Defaults"
+                "Save selection"
               )}
             </Button>
-          </div>
-        </SettingsCardFooter>
-      </SettingsCard>
-    </form>
+          </SheetFooter>
+        ) : null}
+      </SheetContent>
+    </Sheet>
   );
 }

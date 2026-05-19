@@ -65,7 +65,12 @@ export function ExecutionsFilters() {
         />
       ))}
       {hasAny ? (
-        <Button variant="ghost" size="sm" className="ml-auto h-7 text-xs text-[var(--color-bone-muted)] hover:bg-white/[0.05] hover:text-[var(--color-bone)]" onClick={clear}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="ml-auto h-7 text-xs text-[var(--color-bone-muted)] hover:bg-white/[0.05] hover:text-[var(--color-bone)]"
+          onClick={clear}
+        >
           Clear
         </Button>
       ) : null}

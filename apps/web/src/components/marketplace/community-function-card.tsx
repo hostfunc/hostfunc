@@ -1,10 +1,10 @@
 import { CodePreview } from "@/components/marketing/code-preview";
 import { FunctionActions } from "@/components/marketplace/function-actions";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import type { MarketplaceFunctionItem } from "@/server/functions";
 import { GitFork, MessageSquare, Star } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 
 function titleCase(value: string): string {
   return value
@@ -36,7 +36,14 @@ export function CommunityFunctionCard({
         isList ? "p-5" : "p-6",
       )}
     >
-      <div className={cn("flex gap-3", isList ? "flex-col lg:flex-row lg:items-start lg:justify-between" : "items-start justify-between")}>
+      <div
+        className={cn(
+          "flex gap-3",
+          isList
+            ? "flex-col lg:flex-row lg:items-start lg:justify-between"
+            : "items-start justify-between",
+        )}
+      >
         <div className="min-w-0 flex-1">
           <div className={cn("flex items-start justify-between gap-3", isList ? "lg:block" : "")}>
             <Link
@@ -77,7 +84,6 @@ export function CommunityFunctionCard({
               ))}
             </div>
           ) : null}
-          {fn.codePreview ? <CodePreview code={fn.codePreview} compact className="mt-4" /> : null}
         </div>
 
         <div
@@ -95,7 +101,12 @@ export function CommunityFunctionCard({
               {titleCase(fn.category)}
             </Badge>
           )}
-          <div className={cn("flex items-center gap-3 text-xs text-[var(--color-bone-faint)]", isList ? "lg:justify-end" : "")}>
+          <div
+            className={cn(
+              "flex items-center gap-3 text-xs text-[var(--color-bone-faint)]",
+              isList ? "lg:justify-end" : "",
+            )}
+          >
             <span className="inline-flex items-center gap-1">
               <Star className="size-3.5" />
               {fn.starCount}
@@ -118,6 +129,11 @@ export function CommunityFunctionCard({
           />
         </div>
       </div>
+      {fn.codePreview ? (
+        <div className="mt-4 w-full min-w-0">
+          <CodePreview code={fn.codePreview} compact />
+        </div>
+      ) : null}
     </article>
   );
 }

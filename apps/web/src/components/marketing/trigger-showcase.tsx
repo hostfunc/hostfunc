@@ -1,9 +1,9 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
-import { Calendar, Globe, Mail, MessageSquareCode } from "lucide-react";
-import { useState } from "react";
 import type { MarketingContent } from "@/lib/marketing-content";
+import { Calendar, Globe, Mail, MessageSquareCode } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useState } from "react";
 
 interface Props {
   triggers: MarketingContent["triggers"];
@@ -54,9 +54,7 @@ export function TriggerShowcase({ triggers }: Props) {
                 </div>
                 <div className="flex-1">
                   <div className="font-medium text-[var(--color-bone)]">{t.title}</div>
-                  <div className="text-xs text-[var(--color-bone-muted)]">
-                    {t.tagline}
-                  </div>
+                  <div className="text-xs text-[var(--color-bone-muted)]">{t.tagline}</div>
                 </div>
               </div>
             </button>
@@ -79,26 +77,24 @@ export function TriggerShowcase({ triggers }: Props) {
                 className="grid h-full min-h-[300px] gap-0 lg:grid-cols-2"
               >
                 <div className="space-y-3 p-6 lg:p-8">
-                  <h3 className="font-display text-3xl text-[var(--color-bone)]">
-                    {t.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-[var(--color-bone-muted)]">
-                    {t.body}
-                  </p>
+                  <h3 className="font-display text-3xl text-[var(--color-bone)]">{t.title}</h3>
+                  <p className="text-sm leading-relaxed text-[var(--color-bone-muted)]">{t.body}</p>
                 </div>
                 <div className="flex border-t border-[var(--color-border)] bg-[var(--color-ink)] p-5 lg:border-l lg:border-t-0">
                   <pre className="flex-1 overflow-auto font-mono text-[12px] leading-[1.7] text-[var(--color-bone)]">
                     <code>
                       {t.snippet.split("\n").map((line, lineIdx, allLines) => (
                         <span key={`${t.id}-line-${lineIdx}-${line}`} className="block">
-                          {tokenizeLine(line, inferSnippetLanguage(t.snippet)).map((token, tokenIdx) => (
-                            <span
-                              key={`${t.id}-token-${lineIdx}-${tokenIdx}-${token.value}`}
-                              style={getTokenStyle(token.className)}
-                            >
-                              {token.value}
-                            </span>
-                          ))}
+                          {tokenizeLine(line, inferSnippetLanguage(t.snippet)).map(
+                            (token, tokenIdx) => (
+                              <span
+                                key={`${t.id}-token-${lineIdx}-${tokenIdx}-${token.value}`}
+                                style={getTokenStyle(token.className)}
+                              >
+                                {token.value}
+                              </span>
+                            ),
+                          )}
                           {lineIdx < allLines.length - 1 ? "\n" : ""}
                         </span>
                       ))}
@@ -137,8 +133,7 @@ function tokenizeLine(
     typescript:
       /(\/\/.*$|"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|`(?:\\.|[^`])*`|\b(?:import|export|default|async|await|function|return|const|let|var|if|else|try|catch|throw|new|class|interface|type|extends|implements|from|as|true|false|null|undefined)\b|\b(?:number|string|boolean|unknown|void|Record|Promise|Date)\b|\b\d+(?:\.\d+)?\b|\b[A-Za-z_$][A-Za-z0-9_$]*\s*(?=\())/g,
     bash: /(#.*$|"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?|--?[A-Za-z0-9-]+|\b(?:npm|pnpm|npx|hostfunc|curl|node|export|cat|echo|cd|ls|pwd|git|docker)\b|\|\||&&|[|><])/g,
-    json:
-      /("(?:\\.|[^"])*"\s*:|"(?:\\.|[^"])*"|\b(?:true|false|null)\b|\b-?\d+(?:\.\d+)?\b|[{}\[\],:])/g,
+    json: /("(?:\\.|[^"])*"\s*:|"(?:\\.|[^"])*"|\b(?:true|false|null)\b|\b-?\d+(?:\.\d+)?\b|[{}\[\],:])/g,
   };
 
   const regex = patterns[language];
@@ -169,9 +164,11 @@ function tokenizeLine(
 function getTokenClass(language: "typescript" | "bash" | "json", token: string): string {
   if (language === "typescript") {
     if (token.startsWith("//")) return "token comment";
-    if (token.startsWith('"') || token.startsWith("'") || token.startsWith("`")) return "token string";
+    if (token.startsWith('"') || token.startsWith("'") || token.startsWith("`"))
+      return "token string";
     if (/^[A-Za-z_$][A-Za-z0-9_$]*\s*(?=\()/.test(token)) return "token function";
-    if (/^(number|string|boolean|unknown|void|Record|Promise|Date)$/.test(token)) return "token type";
+    if (/^(number|string|boolean|unknown|void|Record|Promise|Date)$/.test(token))
+      return "token type";
     if (/^\d/.test(token)) return "token number";
     if (/^(true|false|null|undefined)$/.test(token)) return "token keyword";
     if (/^[@${}.:[\],()]+$/.test(token)) return "token punctuation";

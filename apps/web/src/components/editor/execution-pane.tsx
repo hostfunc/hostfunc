@@ -109,7 +109,7 @@ export function EditorExecutionPane({ fnId }: { fnId: string }) {
                 .
               </div>
             )}
-            </div>
+          </div>
         </div>
       ) : null}
     </div>

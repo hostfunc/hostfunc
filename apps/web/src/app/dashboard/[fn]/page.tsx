@@ -1,3 +1,4 @@
+import { DeployedSecretsBanner } from "@/components/editor/deployed-secrets-banner";
 import { type AiContextSummary, FunctionEditor } from "@/components/editor/function-editor";
 import { Button } from "@/components/ui/button";
 import { hasOrgPermission } from "@/lib/permissions";
@@ -76,6 +77,7 @@ export default async function FunctionEditorPage({
           </Button>
         </div>
       </div>
+      {fn.currentVersionId ? <DeployedSecretsBanner fnId={fnId} /> : null}
       <div className="flex-1 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/50">
         <FunctionEditor
           fnId={fnId}

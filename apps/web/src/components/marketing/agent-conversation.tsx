@@ -1,9 +1,9 @@
 "use client";
 
-import { motion, useInView } from "motion/react";
-import { Wrench } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 import type { AgentMessage } from "@/lib/marketing-content";
+import { Wrench } from "lucide-react";
+import { motion, useInView } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 
 interface Props {
   messages: AgentMessage[];
@@ -53,7 +53,7 @@ export function AgentConversation({ messages }: Props) {
       <div className="flex-1 space-y-4 overflow-hidden p-5">
         {messages.slice(0, shown).map((msg, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-<Message key={i} msg={msg} index={i} />
+          <Message key={i} msg={msg} index={i} />
         ))}
       </div>
     </div>
@@ -101,9 +101,7 @@ function ToolCall({ tool }: { tool: NonNullable<AgentMessage["tool"]> }) {
     >
       <div className="flex items-center gap-2 border-b border-[var(--color-border)] px-3 py-2">
         <Wrench className="size-3 text-[var(--color-amber)]" />
-        <span className="font-mono text-[11px] text-[var(--color-bone-muted)]">
-          {tool.name}
-        </span>
+        <span className="font-mono text-[11px] text-[var(--color-bone-muted)]">{tool.name}</span>
         <span className="ml-auto text-[10px] uppercase tracking-widest text-[var(--color-emerald)]">
           200
         </span>

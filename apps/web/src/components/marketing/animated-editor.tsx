@@ -12,12 +12,7 @@ interface Props {
   autoStart?: boolean;
 }
 
-export function AnimatedEditor({
-  filename,
-  code,
-  speed = 18,
-  autoStart = false,
-}: Props) {
+export function AnimatedEditor({ filename, code, speed = 18, autoStart = false }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLPreElement>(null);
   const inView = useInView(containerRef, { once: true, margin: "-100px" });
@@ -99,7 +94,7 @@ function LineNumbers({ code }: { code: string }) {
     <div className="select-none border-r border-[var(--color-border)] py-4 pr-3 pl-4 text-right text-[var(--color-bone-faint)]">
       {lines.map((_, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-<div key={i}>{i + 1}</div>
+        <div key={i}>{i + 1}</div>
       ))}
     </div>
   );
@@ -108,9 +103,34 @@ function LineNumbers({ code }: { code: string }) {
 /* ─────────── tiny TypeScript tokenizer ─────────── */
 
 const KEYWORDS = new Set([
-  "import", "from", "export", "async", "await", "function", "const", "let", "var",
-  "return", "if", "else", "for", "while", "of", "in", "new", "class", "extends",
-  "interface", "type", "enum", "as", "default", "true", "false", "null", "undefined",
+  "import",
+  "from",
+  "export",
+  "async",
+  "await",
+  "function",
+  "const",
+  "let",
+  "var",
+  "return",
+  "if",
+  "else",
+  "for",
+  "while",
+  "of",
+  "in",
+  "new",
+  "class",
+  "extends",
+  "interface",
+  "type",
+  "enum",
+  "as",
+  "default",
+  "true",
+  "false",
+  "null",
+  "undefined",
 ]);
 
 function Highlighted({ code }: { code: string }) {

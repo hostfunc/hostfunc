@@ -28,6 +28,9 @@ export async function enforceRateLimit(input: {
     }
     existing.count += 1;
     inMemoryHits.set(redisKey, existing);
-    return { ok: existing.count <= input.limit, remaining: Math.max(0, input.limit - existing.count) };
+    return {
+      ok: existing.count <= input.limit,
+      remaining: Math.max(0, input.limit - existing.count),
+    };
   }
 }

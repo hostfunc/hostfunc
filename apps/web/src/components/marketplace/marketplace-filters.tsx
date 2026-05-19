@@ -16,7 +16,15 @@ import {
   X,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+  type KeyboardEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import {
   MARKETPLACE_CATEGORIES,
   MARKETPLACE_SORTS,
@@ -341,7 +349,9 @@ export function MarketplaceFilters({
           render: () => (
             <div className="flex w-full items-center gap-3">
               <Sparkles className="h-4 w-4 text-[var(--color-amber)]" />
-              <span className="truncate font-mono text-sm text-[var(--color-bone)]">{suggestion.slug}</span>
+              <span className="truncate font-mono text-sm text-[var(--color-bone)]">
+                {suggestion.slug}
+              </span>
               {suggestion.description ? (
                 <span className="ml-auto max-w-[55%] truncate text-xs text-[var(--color-bone-faint)]">
                   {suggestion.description}
@@ -364,7 +374,9 @@ export function MarketplaceFilters({
           <div className="flex w-full items-center gap-3">
             <Boxes className="h-4 w-4 text-[var(--color-bone-faint)]" />
             <span className="text-sm text-[var(--color-bone)]">All categories</span>
-            {!filters.category ? <Check className="ml-auto h-4 w-4 text-[var(--color-amber)]" /> : null}
+            {!filters.category ? (
+              <Check className="ml-auto h-4 w-4 text-[var(--color-amber)]" />
+            ) : null}
           </div>
         ),
       });
@@ -403,7 +415,9 @@ export function MarketplaceFilters({
             <div className="flex w-full items-center gap-3">
               <CalendarClock className="h-4 w-4 text-[var(--color-bone-faint)]" />
               <span className="text-sm text-[var(--color-bone)]">{titleCase(item)}</span>
-              {effective === item ? <Check className="ml-auto h-4 w-4 text-[var(--color-amber)]" /> : null}
+              {effective === item ? (
+                <Check className="ml-auto h-4 w-4 text-[var(--color-amber)]" />
+              ) : null}
             </div>
           ),
         });
@@ -557,7 +571,9 @@ export function MarketplaceFilters({
   return (
     <div className={isHero ? "mx-auto w-full max-w-3xl" : "w-full"}>
       <div className="space-y-2">
-        <div className={cn("flex w-full flex-col gap-2", isHero ? "" : "lg:flex-row lg:items-center")}>
+        <div
+          className={cn("flex w-full flex-col gap-2", isHero ? "" : "lg:flex-row lg:items-center")}
+        >
           <div
             ref={shellRef}
             className={cn(
@@ -650,7 +666,9 @@ export function MarketplaceFilters({
                 </div>
                 <div className="flex items-center justify-between border-t border-[var(--color-border)] bg-black/20 px-3 py-1.5 text-[10px] text-[var(--color-bone-faint)]">
                   <span>Use ↑/↓ and Enter</span>
-                  <span>{dropdownItems.length} item{dropdownItems.length === 1 ? "" : "s"}</span>
+                  <span>
+                    {dropdownItems.length} item{dropdownItems.length === 1 ? "" : "s"}
+                  </span>
                 </div>
               </div>
             ) : null}

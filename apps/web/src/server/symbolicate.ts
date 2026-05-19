@@ -6,7 +6,10 @@ import { SourceMapConsumer } from "source-map";
 
 const STACK_LINE_RE = /^(?<prefix>\s*at\s+.*\()?(?<file>[^():]+):(?<line>\d+):(?<column>\d+)\)?$/;
 
-export async function symbolicateStack(versionId: string, stack?: string | null): Promise<string | null> {
+export async function symbolicateStack(
+  versionId: string,
+  stack?: string | null,
+): Promise<string | null> {
   if (!stack) return null;
   const versionRows = await db
     .select({ sourceMap: schema.fnVersion.sourceMap })

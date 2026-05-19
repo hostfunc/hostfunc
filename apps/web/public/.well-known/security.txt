@@ -1,0 +1,6 @@
+# RFC 9116 — regenerate by 2027-05-15 (Expires below). Once the dedicated
+# security@hostfunc.dev mailbox is provisioned, swap the Contact line.
+Contact: mailto:mfleming2889@gmail.com
+Expires: 2027-05-15T00:00:00Z
+Preferred-Languages: en
+Policy: https://hostfunc.io/security

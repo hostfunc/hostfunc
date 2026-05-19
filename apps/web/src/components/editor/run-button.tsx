@@ -2,7 +2,6 @@
 
 import { getFunctionRunUrl, inferRunPayload, runFunctionNow } from "@/app/dashboard/[fn]/actions";
 import { Button } from "@/components/ui/button";
-import { isQuotaLimitError, openUpgradeModal } from "@/lib/upgrade-modal";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { isQuotaLimitError, openUpgradeModal } from "@/lib/upgrade-modal";
 import { Copy, Loader2, Play, TerminalSquare } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -23,7 +23,9 @@ export function RunButton({ fnId, currentCode }: { fnId: string; currentCode: st
   const [runUrl, setRunUrl] = useState<string>("");
   const [loadingUrl, setLoadingUrl] = useState(false);
   const [payloadJson, setPayloadJson] = useState(DEFAULT_PAYLOAD_JSON);
-  const [prefillSource, setPrefillSource] = useState<"static" | "ai_fallback" | "default" | null>(null);
+  const [prefillSource, setPrefillSource] = useState<"static" | "ai_fallback" | "default" | null>(
+    null,
+  );
   const [prefillReason, setPrefillReason] = useState<string | null>(null);
   const [isPayloadTouched, setIsPayloadTouched] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
@@ -149,7 +151,9 @@ export function RunButton({ fnId, currentCode }: { fnId: string; currentCode: st
 
         <div className="space-y-4 overflow-y-auto pr-1">
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-wider text-[var(--color-bone-faint)]">Run URL</p>
+            <p className="text-xs uppercase tracking-wider text-[var(--color-bone-faint)]">
+              Run URL
+            </p>
             <div className="flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-black/20 px-3 py-2">
               <code className="flex-1 overflow-x-auto text-xs text-cyan-200">
                 {loadingUrl ? "Loading..." : runUrl || "Unavailable"}
@@ -172,7 +176,9 @@ export function RunButton({ fnId, currentCode }: { fnId: string; currentCode: st
 
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xs uppercase tracking-wider text-[var(--color-bone-faint)]">JSON Payload</p>
+              <p className="text-xs uppercase tracking-wider text-[var(--color-bone-faint)]">
+                JSON Payload
+              </p>
               {prefillSource ? (
                 <span className="rounded-full border border-[var(--color-border)] bg-black/20 px-2 py-0.5 text-[10px] text-[var(--color-bone-muted)]">
                   Prefilled: {prefillSource === "ai_fallback" ? "AI" : prefillSource}

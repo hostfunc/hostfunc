@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { ExecutionLineageEdge } from "@/server/executions";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 
 interface ExecutionOption {
   id: string;
@@ -95,20 +95,50 @@ export function ExecutionLineageGraph({
         <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-ink)]">
           <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="block w-full">
             <defs>
-              <marker id="lineage-arrow-ok" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+              <marker
+                id="lineage-arrow-ok"
+                viewBox="0 0 10 10"
+                refX="8"
+                refY="5"
+                markerWidth="5"
+                markerHeight="5"
+                orient="auto"
+              >
                 <title>Lineage edge arrow</title>
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(232,163,23,0.8)" />
               </marker>
-              <marker id="lineage-arrow-error" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+              <marker
+                id="lineage-arrow-error"
+                viewBox="0 0 10 10"
+                refX="8"
+                refY="5"
+                markerWidth="5"
+                markerHeight="5"
+                orient="auto"
+              >
                 <title>Error lineage edge arrow</title>
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(239,68,68,0.85)" />
               </marker>
             </defs>
             {Array.from({ length: 14 }, (_, idx) => idx * 70).map((x) => (
-              <line key={`x-${x}`} x1={x} y1={0} x2={x} y2={HEIGHT} stroke="rgba(255,255,255,0.04)" />
+              <line
+                key={`x-${x}`}
+                x1={x}
+                y1={0}
+                x2={x}
+                y2={HEIGHT}
+                stroke="rgba(255,255,255,0.04)"
+              />
             ))}
             {Array.from({ length: 8 }, (_, idx) => idx * 70).map((y) => (
-              <line key={`y-${y}`} x1={0} y1={y} x2={WIDTH} y2={y} stroke="rgba(255,255,255,0.03)" />
+              <line
+                key={`y-${y}`}
+                x1={0}
+                y1={y}
+                x2={WIDTH}
+                y2={y}
+                stroke="rgba(255,255,255,0.03)"
+              />
             ))}
             {edges.map((edge) => {
               const from = positions[edge.source];
@@ -159,10 +189,24 @@ export function ExecutionLineageGraph({
                     stroke={isError ? "rgba(239,68,68,0.8)" : "rgba(232,163,23,0.7)"}
                     strokeWidth={isFocused ? 2 : 1}
                   />
-                  <text x={pos.x} y={pos.y - 2} textAnchor="middle" fontFamily="var(--font-mono)" fontSize={11} fill="#f4f2ec">
+                  <text
+                    x={pos.x}
+                    y={pos.y - 2}
+                    textAnchor="middle"
+                    fontFamily="var(--font-mono)"
+                    fontSize={11}
+                    fill="#f4f2ec"
+                  >
                     {node.fnSlug}
                   </text>
-                  <text x={pos.x} y={pos.y + 12} textAnchor="middle" fontFamily="var(--font-mono)" fontSize={10} fill="rgba(244,242,236,0.72)">
+                  <text
+                    x={pos.x}
+                    y={pos.y + 12}
+                    textAnchor="middle"
+                    fontFamily="var(--font-mono)"
+                    fontSize={10}
+                    fill="rgba(244,242,236,0.72)"
+                  >
                     {node.id.slice(0, 8)} · {node.status}
                   </text>
                 </g>
@@ -176,14 +220,33 @@ export function ExecutionLineageGraph({
           <div className="space-y-4 text-sm">
             <h2 className="text-base font-semibold text-[var(--color-bone)]">Execution Details</h2>
             <div className="space-y-2 text-[var(--color-bone-muted)]">
-              <p><span className="text-[var(--color-bone)]">ID:</span> <span className="font-mono">{focusedNode.id}</span></p>
-              <p><span className="text-[var(--color-bone)]">Function:</span> {focusedNode.fnSlug}</p>
-              <p><span className="text-[var(--color-bone)]">Status:</span> {focusedNode.status}</p>
-              <p><span className="text-[var(--color-bone)]">Trigger:</span> {focusedNode.triggerKind}</p>
-              <p><span className="text-[var(--color-bone)]">Wall:</span> {focusedNode.wallMs} ms</p>
-              <p><span className="text-[var(--color-bone)]">CPU:</span> {focusedNode.cpuMs} ms</p>
-              <p><span className="text-[var(--color-bone)]">Started:</span> {new Date(focusedNode.startedAt).toLocaleString()}</p>
-              <p><span className="text-[var(--color-bone)]">Ended:</span> {focusedNode.endedAt ? new Date(focusedNode.endedAt).toLocaleString() : "running"}</p>
+              <p>
+                <span className="text-[var(--color-bone)]">ID:</span>{" "}
+                <span className="font-mono">{focusedNode.id}</span>
+              </p>
+              <p>
+                <span className="text-[var(--color-bone)]">Function:</span> {focusedNode.fnSlug}
+              </p>
+              <p>
+                <span className="text-[var(--color-bone)]">Status:</span> {focusedNode.status}
+              </p>
+              <p>
+                <span className="text-[var(--color-bone)]">Trigger:</span> {focusedNode.triggerKind}
+              </p>
+              <p>
+                <span className="text-[var(--color-bone)]">Wall:</span> {focusedNode.wallMs} ms
+              </p>
+              <p>
+                <span className="text-[var(--color-bone)]">CPU:</span> {focusedNode.cpuMs} ms
+              </p>
+              <p>
+                <span className="text-[var(--color-bone)]">Started:</span>{" "}
+                {new Date(focusedNode.startedAt).toLocaleString()}
+              </p>
+              <p>
+                <span className="text-[var(--color-bone)]">Ended:</span>{" "}
+                {focusedNode.endedAt ? new Date(focusedNode.endedAt).toLocaleString() : "running"}
+              </p>
             </div>
             <Link
               href={`/dashboard/${fnId}/executions/${focusedNode.id}`}
@@ -193,7 +256,9 @@ export function ExecutionLineageGraph({
             </Link>
           </div>
         ) : (
-          <p className="text-sm text-[var(--color-bone-muted)]">Select an execution node to inspect details.</p>
+          <p className="text-sm text-[var(--color-bone-muted)]">
+            Select an execution node to inspect details.
+          </p>
         )}
       </aside>
     </div>
@@ -211,7 +276,10 @@ function ExecutionSelector({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <label htmlFor="lineage-execution-select" className="text-xs font-medium uppercase tracking-wide text-[var(--color-bone-faint)]">
+      <label
+        htmlFor="lineage-execution-select"
+        className="text-xs font-medium uppercase tracking-wide text-[var(--color-bone-faint)]"
+      >
         Root Execution
       </label>
       <select

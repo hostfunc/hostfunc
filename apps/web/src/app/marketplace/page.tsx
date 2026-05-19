@@ -1,6 +1,7 @@
 import { CodePreview } from "@/components/marketing/code-preview";
 import { CommunityFunctionCard } from "@/components/marketplace/community-function-card";
 import { MarketplaceFilters } from "@/components/marketplace/marketplace-filters";
+import type { MarketplaceView } from "@/components/marketplace/search-params";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { assertMarketingContent, marketingContent } from "@/lib/marketing-content";
@@ -34,6 +35,8 @@ export default async function MarketplacePage({
     MARKETPLACE_CATEGORIES,
   );
   const sort = oneOf(typeof params.sort === "string" ? params.sort : undefined, MARKETPLACE_SORTS);
+  const rawView = Array.isArray(params.view) ? params.view : [params.view];
+  const view: MarketplaceView = rawView.some((value) => value === "list") ? "list" : "grid";
   const marketplace = await searchMarketplaceFunctions({
     ...(q ? { query: q } : {}),
     ...(category ? { category } : {}),
@@ -46,7 +49,6 @@ export default async function MarketplacePage({
   return (
     <main className="relative min-h-screen bg-[var(--color-ink)] text-[var(--color-bone)]">
       <div className="gradient-radial-amber pointer-events-none absolute inset-x-0 top-0 h-[560px]" />
-      <div className="border-grid pointer-events-none absolute inset-0 opacity-35" />
 
       <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
         <div className="flex w-full items-center justify-between px-6 py-4">
@@ -127,7 +129,7 @@ export default async function MarketplacePage({
             </div>
             <h1 className="mt-6 text-balance font-display text-5xl leading-[1.03] tracking-tight md:text-7xl">
               <span className="text-[var(--color-bone)]">Find proven functions.</span>{" "}
-              <span className="italic text-[var(--color-amber)]">Fork in one click.</span>
+              <span className="text-[var(--color-amber)]">Fork in one click.</span>
             </h1>
             <p className="mx-auto mt-7 max-w-2xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
               Browse public TypeScript functions, official templates, automations, AI workflows,
@@ -140,6 +142,7 @@ export default async function MarketplacePage({
                 q={q}
                 category={category}
                 sort={sort ?? "featured"}
+                view={view}
                 showSearch
                 showCategories
                 variant="hero"
@@ -177,6 +180,7 @@ export default async function MarketplacePage({
                 q={q}
                 category={category}
                 sort={sort ?? "featured"}
+                view={view}
                 showSearch={false}
                 showCategories={false}
                 showSort
@@ -195,13 +199,18 @@ export default async function MarketplacePage({
                 </p>
               </div>
             ) : (
-              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              <div
+                className={
+                  view === "list" ? "space-y-4" : "grid gap-6 md:grid-cols-2 xl:grid-cols-3"
+                }
+              >
                 {marketplace.items.map((fn) => (
                   <CommunityFunctionCard
                     key={fn.id}
                     fn={fn}
                     basePath="/marketplace"
                     signedIn={Boolean(session)}
+                    view={view}
                   />
                 ))}
               </div>
@@ -248,7 +257,11 @@ export default async function MarketplacePage({
                   <p className="mt-2 text-sm leading-relaxed text-[var(--color-bone-muted)]">
                     {template.description}
                   </p>
-                  <CodePreview code={template.snippet} compact className="mb-4 mt-4 min-h-[220px]" />
+                  <CodePreview
+                    code={template.snippet}
+                    compact
+                    className="mb-4 mt-4 min-h-[220px]"
+                  />
                   <Button
                     asChild
                     size="sm"
@@ -294,13 +307,8 @@ export default async function MarketplacePage({
         <div className="w-full px-6">
           <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
             <div className="flex items-center gap-2">
-              <Hexagon
-                className="size-5 text-[var(--color-bone-faint)]"
-                strokeWidth={1.5}
-              />
-              <span className="font-display text-lg text-[var(--color-bone-muted)]">
-                hostfunc
-              </span>
+              <Hexagon className="size-5 text-[var(--color-bone-faint)]" strokeWidth={1.5} />
+              <span className="font-display text-lg text-[var(--color-bone-muted)]">hostfunc</span>
               <span className="ml-3 text-xs text-[var(--color-bone-faint)]">
                 © {new Date().getFullYear()}
               </span>

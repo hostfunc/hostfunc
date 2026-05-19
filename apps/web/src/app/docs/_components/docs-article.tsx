@@ -88,7 +88,10 @@ export function DocsArticle({ path }: { path: string }) {
 
             <div className="grid gap-6">
               {page.sdkGuide.apiReference.map((entry) => (
-                <section key={`${path}-api-${entry.name}`} className="space-y-5 border-b border-[var(--color-border)]/60 pb-6">
+                <section
+                  key={`${path}-api-${entry.name}`}
+                  className="space-y-5 border-b border-[var(--color-border)]/60 pb-6"
+                >
                   <div className="space-y-2">
                     <h3 className="text-xl font-semibold text-[var(--color-bone)]">{entry.name}</h3>
                     <code className="block overflow-x-auto whitespace-pre-wrap rounded-md bg-black/30 px-3 py-2 text-xs text-[var(--color-amber)]">
@@ -158,7 +161,10 @@ export function DocsArticle({ path }: { path: string }) {
                       </h4>
                       <ul className="list-disc space-y-2 pl-6">
                         {entry.throws.map((item) => (
-                          <li key={`${entry.name}-throw-${item}`} className="text-sm text-[var(--color-bone-muted)]">
+                          <li
+                            key={`${entry.name}-throw-${item}`}
+                            className="text-sm text-[var(--color-bone-muted)]"
+                          >
                             {renderInlineCode(item)}
                           </li>
                         ))}
@@ -173,7 +179,10 @@ export function DocsArticle({ path }: { path: string }) {
                       </h4>
                       <ul className="list-disc space-y-2 pl-6">
                         {entry.notes.map((item) => (
-                          <li key={`${entry.name}-note-${item}`} className="text-sm text-[var(--color-bone-muted)]">
+                          <li
+                            key={`${entry.name}-note-${item}`}
+                            className="text-sm text-[var(--color-bone-muted)]"
+                          >
                             {renderInlineCode(item)}
                           </li>
                         ))}
@@ -193,9 +202,14 @@ export function DocsArticle({ path }: { path: string }) {
               </h2>
               <div className="space-y-5">
                 {page.sdkGuide.codeExamples.map((example) => (
-                  <div key={`${path}-example-${example.title}`} className="space-y-3 border-b border-[var(--color-border)]/60 pb-6">
+                  <div
+                    key={`${path}-example-${example.title}`}
+                    className="space-y-3 border-b border-[var(--color-border)]/60 pb-6"
+                  >
                     <div>
-                      <h3 className="text-base font-semibold text-[var(--color-bone)]">{example.title}</h3>
+                      <h3 className="text-base font-semibold text-[var(--color-bone)]">
+                        {example.title}
+                      </h3>
                       <p className="mt-1 text-[15px] leading-7 text-[var(--color-bone-muted)]">
                         {renderInlineCode(example.description)}
                       </p>
@@ -216,7 +230,10 @@ export function DocsArticle({ path }: { path: string }) {
               <div className="rounded-lg border border-[var(--color-border)]/80 bg-[var(--color-ink-elevated)]/40 p-5">
                 <ul className="list-disc space-y-3 pl-6">
                   {page.sdkGuide.bestPractices.map((item) => (
-                    <li key={`${path}-best-practice-${item}`} className="text-sm leading-relaxed text-[var(--color-bone-muted)]">
+                    <li
+                      key={`${path}-best-practice-${item}`}
+                      className="text-sm leading-relaxed text-[var(--color-bone-muted)]"
+                    >
                       {renderInlineCode(item)}
                     </li>
                   ))}

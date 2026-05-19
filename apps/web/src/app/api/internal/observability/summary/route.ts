@@ -19,7 +19,9 @@ export async function GET(req: NextRequest) {
       count: sql<number>`count(*)::int`,
     })
     .from(schema.webhookEvent)
-    .where(and(eq(schema.webhookEvent.source, "analytics"), gte(schema.webhookEvent.receivedAt, since)))
+    .where(
+      and(eq(schema.webhookEvent.source, "analytics"), gte(schema.webhookEvent.receivedAt, since)),
+    )
     .groupBy(schema.webhookEvent.kind);
 
   const webhookFailures = await db

@@ -1,8 +1,8 @@
 "use client";
 
-import { motion, useInView } from "motion/react";
-import { useEffect, useRef, useState } from "react";
 import type { MarketingContent } from "@/lib/marketing-content";
+import { motion, useInView } from "motion/react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 interface Props {
   stages: MarketingContent["architecture"]["stages"];
@@ -10,14 +10,40 @@ interface Props {
 
 export function ArchitectureFlow({ stages }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  const firstBadgeRef = useRef<HTMLDivElement>(null);
+  const lastBadgeRef = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
   const [activeStage, setActiveStage] = useState(0);
   const [pulseTick, setPulseTick] = useState(0);
+  const [trackInsets, setTrackInsets] = useState<{ left: number; right: number } | null>(null);
 
   const stageCount = Math.max(stages.length, 1);
   const travelPoints = Math.max(stageCount - 1, 1);
   const cycleDuration = 14;
   const stageDurationMs = (cycleDuration * 1000) / travelPoints;
+
+  useLayoutEffect(() => {
+    const container = ref.current;
+    const first = firstBadgeRef.current;
+    const last = lastBadgeRef.current;
+    if (!container || !first || !last) return;
+
+    const measure = () => {
+      const containerRect = container.getBoundingClientRect();
+      const firstRect = first.getBoundingClientRect();
+      const lastRect = last.getBoundingClientRect();
+      const left = firstRect.left + firstRect.width / 2 - containerRect.left;
+      const right = containerRect.right - (lastRect.left + lastRect.width / 2);
+      setTrackInsets({ left, right });
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    observer.observe(first);
+    observer.observe(last);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!inView || stages.length === 0) return;
@@ -37,25 +63,26 @@ export function ArchitectureFlow({ stages }: Props) {
 
   return (
     <div ref={ref} className="relative">
-      {/* Horizontal connecting line */}
-      <svg
-        className="absolute inset-x-0 top-12 hidden md:block"
-        height="2"
-        viewBox="0 0 1000 2"
-        preserveAspectRatio="none"
+      {/* Horizontal connecting line from node 1 centre to node N centre */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-12 hidden h-px md:block"
+        style={{
+          left: trackInsets ? `${trackInsets.left}px` : undefined,
+          right: trackInsets ? `${trackInsets.right}px` : undefined,
+          visibility: trackInsets ? "visible" : "hidden",
+          background: "rgba(255,255,255,0.1)",
+        }}
       >
-        <title>Architecture stage connector</title>
-        <line x1="0" y1="1" x2="1000" y2="1" stroke="rgba(255,255,255,0.1)" />
         {/* Travelling dot — only when in view */}
         {inView && (
-          <motion.circle
-            cy="1"
-            r="3"
-            fill="#e8a317"
-            initial={{ cx: 0 }}
+          <motion.div
+            className="absolute size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#e8a317]"
+            style={{ top: "50%" }}
+            initial={{ left: "0%" }}
             animate={{
-              cx: Array.from({ length: stageCount }, (_, i) =>
-                stageCount <= 1 ? 500 : (i / (stageCount - 1)) * 1000,
+              left: Array.from({ length: stageCount }, (_, i) =>
+                stageCount <= 1 ? "50%" : `${(i / (stageCount - 1)) * 100}%`,
               ),
             }}
             transition={{
@@ -65,7 +92,7 @@ export function ArchitectureFlow({ stages }: Props) {
             }}
           />
         )}
-      </svg>
+      </div>
 
       <div className="grid gap-6 md:grid-cols-5">
         {stages.map((stage, i) => (
@@ -76,7 +103,10 @@ export function ArchitectureFlow({ stages }: Props) {
             transition={{ duration: 0.4, delay: i * 0.1 }}
             className="relative text-center"
           >
-            <div className="relative mx-auto size-24">
+            <div
+              ref={i === 0 ? firstBadgeRef : i === stages.length - 1 ? lastBadgeRef : null}
+              className="relative mx-auto size-24"
+            >
               <motion.svg
                 className="pointer-events-none absolute inset-0"
                 viewBox="0 0 96 96"
@@ -103,13 +133,11 @@ export function ArchitectureFlow({ stages }: Props) {
                   transition={{ duration: 1.1, ease: "easeOut" }}
                 />
               </motion.svg>
-              <div className="grid size-24 place-items-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink)] font-display text-3xl italic text-[var(--color-amber)]">
+              <div className="grid size-24 place-items-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink)] font-display text-3xl text-[var(--color-amber)]">
                 {String(i + 1).padStart(2, "0")}
               </div>
             </div>
-            <h3 className="mt-4 font-medium text-[var(--color-bone)]">
-              {stage.label}
-            </h3>
+            <h3 className="mt-4 font-medium text-[var(--color-bone)]">{stage.label}</h3>
             <p className="mx-auto mt-1 max-w-[14ch] text-pretty text-xs leading-relaxed text-[var(--color-bone-muted)]">
               {stage.detail}
             </p>

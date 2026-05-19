@@ -17,7 +17,14 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
-import { type MouseEvent as ReactMouseEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type MouseEvent as ReactMouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { DeployButton } from "./deploy-button";
 import { EditorExecutionPane } from "./execution-pane";
@@ -100,9 +107,7 @@ function AiProviderIcon({ provider }: { provider: "openai" | "claude" }) {
     provider === "openai"
       ? "size-4 object-contain brightness-0 invert"
       : "size-4 object-contain rounded-[2px]";
-  return (
-    <img src={src} alt="" aria-hidden="true" className={iconClass} />
-  );
+  return <img src={src} alt="" aria-hidden="true" className={iconClass} />;
 }
 
 export function FunctionEditor({
@@ -144,7 +149,8 @@ export function FunctionEditor({
   }, [fnId, selectedPath]);
 
   const selectedAsset = useMemo(
-    () => (selectedPath === "index.ts" ? null : assets.find((a) => a.path === selectedPath) ?? null),
+    () =>
+      selectedPath === "index.ts" ? null : (assets.find((a) => a.path === selectedPath) ?? null),
     [assets, selectedPath],
   );
 
@@ -170,8 +176,8 @@ export function FunctionEditor({
   const [aiPanelWidth, setAiPanelWidth] = useState<number>(AI_PANEL_DEFAULT_WIDTH);
   const [isGenerating, setIsGenerating] = useState(false);
   const enabledContexts = useMemo(() => contexts.filter((ctx) => ctx.enabled), [contexts]);
-  const [selectedContextIds, setSelectedContextIds] = useState<string[]>(
-    () => enabledContexts.map((ctx) => ctx.id),
+  const [selectedContextIds, setSelectedContextIds] = useState<string[]>(() =>
+    enabledContexts.map((ctx) => ctx.id),
   );
   const [aiMessages, setAiMessages] = useState<AiChatMessage[]>([
     {
@@ -250,7 +256,12 @@ export function FunctionEditor({
     setAiMessages((prev) => [
       ...prev,
       { id: userMessageId, role: "user", kind: "normal", content: prompt },
-      { id: assistantMessageId, role: "assistant", kind: "normal", content: "Generating code patch..." },
+      {
+        id: assistantMessageId,
+        role: "assistant",
+        kind: "normal",
+        content: "Generating code patch...",
+      },
     ]);
     setAiPrompt("");
 
@@ -266,9 +277,7 @@ export function FunctionEditor({
           .split(",")
           .map((v) => v.trim())
           .filter(Boolean),
-        contextIds: selectedContextIds.filter((id) =>
-          enabledContexts.some((ctx) => ctx.id === id),
-        ),
+        contextIds: selectedContextIds.filter((id) => enabledContexts.some((ctx) => ctx.id === id)),
       });
       setPendingGeneratedCode(result.code);
       toast.success("Code generated. Review and accept changes.");
@@ -286,7 +295,9 @@ export function FunctionEditor({
       const message = error instanceof Error ? error.message : "Failed to generate code";
       setAiMessages((prev) =>
         prev.map((msg) =>
-          msg.id === assistantMessageId ? { ...msg, kind: "error", content: `Generation failed: ${message}` } : msg,
+          msg.id === assistantMessageId
+            ? { ...msg, kind: "error", content: `Generation failed: ${message}` }
+            : msg,
         ),
       );
       toast.error("Failed to generate code", { description: message });
@@ -618,7 +629,9 @@ export function FunctionEditor({
                   <summary className="flex cursor-pointer list-none items-center justify-between text-xs marker:content-none">
                     <div className="space-y-1">
                       <p className="font-medium text-slate-200">Advanced options</p>
-                      <p className="text-[11px] text-slate-400">Model selection, docs lookup, and domains.</p>
+                      <p className="text-[11px] text-slate-400">
+                        Model selection, docs lookup, and domains.
+                      </p>
                     </div>
                     <ChevronDown className="size-4 text-slate-400" />
                   </summary>
@@ -715,11 +728,18 @@ export function FunctionEditor({
                   </div>
                 </details>
 
-                <div ref={aiScrollRef} aria-live="polite" className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+                <div
+                  ref={aiScrollRef}
+                  aria-live="polite"
+                  className="flex-1 space-y-3 overflow-y-auto px-4 py-4"
+                >
                   {aiMessages.map((msg) => {
                     const isUser = msg.role === "user";
                     return (
-                      <div key={msg.id} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+                      <div
+                        key={msg.id}
+                        className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                      >
                         <div
                           className={`max-w-[88%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                             isUser
@@ -760,7 +780,9 @@ export function FunctionEditor({
                       className="max-h-40 min-h-20 w-full resize-y bg-transparent p-2 text-sm text-slate-200 outline-none placeholder:text-slate-500"
                     />
                     <div className="flex items-center justify-between gap-3 px-2 pb-1">
-                      <p className="text-xs text-slate-400">Enter to send, Shift+Enter for newline.</p>
+                      <p className="text-xs text-slate-400">
+                        Enter to send, Shift+Enter for newline.
+                      </p>
                       <Button
                         type="button"
                         size="sm"

@@ -85,7 +85,11 @@ export async function deleteTriggerForFunction(orgId: string, fnId: string, kind
   await db
     .delete(schema.trigger)
     .where(
-      and(eq(schema.trigger.orgId, orgId), eq(schema.trigger.fnId, fnId), eq(schema.trigger.kind, kind)),
+      and(
+        eq(schema.trigger.orgId, orgId),
+        eq(schema.trigger.fnId, fnId),
+        eq(schema.trigger.kind, kind),
+      ),
     );
 }
 

@@ -55,11 +55,13 @@ async function fetchText(url: string): Promise<string | null> {
   }
 }
 
-async function addTypePackageLibs(monaco: Monaco, packageName: string, loadedLibs: Set<string>): Promise<boolean> {
+async function addTypePackageLibs(
+  monaco: Monaco,
+  packageName: string,
+  loadedLibs: Set<string>,
+): Promise<boolean> {
   const typePackage = toDefinitelyTypedName(packageName);
-  const meta = await fetchJson<{ tags?: { latest?: string } }>(
-    `${TYPE_LIST_URL}/${typePackage}`,
-  );
+  const meta = await fetchJson<{ tags?: { latest?: string } }>(`${TYPE_LIST_URL}/${typePackage}`);
   const version = meta?.tags?.latest;
   if (!version) return false;
 
@@ -88,7 +90,11 @@ async function addTypePackageLibs(monaco: Monaco, packageName: string, loadedLib
   return true;
 }
 
-function addFallbackModuleDeclaration(monaco: Monaco, packageName: string, loadedLibs: Set<string>) {
+function addFallbackModuleDeclaration(
+  monaco: Monaco,
+  packageName: string,
+  loadedLibs: Set<string>,
+) {
   const libKey = `fallback:${packageName}`;
   if (loadedLibs.has(libKey)) return;
   const decl = `declare module "${packageName}" { const value: any; export default value; }\n`;
@@ -170,10 +176,7 @@ function computePanelPosition(cursorX: number, cursorY: number) {
   const estimatedHeight = 480;
   const left = Math.max(8, Math.min(cursorX + 16, vw - PANEL_WIDTH - 16));
   const belowY = cursorY + 28;
-  const top =
-    belowY + estimatedHeight > vh
-      ? Math.max(8, cursorY - estimatedHeight - 8)
-      : belowY;
+  const top = belowY + estimatedHeight > vh ? Math.max(8, cursorY - estimatedHeight - 8) : belowY;
   return { left, top };
 }
 
@@ -333,9 +336,7 @@ function SymbolHoverPanel({
   const returnsTags = tags.filter((t) => t.name === "returns");
   const throwsTags = tags.filter((t) => t.name === "throws");
   const exampleTags = tags.filter((t) => t.name === "example");
-  const otherTags = tags.filter(
-    (t) => !["param", "returns", "throws", "example"].includes(t.name),
-  );
+  const otherTags = tags.filter((t) => !["param", "returns", "throws", "example"].includes(t.name));
 
   return (
     <PanelShell x={x} y={y} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
@@ -352,9 +353,7 @@ function SymbolHoverPanel({
 
       <div className="space-y-4 px-4 py-4">
         {/* Documentation prose */}
-        {docs && (
-          <p className="text-[12px] leading-relaxed text-slate-300">{docs}</p>
-        )}
+        {docs && <p className="text-[12px] leading-relaxed text-slate-300">{docs}</p>}
 
         {/* @param */}
         {paramTags.length > 0 && (
@@ -367,9 +366,7 @@ function SymbolHoverPanel({
                 const parts = tag.text ?? [];
                 // First part is usually the param name (kind: "parameterName")
                 const namePart = parts.find((p) => p.kind === "parameterName");
-                const descParts = namePart
-                  ? parts.filter((p) => p !== namePart)
-                  : parts;
+                const descParts = namePart ? parts.filter((p) => p !== namePart) : parts;
                 const desc = descParts
                   .map((p) => p.text)
                   .join("")
@@ -384,9 +381,7 @@ function SymbolHoverPanel({
                     <span className="flex-shrink-0 text-orange-300">
                       {namePart?.text ?? `param${i}`}
                     </span>
-                    {desc && (
-                      <span className="font-sans text-slate-400">{desc}</span>
-                    )}
+                    {desc && <span className="font-sans text-slate-400">{desc}</span>}
                   </div>
                 );
               })}
@@ -401,7 +396,10 @@ function SymbolHoverPanel({
               Returns
             </div>
             {returnsTags.map((tag) => (
-              <p key={`returns:${renderTagText(tag.text).slice(0, 40)}`} className="text-[12px] leading-relaxed text-slate-300">
+              <p
+                key={`returns:${renderTagText(tag.text).slice(0, 40)}`}
+                className="text-[12px] leading-relaxed text-slate-300"
+              >
                 {renderTagText(tag.text)}
               </p>
             ))}
@@ -416,7 +414,10 @@ function SymbolHoverPanel({
             </div>
             <div className="space-y-1">
               {throwsTags.map((tag) => (
-                <p key={`throws:${renderTagText(tag.text).slice(0, 40)}`} className="text-[12px] leading-relaxed text-slate-300">
+                <p
+                  key={`throws:${renderTagText(tag.text).slice(0, 40)}`}
+                  className="text-[12px] leading-relaxed text-slate-300"
+                >
                   {renderTagText(tag.text)}
                 </p>
               ))}
@@ -447,9 +448,7 @@ function SymbolHoverPanel({
             <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
               {tag.name}
             </div>
-            <p className="text-[12px] leading-relaxed text-slate-300">
-              {renderTagText(tag.text)}
-            </p>
+            <p className="text-[12px] leading-relaxed text-slate-300">{renderTagText(tag.text)}</p>
           </div>
         ))}
       </div>
@@ -500,7 +499,9 @@ function DiagnosticPanel({
             <div key={`${mk.severity}:${mk.message.slice(0, 60)}`} className="px-4 py-3">
               <div className="mb-1.5 flex items-center gap-2">
                 <span className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${cls.dot}`} />
-                <span className={`text-[10px] font-semibold uppercase tracking-widest ${cls.label}`}>
+                <span
+                  className={`text-[10px] font-semibold uppercase tracking-widest ${cls.label}`}
+                >
                   {severityLabel(mk.severity)}
                 </span>
                 {badge && (
@@ -660,7 +661,9 @@ export function MonacoEditor({ value, packageNames, onChange, onSave, readOnly =
     const monaco = monacoRef.current;
     if (!monaco) return;
 
-    const candidates = [...new Set(packageNames)].filter((name) => name && !INTERNAL_MODULES.has(name));
+    const candidates = [...new Set(packageNames)].filter(
+      (name) => name && !INTERNAL_MODULES.has(name),
+    );
     if (candidates.length === 0) return;
 
     void (async () => {
@@ -774,7 +777,9 @@ export function MonacoDiffEditor({ originalValue, modifiedValue, packageNames }:
   useEffect(() => {
     const monaco = monacoRef.current;
     if (!monaco) return;
-    const candidates = [...new Set(packageNames)].filter((name) => name && !INTERNAL_MODULES.has(name));
+    const candidates = [...new Set(packageNames)].filter(
+      (name) => name && !INTERNAL_MODULES.has(name),
+    );
     if (candidates.length === 0) return;
     void (async () => {
       for (const packageName of candidates) {

@@ -65,7 +65,8 @@ export default function DocsPage({ params }: { params: { slug?: string[] } }) {
             Read By Area
           </h2>
           <p className="mb-6 max-w-2xl text-sm leading-relaxed text-[var(--color-bone-muted)]">
-            Start with Getting Started, then move through platform behavior, operations, and SDK modules.
+            Start with Getting Started, then move through platform behavior, operations, and SDK
+            modules.
           </p>
           <div className="grid gap-4 md:grid-cols-2">
             {areaCards.map((card) => (

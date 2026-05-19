@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { DocsSearch } from "@/app/docs/_components/docs-search";
+import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 import { assertDocsContentIntegrity, docsSections } from "@/lib/docs-content";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,6 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen bg-[var(--color-ink)] font-sans text-[var(--color-bone)] selection:bg-[var(--color-amber)]/30">
       <div className="gradient-radial-amber pointer-events-none absolute inset-x-0 top-0 h-[420px] opacity-60" />
-      <div className="border-grid pointer-events-none absolute inset-0 opacity-30" />
       {/* Top Docs Navbar */}
       <header className="sticky top-0 z-40 w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
         <div className="flex h-16 w-full items-center gap-4 px-6 lg:px-8">
@@ -87,14 +86,16 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
         {/* Desktop Sidebar Navigation */}
         <aside
           className={cn(
-            "fixed top-16 z-30 -ml-2 hidden h-[calc(100vh-4rem)] w-64 shrink-0 overflow-y-auto lg:sticky lg:block", 
+            "fixed top-16 z-30 -ml-2 hidden h-[calc(100vh-4rem)] w-64 shrink-0 overflow-y-auto lg:sticky lg:block",
             "border-r border-[var(--color-border)] bg-[var(--color-ink)] pt-10 pb-8 pr-6",
           )}
         >
           <div className="flex flex-col gap-8">
             {docsSections.map((section) => (
               <div key={section.title}>
-                <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-[var(--color-bone-faint)]">{section.title}</h4>
+                <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-[var(--color-bone-faint)]">
+                  {section.title}
+                </h4>
                 <div className="ml-1 flex flex-col space-y-1 border-l border-[var(--color-border)]">
                   {section.links.map((link) => {
                     const isActive = pathname === link.href;
@@ -128,7 +129,9 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
             <div className="flex flex-col gap-8 pb-10">
               {docsSections.map((section) => (
                 <div key={section.title}>
-                  <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-[var(--color-bone-faint)]">{section.title}</h4>
+                  <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-[var(--color-bone-faint)]">
+                    {section.title}
+                  </h4>
                   <div className="ml-1 flex flex-col space-y-1 border-l border-[var(--color-border)]">
                     {section.links.map((link) => {
                       const isActive = pathname === link.href;
@@ -159,7 +162,9 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
         )}
 
         {/* Dynamic Page Content */}
-        <main className="relative min-h-[calc(100vh-4rem)] w-full max-w-4xl px-6 py-12 lg:px-12">{children}</main>
+        <main className="relative min-h-[calc(100vh-4rem)] w-full max-w-4xl px-6 py-12 lg:px-12">
+          {children}
+        </main>
       </div>
     </div>
   );

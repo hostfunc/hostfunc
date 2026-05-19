@@ -1,10 +1,4 @@
-type JsonLike =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonLike[]
-  | { [key: string]: JsonLike };
+type JsonLike = string | number | boolean | null | JsonLike[] | { [key: string]: JsonLike };
 
 const SIMPLE_TYPE_MAP: Record<string, JsonLike> = {
   string: "test_value",
@@ -137,4 +131,3 @@ export function parsePayloadCandidate(candidate: string): {
     return { ok: false, payload: {}, reason: "invalid_json" };
   }
 }
-

@@ -23,7 +23,8 @@ export async function POST(req: NextRequest) {
       }),
     });
     const json = await response.json().catch(() => null);
-    if (!response.ok) return Response.json(json ?? { error: "agent_run_failed" }, { status: response.status });
+    if (!response.ok)
+      return Response.json(json ?? { error: "agent_run_failed" }, { status: response.status });
     return Response.json({
       status: "completed",
       output: json?.text ?? "",
@@ -33,7 +34,10 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     if (error instanceof IntegrationConfigError) {
-      return Response.json({ error: error.code, message: error.message, detail: error.detail }, { status: 400 });
+      return Response.json(
+        { error: error.code, message: error.message, detail: error.detail },
+        { status: 400 },
+      );
     }
     return Response.json({ error: "agent_run_failed" }, { status: 500 });
   }

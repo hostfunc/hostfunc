@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, ChevronDown } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 type CustomSelectOption = {
   value: string;
@@ -110,7 +110,9 @@ export function CustomSelect({
                   <span className="min-w-0 flex-1">
                     {renderOption ? renderOption(option, isSelected) : option.label}
                   </span>
-                  {isSelected ? <CheckCircle2 className="ml-2 h-4 w-4 text-[var(--color-amber)]" /> : null}
+                  {isSelected ? (
+                    <CheckCircle2 className="ml-2 h-4 w-4 text-[var(--color-amber)]" />
+                  ) : null}
                 </button>
               );
             })}

@@ -1,13 +1,16 @@
 import "server-only";
 
-import { authenticateCallback } from "@/server/exec-registry";
 import { verifyExecToken } from "@/lib/exec-token";
+import { authenticateCallback } from "@/server/exec-registry";
 import type { NextRequest } from "next/server";
 
-export async function requireInternalExec(req: NextRequest): Promise<{
-  ok: true;
-  payload: { fnId: string; orgId: string };
-} | { ok: false; response: Response }> {
+export async function requireInternalExec(req: NextRequest): Promise<
+  | {
+      ok: true;
+      payload: { fnId: string; orgId: string };
+    }
+  | { ok: false; response: Response }
+> {
   const auth = req.headers.get("authorization");
   if (!auth?.startsWith("Bearer ")) {
     return { ok: false, response: Response.json({ error: "unauthorized" }, { status: 401 }) };

@@ -1,8 +1,8 @@
 "use client";
 
+import type { LineageEdgeSeed, LineageNodeSeed } from "@/lib/marketing-content";
 import { motion, useInView } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { LineageEdgeSeed, LineageNodeSeed } from "@/lib/marketing-content";
 
 interface Props {
   nodes: LineageNodeSeed[];
@@ -16,12 +16,7 @@ interface Props {
 const WIDTH = 520;
 const HEIGHT = 360;
 
-export function LineageBuilder({
-  nodes,
-  edges,
-  staggerMs = 600,
-  loop = true,
-}: Props) {
+export function LineageBuilder({ nodes, edges, staggerMs = 600, loop = true }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const inView = useInView(containerRef, { margin: "-50px" });
   const [revealed, setRevealed] = useState(0);
@@ -72,7 +67,10 @@ export function LineageBuilder({
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         className="block w-full"
         style={{ aspectRatio: `${WIDTH}/${HEIGHT}` }}
+        role="img"
+        aria-label="Animated lineage diagram"
       >
+        <title>Lineage diagram</title>
         <defs>
           <marker
             id="arrowhead"
@@ -90,9 +88,11 @@ export function LineageBuilder({
         {/* Subtle grid */}
         <g stroke="rgba(255,255,255,0.04)">
           {Array.from({ length: 9 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: static grid; index is stable identity
             <line key={i} x1={0} y1={i * 40} x2={WIDTH} y2={i * 40} />
           ))}
           {Array.from({ length: 13 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: static grid; index is stable identity
             <line key={i} x1={i * 40} y1={0} x2={i * 40} y2={HEIGHT} />
           ))}
         </g>
@@ -106,6 +106,7 @@ export function LineageBuilder({
           const length = Math.hypot(to.x - from.x, to.y - from.y);
           return (
             <motion.line
+              // biome-ignore lint/suspicious/noArrayIndexKey: edges array is rebuilt deterministically each render
               key={`edge-${i}`}
               x1={from.x}
               y1={from.y}
@@ -118,9 +119,7 @@ export function LineageBuilder({
               markerEnd="url(#arrowhead)"
               initial={{ pathLength: 0, opacity: 0 }}
               animate={
-                isRevealed
-                  ? { pathLength: 1, opacity: 0.55 }
-                  : { pathLength: 0, opacity: 0 }
+                isRevealed ? { pathLength: 1, opacity: 0.55 } : { pathLength: 0, opacity: 0 }
               }
               transition={{ duration: 0.6, ease: "easeOut" }}
               style={{ strokeDasharray: length, strokeDashoffset: 0 }}
@@ -159,14 +158,7 @@ export function LineageBuilder({
                 stroke={n.scratch ? "#7dd3fc" : "#e8a317"}
                 strokeOpacity={0.5}
               />
-              {n.scratch && (
-                <circle
-                  cx={pos.x - 44}
-                  cy={pos.y}
-                  r={2.5}
-                  fill="#7dd3fc"
-                />
-              )}
+              {n.scratch && <circle cx={pos.x - 44} cy={pos.y} r={2.5} fill="#7dd3fc" />}
               <text
                 x={pos.x}
                 y={pos.y + 4}
@@ -198,15 +190,17 @@ function layoutNodes(
   for (const e of edges) {
     if (!incoming.has(e.target)) incoming.set(e.target, []);
     if (!outgoing.has(e.source)) outgoing.set(e.source, []);
-    incoming.get(e.target)!.push(e.source);
-    outgoing.get(e.source)!.push(e.target);
+    incoming.get(e.target)?.push(e.source);
+    outgoing.get(e.source)?.push(e.target);
   }
 
   const depth = new Map<string, number>();
   const roots = nodes.filter((n) => !incoming.has(n.id));
   const queue: Array<[string, number]> = roots.map((n) => [n.id, 0]);
   while (queue.length > 0) {
-    const [id, d] = queue.shift()!;
+    const head = queue.shift();
+    if (!head) break;
+    const [id, d] = head;
     if ((depth.get(id) ?? -1) >= d) continue;
     depth.set(id, d);
     for (const next of outgoing.get(id) ?? []) {
@@ -219,9 +213,9 @@ function layoutNodes(
 
   const byDepth = new Map<number, string[]>();
   for (const n of nodes) {
-    const d = depth.get(n.id)!;
+    const d = depth.get(n.id) ?? 0;
     if (!byDepth.has(d)) byDepth.set(d, []);
-    byDepth.get(d)!.push(n.id);
+    byDepth.get(d)?.push(n.id);
   }
 
   const maxDepth = Math.max(0, ...Array.from(byDepth.keys()));
@@ -229,16 +223,10 @@ function layoutNodes(
   const padding = 80;
 
   for (const [d, ids] of byDepth) {
-    const x =
-      maxDepth === 0
-        ? WIDTH / 2
-        : padding + (d / maxDepth) * (WIDTH - padding * 2);
+    const x = maxDepth === 0 ? WIDTH / 2 : padding + (d / maxDepth) * (WIDTH - padding * 2);
     const colHeight = HEIGHT - padding * 2;
     ids.forEach((id, i) => {
-      const y =
-        ids.length === 1
-          ? HEIGHT / 2
-          : padding + (i / (ids.length - 1)) * colHeight;
+      const y = ids.length === 1 ? HEIGHT / 2 : padding + (i / (ids.length - 1)) * colHeight;
       positions[id] = { x, y };
     });
   }

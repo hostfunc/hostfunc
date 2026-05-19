@@ -13,7 +13,9 @@ export default async function SetupPage() {
       <section className="rounded-lg border border-border p-4 space-y-2">
         <h2 className="font-medium">Required environment</h2>
         {state.missing.length === 0 ? (
-          <p className="text-sm text-emerald-600">All required environment variables are present.</p>
+          <p className="text-sm text-emerald-600">
+            All required environment variables are present.
+          </p>
         ) : (
           <ul className="list-disc ml-5 text-sm space-y-1">
             {state.missing.map((key) => (
