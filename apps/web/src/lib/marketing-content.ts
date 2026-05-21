@@ -39,7 +39,7 @@ export interface MarketingContent {
   primaryCta: MarketingLink;
   secondaryCta: MarketingLink;
   navLinks: MarketingLink[];
-  trustItems: string[];
+  trustItems: { label: string; icon: string }[];
 
   /** Hero animated editor — typed character by character */
   heroEditor: {
@@ -179,11 +179,11 @@ export const marketingContent: MarketingContent = {
   ],
 
   trustItems: [
-    "Cloudflare Workers runtime",
-    "MCP-native",
-    "AGPL-3.0",
-    "TypeScript-first",
-    "Self-hostable",
+    { label: "Cloudflare Workers runtime", icon: "cloudflare" },
+    { label: "MCP-native", icon: "mcp" },
+    { label: "AGPL-3.0", icon: "agpl" },
+    { label: "TypeScript-first", icon: "typescript" },
+    { label: "Self-hostable", icon: "self-host" },
   ],
 
   heroEditor: {

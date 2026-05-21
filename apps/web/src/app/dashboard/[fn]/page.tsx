@@ -1,5 +1,6 @@
 import { DeployedSecretsBanner } from "@/components/editor/deployed-secrets-banner";
 import { type AiContextSummary, FunctionEditor } from "@/components/editor/function-editor";
+import { FunctionLogo } from "@/components/function/function-logo";
 import { Button } from "@/components/ui/button";
 import { hasOrgPermission } from "@/lib/permissions";
 import { getActiveMembership } from "@/lib/session";
@@ -46,11 +47,14 @@ export default async function FunctionEditorPage({
   return (
     <div className="mt-2 flex h-[calc(100dvh-7rem)] flex-col">
       <div className="mb-4 flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-4">
-        <div>
-          <h1 className="font-mono text-lg font-semibold text-[var(--color-bone)]">{fn.slug}</h1>
-          <p className="text-xs text-[var(--color-bone-muted)]">
-            {fn.description || "No description"}
-          </p>
+        <div className="flex items-center gap-3">
+          <FunctionLogo logo={fn.logo} name={fn.slug} size="md" />
+          <div>
+            <h1 className="font-mono text-lg font-semibold text-[var(--color-bone)]">{fn.slug}</h1>
+            <p className="text-xs text-[var(--color-bone-muted)]">
+              {fn.description || "No description"}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button

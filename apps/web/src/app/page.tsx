@@ -13,16 +13,19 @@ import {
   Code,
   Gauge,
   GitBranch,
-  Hexagon,
   Library,
   Lock,
   PlugZap,
   Server,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
+import { Logo } from "@/components/brand/logo";
+import { CloudflareMark, TypeScriptMark } from "@/components/brand/tech-icons";
 import { AgentConversation } from "@/components/marketing/agent-conversation";
 import { AnimatedEditor } from "@/components/marketing/animated-editor";
 import { ArchitectureFlow } from "@/components/marketing/architecture-flow";
@@ -50,6 +53,15 @@ const ICON_MAP: Record<string, typeof Code> = {
   server: Server,
 };
 
+// Hero trust line — `icon` keys from marketingContent.trustItems map to a glyph.
+const TRUST_ICON: Record<string, ReactNode> = {
+  cloudflare: <CloudflareMark className="size-3.5" />,
+  mcp: <Sparkles className="size-3.5 text-[var(--color-amber)]" />,
+  agpl: <ShieldCheck className="size-3.5 text-emerald-400" />,
+  typescript: <TypeScriptMark className="size-3.5" />,
+  "self-host": <Server className="size-3.5 text-sky-400" />,
+};
+
 export default function HomePage() {
   const { data: session, isPending } = useSession();
   assertMarketingContent();
@@ -62,8 +74,7 @@ export default function HomePage() {
       <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
         <div className="flex w-full items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
-            <Hexagon className="size-5 text-[var(--color-amber)]" strokeWidth={1.5} />
-            <span className="font-display text-xl text-[var(--color-bone)]">hostfunc</span>
+            <Logo wordmarkClassName="text-xl" />
           </Link>
           <nav className="hidden items-center gap-7 md:flex">
             {marketingContent.navLinks.map((link) => (
@@ -190,9 +201,12 @@ export default function HomePage() {
             {/* Trust line */}
             <div className="mt-16 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs uppercase tracking-widest text-[var(--color-bone-faint)]">
               {marketingContent.trustItems.map((item, i) => (
-                <span key={item} className="flex items-center gap-3">
+                <span key={item.label} className="flex items-center gap-3">
                   {i > 0 && <span className="text-[var(--color-border-strong)]">·</span>}
-                  {item}
+                  <span className="flex items-center gap-1.5">
+                    {TRUST_ICON[item.icon]}
+                    {item.label}
+                  </span>
                 </span>
               ))}
             </div>
@@ -568,13 +582,7 @@ export default function HomePage() {
                   </dt>
                   <dd className="mt-3 flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center gap-2 rounded-full border border-[#3178C6]/40 bg-[#3178C6]/12 px-3 py-1.5 text-sm font-medium text-[#7CB7F0]">
-                      <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-[#3178C6]">
-                        <rect width="24" height="24" rx="3" />
-                        <path
-                          d="M9.506 12.104h2.86v7.62h1.808v-7.62h2.861v-1.566H9.506v1.566zm12.092 4.66c-.083-.119-.207-.243-.373-.374a5.597 5.597 0 0 0-.807-.444 27.72 27.72 0 0 0-1.007-.436c-.918-.383-1.602-.852-2.053-1.405-.45-.553-.676-1.222-.676-2.005 0-.614.123-1.141.369-1.582.246-.441.58-.804 1.004-1.089a4.494 4.494 0 0 1 1.47-.629 7.536 7.536 0 0 1 1.77-.201c.612 0 1.154.037 1.627.111a6.38 6.38 0 0 1 1.306.34v2.458a3.95 3.95 0 0 0-.643-.361 5.093 5.093 0 0 0-.717-.26 5.453 5.453 0 0 0-1.426-.2c-.3 0-.573.028-.819.086a2.1 2.1 0 0 0-.623.242c-.17.104-.3.229-.393.374a.888.888 0 0 0-.14.49c0 .196.053.373.156.529.104.156.252.304.443.444.191.14.423.276.696.41.273.135.582.274.926.416.47.197.892.407 1.266.628.374.222.695.473.963.753.268.279.472.598.614.957.142.359.214.776.214 1.253 0 .657-.125 1.21-.373 1.656a3.033 3.033 0 0 1-1.012 1.085 4.38 4.38 0 0 1-1.487.596c-.566.12-1.163.18-1.79.18a9.916 9.916 0 0 1-1.84-.164 5.544 5.544 0 0 1-1.512-.493v-2.63a5.033 5.033 0 0 0 3.237 1.2c.333 0 .624-.03.872-.09.249-.06.456-.144.623-.25.166-.108.29-.234.373-.38a1.023 1.023 0 0 0-.074-1.089z"
-                          fill="#fff"
-                        />
-                      </svg>
+                      <TypeScriptMark className="size-4" />
                       TypeScript
                     </span>
                     <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] px-3 py-1.5 text-sm font-medium text-[var(--color-bone)]">
@@ -584,9 +592,7 @@ export default function HomePage() {
                       Next.js 16
                     </span>
                     <span className="inline-flex items-center gap-2 rounded-full border border-[#F38020]/40 bg-[#F38020]/12 px-3 py-1.5 text-sm font-medium text-[#F4B47A]">
-                      <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-[#F38020]">
-                        <path d="M16.5088 16.8447l.1607-.5555c.1916-.6611.1196-1.2691-.2036-1.7167-.297-.4119-.7925-.6535-1.395-.6834l-11.41-.1448a.2255.2255 0 0 1-.1797-.0952.2273.2273 0 0 1-.0235-.2056.305.305 0 0 1 .2683-.2026l11.515-.1457c1.3666-.0623 2.8461-1.1681 3.3637-2.5159l.6571-1.711a.4.4 0 0 0 .0247-.2059A7.4083 7.4083 0 0 0 11.7164 4.5538a7.4081 7.4081 0 0 0-6.9656 4.6722 3.3308 3.3308 0 0 0-2.3322-.6443A3.3527 3.3527 0 0 0 .0185 12.1842 3.3517 3.3517 0 0 0 .0095 12.2754c0 .1685.0142.3361.0265.5028.0029.0419.0345.0758.0762.0758H15.945c.001 0 .0019-.0004.0026-.0008.013-.0017.0244-.0091.0317-.0202l.5295-1.0083zm3.4477-6.4938c-.1027 0-.2055.0029-.3084.0084a.1297.1297 0 0 0-.1162.0911l-.4502 1.5511c-.1916.6611-.1196 1.2691.2036 1.7167.297.4119.7925.6535 1.395.6834l2.434.1448a.2253.2253 0 0 1 .1782.0922c.0367.0511.0476.1175.0263.1788a.3057.3057 0 0 1-.2683.203l-2.5318.1457c-1.373.0623-2.8461 1.1681-3.3637 2.5159l-.1828.4727a.0892.0892 0 0 0 .0794.1207h8.7115a.1304.1304 0 0 0 .1262-.0918 6.3017 6.3017 0 0 0 .2342-1.708c0-3.4855-2.8249-6.3104-6.3104-6.3104z" />
-                      </svg>
+                      <CloudflareMark className="size-4" />
                       Cloudflare
                     </span>
                   </dd>
@@ -639,8 +645,7 @@ export default function HomePage() {
         <div className="w-full px-6">
           <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
             <div className="flex items-center gap-2">
-              <Hexagon className="size-5 text-[var(--color-bone-faint)]" strokeWidth={1.5} />
-              <span className="font-display text-lg text-[var(--color-bone-muted)]">hostfunc</span>
+              <Logo tone="muted" wordmarkClassName="text-lg text-[var(--color-bone-muted)]" />
               <span className="ml-3 text-xs text-[var(--color-bone-faint)]">
                 © {new Date().getFullYear()}
               </span>

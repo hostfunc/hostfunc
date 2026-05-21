@@ -1,11 +1,14 @@
+import { Logo } from "@/components/brand/logo";
+import { FunctionLogo } from "@/components/function/function-logo";
 import { CodePreview } from "@/components/marketing/code-preview";
 import { FunctionActions } from "@/components/marketplace/function-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { WorkspaceLogo } from "@/components/workspace/workspace-logo";
 import { renderMarketplaceReadme } from "@/lib/marketplace-readme";
 import { getOptionalSession } from "@/lib/session";
 import { getMarketplaceFunction, listFunctionComments } from "@/server/functions";
-import { ArrowLeft, GitFork, Hexagon, MessageSquare, Package, Star } from "lucide-react";
+import { ArrowLeft, GitFork, MessageSquare, Package, Star } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CommentsThread } from "./comments-thread";
@@ -35,8 +38,7 @@ export default async function MarketplaceFunctionPage({
       <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
         <div className="flex w-full items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
-            <Hexagon className="size-5 text-[var(--color-amber)]" strokeWidth={1.5} />
-            <span className="font-display text-xl text-[var(--color-bone)]">hostfunc</span>
+            <Logo wordmarkClassName="text-xl" />
           </Link>
           <Button
             asChild
@@ -78,14 +80,20 @@ export default async function MarketplaceFunctionPage({
                   </Badge>
                 ))}
               </div>
-              <h1 className="mt-5 text-balance font-display text-5xl leading-tight text-[var(--color-bone)]">
-                {fn.slug}
-              </h1>
+              <div className="mt-5 flex items-center gap-4">
+                <FunctionLogo logo={fn.logo} name={fn.slug} size="lg" />
+                <h1 className="text-balance font-display text-5xl leading-tight text-[var(--color-bone)]">
+                  {fn.slug}
+                </h1>
+              </div>
               <p className="mt-4 max-w-3xl text-lg leading-relaxed text-[var(--color-bone-muted)]">
                 {fn.shortDescription || fn.description || "A public TypeScript function."}
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-5 text-sm text-[var(--color-bone-faint)]">
-                <span>by {fn.orgName}</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <WorkspaceLogo logo={fn.orgLogo} name={fn.orgName} size="md" />
+                  by {fn.orgName}
+                </span>
                 <span className="inline-flex items-center gap-1">
                   <Package className="size-4" />
                   {fn.packageCount} packages

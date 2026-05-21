@@ -1,3 +1,4 @@
+import { Logo } from "@/components/brand/logo";
 import { CodePreview } from "@/components/marketing/code-preview";
 import { CommunityFunctionCard } from "@/components/marketplace/community-function-card";
 import { MarketplaceFilters } from "@/components/marketplace/marketplace-filters";
@@ -11,7 +12,7 @@ import {
   type MarketplaceSort,
   searchMarketplaceFunctions,
 } from "@/server/functions";
-import { ArrowRight, ArrowUpRight, Boxes, Hexagon, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Boxes, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 const MARKETPLACE_SORTS: MarketplaceSort[] = ["featured", "trending", "recent", "stars", "forks"];
@@ -53,8 +54,7 @@ export default async function MarketplacePage({
       <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
         <div className="flex w-full items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
-            <Hexagon className="size-5 text-[var(--color-amber)]" strokeWidth={1.5} />
-            <span className="font-display text-xl text-[var(--color-bone)]">hostfunc</span>
+            <Logo wordmarkClassName="text-xl" />
           </Link>
 
           <nav className="hidden items-center gap-7 md:flex">
@@ -307,8 +307,7 @@ export default async function MarketplacePage({
         <div className="w-full px-6">
           <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
             <div className="flex items-center gap-2">
-              <Hexagon className="size-5 text-[var(--color-bone-faint)]" strokeWidth={1.5} />
-              <span className="font-display text-lg text-[var(--color-bone-muted)]">hostfunc</span>
+              <Logo tone="muted" wordmarkClassName="text-lg text-[var(--color-bone-muted)]" />
               <span className="ml-3 text-xs text-[var(--color-bone-faint)]">
                 © {new Date().getFullYear()}
               </span>

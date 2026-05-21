@@ -42,6 +42,7 @@ export const fn = pgTable(
       .references(() => user.id, { onDelete: "restrict" }),
     slug: text("slug").notNull(),
     description: text("description").notNull().default(""),
+    logo: text("logo"),
     packages: jsonb("packages").$type<FunctionPackage[]>().notNull().default([]),
     visibility: visibilityEnum("visibility").notNull().default("public"),
     forkedFromFnId: text("forked_from_fn_id").references((): AnyPgColumn => fn.id, {

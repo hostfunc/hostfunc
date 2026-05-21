@@ -99,6 +99,13 @@
       "when": 1778025700000,
       "tag": "0013_fk_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1779269017325,
+      "tag": "0014_fn_logo",
+      "breakpoints": true
     }
   ]
 }

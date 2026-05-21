@@ -1,6 +1,8 @@
+import { FunctionLogo } from "@/components/function/function-logo";
 import { CodePreview } from "@/components/marketing/code-preview";
 import { FunctionActions } from "@/components/marketplace/function-actions";
 import { Badge } from "@/components/ui/badge";
+import { WorkspaceLogo } from "@/components/workspace/workspace-logo";
 import { cn } from "@/lib/utils";
 import type { MarketplaceFunctionItem } from "@/server/functions";
 import { GitFork, MessageSquare, Star } from "lucide-react";
@@ -46,24 +48,24 @@ export function CommunityFunctionCard({
       >
         <div className="min-w-0 flex-1">
           <div className={cn("flex items-start justify-between gap-3", isList ? "lg:block" : "")}>
-            <Link
-              href={`${basePath}/${fn.id}`}
-              className={cn(
-                "text-[var(--color-bone)] transition-colors group-hover:text-[var(--color-amber)]",
-                isList ? "font-display text-xl" : "font-display text-2xl",
-              )}
-            >
-              {fn.slug}
-            </Link>
+            <div className="flex min-w-0 items-center gap-3">
+              <FunctionLogo logo={fn.logo} name={fn.slug} size="md" />
+              <Link
+                href={`${basePath}/${fn.id}`}
+                className={cn(
+                  "min-w-0 truncate text-[var(--color-bone)] transition-colors group-hover:text-[var(--color-amber)]",
+                  isList ? "font-display text-xl" : "font-display text-2xl",
+                )}
+              >
+                {fn.slug}
+              </Link>
+            </div>
             {isList ? (
               <Badge className="border-[var(--color-border)] bg-white/[0.04] text-[var(--color-bone-faint)] lg:hidden">
                 {titleCase(fn.category)}
               </Badge>
             ) : null}
           </div>
-          <p className="mt-1 text-xs text-[var(--color-bone-faint)]">
-            by {fn.orgName} / {fn.authorName}
-          </p>
           <p
             className={cn(
               "mt-3 text-sm leading-relaxed text-[var(--color-bone-muted)]",
@@ -134,6 +136,12 @@ export function CommunityFunctionCard({
           <CodePreview code={fn.codePreview} compact />
         </div>
       ) : null}
+      <div className="mt-4 flex items-center justify-end gap-1.5 text-xs text-[var(--color-bone-faint)]">
+        <WorkspaceLogo logo={fn.orgLogo} name={fn.orgName} size="md" className="shrink-0" />
+        <span className="truncate">
+          by {fn.orgName} / {fn.authorName}
+        </span>
+      </div>
     </article>
   );
 }

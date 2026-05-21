@@ -38,7 +38,7 @@ export function GeneralSettingsClient({ initialName, initialSlug }: Props) {
         <form action={nameAction}>
           <SettingsCardHeader>
             <SettingsCardTitle className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-[var(--color-amber)]" />
+              {/* <Building2 className="h-4 w-4 text-[var(--color-amber)]" /> */}
               Organization Name
             </SettingsCardTitle>
             <SettingsCardDescription>
@@ -92,7 +92,7 @@ export function GeneralSettingsClient({ initialName, initialSlug }: Props) {
         <form action={slugAction}>
           <SettingsCardHeader>
             <SettingsCardTitle className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-[var(--color-amber)]" />
+              {/* <Globe className="h-4 w-4 text-[var(--color-amber)]" /> */}
               Organization Slug
             </SettingsCardTitle>
             <SettingsCardDescription>

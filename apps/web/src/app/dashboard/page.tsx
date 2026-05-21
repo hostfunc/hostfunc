@@ -7,6 +7,7 @@ import { RangeSwitcher } from "@/components/dashboard/charts/range-switcher";
 import { StatusRadialChart } from "@/components/dashboard/charts/status-radial-chart";
 import { TopFunctionsBar } from "@/components/dashboard/charts/top-functions-bar";
 import { TriggerDonutChart } from "@/components/dashboard/charts/trigger-donut-chart";
+import { FunctionLogo } from "@/components/function/function-logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +27,6 @@ import {
   PieChart,
   Save,
   Settings,
-  Sparkles,
   Timer,
   Zap,
 } from "lucide-react";
@@ -95,10 +95,10 @@ export default async function DashboardPage({
     <div className="animate-in space-y-8 fade-in duration-500">
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-[var(--color-amber)]">
+          {/* <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-[var(--color-amber)]">
             <Sparkles className="size-3.5" />
             Overview
-          </div>
+          </div> */}
           <h1 className="mt-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
             Dashboard Overview
           </h1>
@@ -422,9 +422,7 @@ export default async function DashboardPage({
                 <div className="p-4">
                   <div className="mb-3 flex items-start justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="flex size-8 shrink-0 items-center justify-center rounded border border-[var(--color-amber)]/30 bg-[var(--color-amber)]/10">
-                        <Activity className="size-4 text-[var(--color-amber)]" />
-                      </div>
+                      <FunctionLogo logo={fn.logo} name={fn.slug} size="md" />
                       <div className="overflow-hidden">
                         <h3 className="truncate font-mono font-semibold text-sm" title={fn.slug}>
                           {fn.slug}

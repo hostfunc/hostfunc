@@ -18,6 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { WorkspaceLogo } from "@/components/workspace/workspace-logo";
 import { signOut } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import {
@@ -25,7 +26,6 @@ import {
   BadgeCheck,
   ChevronDown,
   Crown,
-  Hexagon,
   LogOut,
   Plus,
   Settings,
@@ -66,6 +66,7 @@ export function DashboardNavbar({
     id: string;
     name: string;
     slug: string;
+    logo: string | null;
     role: string;
     ownerName: string;
     isShared: boolean;
@@ -154,9 +155,11 @@ export function DashboardNavbar({
                 className="flex h-9 items-center gap-2 px-2 pl-2 pr-3 text-[var(--color-bone)] hover:bg-white/[0.05] hover:text-[var(--color-bone)]"
                 size="sm"
               >
-                <div className="rounded-md bg-[var(--color-amber)]/20 p-1 text-[var(--color-amber)]">
-                  <Hexagon className="h-4 w-4 fill-[var(--color-amber)]/20" />
-                </div>
+                <WorkspaceLogo
+                  logo={activeOrg?.logo ?? null}
+                  name={activeOrg?.name ?? "Workspace"}
+                  size="sm"
+                />
                 <span className="font-semibold text-sm">{activeOrg?.name ?? "Workspace"}</span>
                 <span className="rounded-sm bg-white/[0.05] px-1.5 py-0.5 text-xs text-[var(--color-bone-faint)]">
                   /
@@ -188,9 +191,7 @@ export function DashboardNavbar({
                     onClick={() => handleSwitchWorkspace(organization.id)}
                     disabled={isSwitching}
                   >
-                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--color-amber)]/15 p-1 text-[var(--color-amber)]">
-                      <Hexagon className="h-3 w-3 fill-[var(--color-amber)]/20" />
-                    </div>
+                    <WorkspaceLogo logo={organization.logo} name={organization.name} size="md" />
                     <div className="flex min-w-0 flex-col">
                       <div className="flex items-center gap-2">
                         <span className="truncate">{organization.ownerName}</span>

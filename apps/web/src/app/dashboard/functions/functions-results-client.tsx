@@ -1,5 +1,6 @@
 "use client";
 
+import { FunctionLogo } from "@/components/function/function-logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -109,9 +110,7 @@ export function FunctionsResultsClient({
               <div className="p-4">
                 <div className="mb-3 flex items-start justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--color-amber)]/30 bg-[var(--color-amber)]/10">
-                      <Activity className="h-4 w-4 text-[var(--color-amber)]" />
-                    </div>
+                    <FunctionLogo logo={fn.logo} name={fn.slug} size="md" />
                     <div className="overflow-hidden">
                       <h3 className="truncate font-mono text-sm font-semibold" title={fn.slug}>
                         {fn.slug}
@@ -251,9 +250,7 @@ export function FunctionsResultsClient({
                 <div className="min-w-0 flex-1">
                   <div className="mb-2 flex flex-wrap items-center gap-2">
                     <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-[var(--color-amber)]/30 bg-[var(--color-amber)]/10">
-                        <Activity className="h-3.5 w-3.5 text-[var(--color-amber)]" />
-                      </div>
+                      <FunctionLogo logo={fn.logo} name={fn.slug} size="sm" />
                       <h3 className="min-w-0 font-mono text-sm font-semibold">{fn.slug}</h3>
                       {fn.hasGithubBinding ? (
                         <Badge
