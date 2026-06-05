@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building2, Globe, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useActionState } from "react";
 import { updateWorkspaceNameAction, updateWorkspaceSlugAction } from "./actions";
 

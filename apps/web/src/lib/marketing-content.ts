@@ -441,6 +441,11 @@ export async function main(input: { url: string }) {
       icon: "code",
     },
     {
+      title: "VS Code extension",
+      body: "Browse, deploy, and run your functions without leaving your editor. Sign in from the browser, stream logs inline, switch workspaces in a click.",
+      icon: "blocks",
+    },
+    {
       title: "Host websites, not just APIs",
       body: "Ship an index.html with your function — hostfunc serves it as a real web page at your URL, with CSS, JS, and images included.",
       icon: "globe",

@@ -8,6 +8,7 @@ import {
   Activity,
   ArrowRight,
   ArrowUpRight,
+  Blocks,
   Calendar,
   Check,
   Code,
@@ -55,6 +56,7 @@ const ICON_MAP: Record<string, typeof Code> = {
   library: Library,
   gauge: Gauge,
   server: Server,
+  blocks: Blocks,
 };
 
 // Hero trust line — `icon` keys from marketingContent.trustItems map to a glyph.
@@ -146,17 +148,12 @@ export default function HomePage() {
       </header>
 
       {/* ─────────────────────────────────── HERO ─────────────────────────────────── */}
-      <section className="relative overflow-hidden">
-        {/* 3D scene as background */}
-        <div className="absolute inset-0 -z-10 opacity-90">
-          <HeroScene />
-        </div>
-        {/* Radial fade for legibility */}
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_var(--color-ink)_75%)]" />
+      <section className="relative isolate overflow-hidden">
         <div className="gradient-radial-amber absolute inset-x-0 top-0 -z-10 h-[600px]" />
 
-        <div className="mx-auto max-w-7xl px-6 py-32 lg:py-40">
-          <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
+        <div className="mx-auto grid max-w-[1800px] grid-cols-1 items-center gap-12 px-6 py-20 lg:grid-cols-[2fr_3fr] lg:gap-12 lg:py-28">
+          {/* LEFT — copy + CTAs */}
+          <div className="flex flex-col items-start text-left">
             <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-ink-overlay)] px-3 py-1 text-xs text-[var(--color-bone-muted)] backdrop-blur-md">
               <span className="relative flex size-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--color-amber)] opacity-60" />
@@ -165,7 +162,7 @@ export default function HomePage() {
               {marketingContent.badge}
             </div>
 
-            <h1 className="mt-10 text-balance font-display text-5xl leading-[1.02] tracking-tight text-[var(--color-bone)] md:text-7xl lg:text-[88px]">
+            <h1 className="mt-8 text-balance font-display text-5xl leading-[1.05] tracking-tight text-[var(--color-bone)] md:text-6xl">
               {marketingContent.headlineLead}{" "}
               <em className="not-italic text-[var(--color-amber)]">
                 {marketingContent.headlineEmphasis}
@@ -175,11 +172,11 @@ export default function HomePage() {
               </span>
             </h1>
 
-            <p className="mt-8 max-w-2xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
+            <p className="mt-6 max-w-xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
               {marketingContent.subheadline}
             </p>
 
-            <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
               <Button
                 asChild
                 size="lg"
@@ -203,7 +200,7 @@ export default function HomePage() {
             </div>
 
             {/* Trust line */}
-            <div className="mt-16 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs uppercase tracking-widest text-[var(--color-bone-faint)]">
+            <div className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs uppercase tracking-widest text-[var(--color-bone-faint)]">
               {marketingContent.trustItems.map((item, i) => (
                 <span key={item.label} className="flex items-center gap-3">
                   {i > 0 && <span className="text-[var(--color-border-strong)]">·</span>}
@@ -215,24 +212,22 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* ────────────────────────────── HERO EDITOR ───────────────────────────── */}
-      <section className="relative px-6 pb-24">
-        <div className="mx-auto max-w-5xl">
-          <AnimatedEditor
-            filename={marketingContent.heroEditor.filename}
-            code={marketingContent.heroEditor.code}
-            speed={14}
-            autoStart
-          />
+          {/* RIGHT — 3D scene */}
+          <div
+            aria-hidden="true"
+            className="relative h-[420px] w-full sm:h-[560px] lg:h-[720px] lg:-my-12"
+          >
+            <div className="absolute inset-0">
+              <HeroScene />
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ─────────────────────────── AGENT-NATIVE PITCH ──────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] bg-gradient-to-b from-[var(--color-ink)] via-[#0d0c0a] to-[var(--color-ink)] py-32">
-        <div className="mx-auto max-w-screen-2xl px-6">
+        <div className="mx-auto max-w-[1600px] px-6">
           <div className="mx-auto max-w-3xl text-center">
             <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-amber)]">
               {marketingContent.agentPitch.eyebrow}
@@ -274,7 +269,7 @@ export default function HomePage() {
 
       {/* ─────────────────────────────── TRIGGERS ─────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] py-32">
-        <div className="mx-auto max-w-screen-2xl px-6">
+        <div className="mx-auto max-w-[1600px] px-6">
           <SectionHeader
             eyebrow="Triggers"
             title={
@@ -292,7 +287,7 @@ export default function HomePage() {
 
       {/* ─────────────────────────── COMPOSITION ──────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
-        <div className="mx-auto max-w-screen-2xl px-6">
+        <div className="mx-auto max-w-[1600px] px-6">
           <SectionHeader
             eyebrow={marketingContent.composition.eyebrow}
             title={marketingContent.composition.headline}
@@ -315,7 +310,7 @@ export default function HomePage() {
 
       {/* ─────────────────────────────── CLI ──────────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] py-32">
-        <div className="mx-auto max-w-screen-2xl px-6">
+        <div className="mx-auto max-w-[1600px] px-6">
           <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:items-center">
             <div>
               <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-amber)]">
@@ -339,7 +334,7 @@ export default function HomePage() {
 
       {/* ────────────────────────── ARCHITECTURE ──────────────────────────────── */}
       <section className="relative overflow-hidden border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
-        <div className="mx-auto max-w-screen-2xl px-6">
+        <div className="mx-auto max-w-[1600px] px-6">
           <SectionHeader
             eyebrow={marketingContent.architecture.eyebrow}
             title={marketingContent.architecture.headline}
@@ -353,7 +348,7 @@ export default function HomePage() {
 
       {/* ───────────────────────────── CONNECTORS ─────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] py-32">
-        <div className="mx-auto max-w-screen-2xl px-6">
+        <div className="mx-auto max-w-[1600px] px-6">
           <SectionHeader
             eyebrow="Connectors"
             title={
@@ -374,7 +369,7 @@ export default function HomePage() {
 
       {/* ───────────────────────────── TEMPLATES ──────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
-        <div className="mx-auto max-w-screen-2xl px-6 text-center">
+        <div className="mx-auto max-w-[1600px] px-6 text-center">
           <SectionHeader
             eyebrow="Templates"
             title={<>Don't start from blank. Fork it.</>}
@@ -389,7 +384,7 @@ export default function HomePage() {
 
       {/* ────────────────────────── FEATURE GRID ──────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] py-32">
-        <div className="mx-auto max-w-screen-2xl px-6">
+        <div className="mx-auto max-w-[1600px] px-6">
           <SectionHeader
             eyebrow="Capabilities"
             title={
@@ -424,7 +419,7 @@ export default function HomePage() {
 
       {/* ────────────────────────────── PRICING ───────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
-        <div className="mx-auto max-w-screen-2xl px-6">
+        <div className="mx-auto max-w-[1600px] px-6">
           <SectionHeader
             eyebrow={marketingContent.pricing.eyebrow}
             title={
@@ -510,7 +505,7 @@ export default function HomePage() {
 
       {/* ───────────────────────────── COMMUNITY ──────────────────────────────── */}
       <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
-        <div className="mx-auto max-w-screen-2xl px-6">
+        <div className="mx-auto max-w-[1600px] px-6">
           <div className="grid gap-16 md:grid-cols-2 md:items-center">
             <div>
               <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-amber)]">
@@ -629,6 +624,14 @@ export default function HomePage() {
           <p className="mx-auto mt-6 max-w-xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
             {marketingContent.closer.body}
           </p>
+          <div className="mx-auto mt-12 max-w-2xl text-left">
+            <AnimatedEditor
+              filename={marketingContent.heroEditor.filename}
+              code={marketingContent.heroEditor.code}
+              speed={14}
+              autoStart
+            />
+          </div>
           <div className="mt-10 flex justify-center">
             <Button
               asChild

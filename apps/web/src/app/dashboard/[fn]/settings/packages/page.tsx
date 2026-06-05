@@ -1,7 +1,6 @@
 import { listFunctionPackages } from "@/app/dashboard/[fn]/actions";
 import { hasOrgPermission } from "@/lib/permissions";
 import { getActiveMembership, requireActiveOrg } from "@/lib/session";
-import { PackageCheck } from "lucide-react";
 import { PackagesClient } from "./packages-client";
 
 export default async function PackagesFunctionSettingsPage({
@@ -20,7 +19,7 @@ export default async function PackagesFunctionSettingsPage({
       <div className="flex flex-col justify-between gap-6 border-b border-[var(--color-border)] pb-6 md:flex-row md:items-center">
         <div>
           <h3 className="flex items-center gap-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
-            Packages 
+            Packages
           </h3>
           <p className="mt-2 max-w-xl leading-relaxed text-[var(--color-bone-muted)]">
             External npm packages are auto-added from imports when you save in the editor.

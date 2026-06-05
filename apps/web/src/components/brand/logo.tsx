@@ -22,7 +22,7 @@ export function Logo({
         className={cn("h-5 w-5 shrink-0", tone === "muted" && "opacity-60", iconClassName)}
       />
       {wordmark ? (
-        <span className={cn("font-display text-[var(--color-bone)]", wordmarkClassName)}>
+        <span className={cn("font-pixel uppercase text-[var(--color-bone)]", wordmarkClassName)}>
           hostfunc
         </span>
       ) : null}

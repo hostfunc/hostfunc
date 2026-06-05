@@ -1,6 +1,5 @@
 import { requireActiveOrg } from "@/lib/session";
 import { listContextsForFunction } from "@/server/fn-ai-context";
-import { Sparkles } from "lucide-react";
 import { ContextClient, type ContextClientItem } from "./context-client";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +29,7 @@ export default async function FunctionAiContextPage({
       <div className="flex flex-col justify-between gap-6 border-b border-[var(--color-border)] pb-6 md:flex-row md:items-center">
         <div>
           <h3 className="flex items-center gap-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
-            AI Context 
+            AI Context
           </h3>
           <p className="mt-2 max-w-xl leading-relaxed text-[var(--color-bone-muted)]">
             Attach notes, URLs, and reference docs (markdown, text, JSON) to this function. Enabled

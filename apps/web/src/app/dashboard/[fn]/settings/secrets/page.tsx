@@ -1,6 +1,5 @@
 import { listSecrets } from "@/app/dashboard/[fn]/actions";
 import { requireActiveOrg } from "@/lib/session";
-import { KeyRound } from "lucide-react";
 import { SecretsClient } from "./secrets-client";
 
 export default async function SecretsFunctionSettingsPage({
@@ -17,7 +16,7 @@ export default async function SecretsFunctionSettingsPage({
       <div className="flex flex-col justify-between gap-6 border-b border-[var(--color-border)] pb-6 md:flex-row md:items-center">
         <div>
           <h3 className="flex items-center gap-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
-            Environment Variables 
+            Environment Variables
           </h3>
           <p className="mt-2 max-w-xl leading-relaxed text-[var(--color-bone-muted)]">
             Secrets are encrypted at rest and injected only for this function at execution time.

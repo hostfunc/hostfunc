@@ -1,0 +1,66 @@
+name: Publish VS Code extension
+
+# Triggered by a `vscode-vX.Y.Z` tag. Builds the workspace deps, packages the .vsix, and publishes
+# to the Visual Studio Marketplace and Open VSX. See apps/vscode-extension/PUBLISHING.md.
+on:
+  push:
+    tags:
+      - "vscode-v*"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Package & publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Verify tag matches package.json version
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#vscode-v}"
+          PKG_VERSION="$(node -p "require('./apps/vscode-extension/package.json').version")"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME ($TAG_VERSION) does not match package.json version ($PKG_VERSION)"
+            exit 1
+          fi
+
+      # Builds @hostfunc/api-client (and any other workspace deps) before bundling the extension.
+      - run: pnpm --filter hostfunc-vscode... build
+
+      - name: Gates
+        run: |
+          pnpm --filter hostfunc-vscode typecheck
+          pnpm --filter hostfunc-vscode test
+
+      - name: Package .vsix
+        working-directory: apps/vscode-extension
+        run: pnpm package
+
+      - name: Publish to Visual Studio Marketplace
+        working-directory: apps/vscode-extension
+        run: npx @vscode/vsce publish --no-dependencies --packagePath hostfunc.vsix -p "$VSCE_PAT"
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Publish to Open VSX
+        working-directory: apps/vscode-extension
+        run: npx ovsx publish hostfunc.vsix -p "$OVSX_PAT"
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+
+      - name: Upload .vsix artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hostfunc-vsix
+          path: apps/vscode-extension/hostfunc.vsix

@@ -16,7 +16,7 @@ import {
   isAcceptedLogoMime,
   isHttpLogo,
 } from "@/lib/logo";
-import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
+import { Loader2, Trash2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type ChangeEvent, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -144,9 +144,7 @@ export function WorkspaceLogoCard({ initialLogo }: { initialLogo: string | null 
   return (
     <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/70 shadow-xl">
       <SettingsCardHeader>
-        <SettingsCardTitle className="flex items-center gap-2">
-          Workspace Logo
-        </SettingsCardTitle>
+        <SettingsCardTitle className="flex items-center gap-2">Workspace Logo</SettingsCardTitle>
         <SettingsCardDescription>
           Upload a PNG, JPEG, WebP, or SVG up to 2 MB. It replaces the default mark in the workspace
           switcher.

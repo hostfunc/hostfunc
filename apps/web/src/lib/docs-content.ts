@@ -64,6 +64,7 @@ export const docsSections: DocsSection[] = [
     links: [
       { name: "Security", href: "/docs/security" },
       { name: "CLI", href: "/docs/cli" },
+      { name: "VS Code Extension", href: "/docs/vscode-extension" },
       { name: "MCP", href: "/docs/mcp" },
     ],
   },
@@ -581,12 +582,67 @@ export async function main(input: { customerId: string }) {
       { label: "MCP", href: "/docs/mcp" },
     ],
   },
+  "/docs/vscode-extension": {
+    title: "VS Code Extension",
+    summary:
+      "The hostfunc extension brings your functions into VS Code: browse them, deploy, run with a payload, and stream execution logs — without leaving the editor. Sign in happens in your browser; no token to copy.",
+    highlights: [
+      "Browser sign-in via the OAuth device flow; tokens are stored in VS Code SecretStorage, scoped per workspace.",
+      "Functions explorer with deploy and run-with-payload, plus execution logs in the hostfunc Output channel.",
+      "Switch between workspaces (organizations) from the status bar.",
+      "Point `hostfunc.baseUrl` at localhost or a self-hosted instance for development.",
+    ],
+    guideSections: [
+      {
+        title: "1. Install",
+        description:
+          'Install from the Visual Studio Marketplace (and Open VSX for Cursor, Windsurf, and VSCodium). Search the Extensions view for "hostfunc", or install from the command line.',
+        code: `# VS Code
+code --install-extension hostfunc.hostfunc-vscode
+
+# Cursor / Windsurf / VSCodium (Open VSX)
+# Extensions view → search "hostfunc" → Install`,
+      },
+      {
+        title: "2. Sign in",
+        description:
+          "Open the hostfunc view in the Activity Bar and click Sign in. A code appears and your browser opens to authorize the device — confirm the code matches, then approve.",
+        bullets: [
+          "The extension polls until you approve, then stores a workspace-scoped token securely.",
+          "The status bar shows your active workspace; click it to switch workspaces.",
+          "Run the `hostfunc: Sign Out` command to remove stored tokens.",
+        ],
+      },
+      {
+        title: "3. Deploy and run",
+        description:
+          "Each function in the explorer has inline actions. Deploy publishes the current draft to a live version; Run prompts for a JSON payload and invokes the deployed function.",
+        bullets: [
+          "Run output and execution logs stream into the hostfunc Output channel.",
+          "Open in Dashboard jumps to the function's editor on the web.",
+          "Refresh re-loads the function list for the active workspace.",
+        ],
+      },
+      {
+        title: "Configuration",
+        description: "Settings live under the `hostfunc` namespace.",
+        bullets: [
+          "`hostfunc.baseUrl` — control-plane URL. Defaults to `https://hostfunc.dev`; set it to `http://localhost:3000` for local development.",
+        ],
+      },
+    ],
+    related: [
+      { label: "CLI", href: "/docs/cli" },
+      { label: "Security", href: "/docs/security" },
+      { label: "Getting Started", href: "/docs/getting-started" },
+    ],
+  },
   "/docs/cli": {
     title: "CLI",
     summary:
       "Public npm package `@hostfunc/cli` supports login, init, list, deploy, run, logs, and secrets set flows.",
     highlights: [
-      "CLI authenticates with API token and base URL config.",
+      "`hostfunc login` signs you in through your browser (OAuth device flow); `--token` stays available for CI/headless.",
       "Deploy/run/logs/secrets map to `/api/cli/*` routes.",
       "CLI reads project config from `hostfunc.json` and user credentials from `~/.hostfunc`.",
       "Supported runtime is Node.js >=22 and CLI telemetry is disabled.",
@@ -594,9 +650,15 @@ export async function main(input: { customerId: string }) {
     guideSections: [
       {
         title: "Install and authenticate",
-        description: "Install CLI globally, then log in once per environment.",
+        description:
+          "Install the CLI globally, then sign in once per environment. `hostfunc login` opens your browser to authorize the device; use `--token` for CI or headless environments.",
         code: `npm install -g @hostfunc/cli
-hostfunc login --token <api-token> --url http://localhost:3000`,
+
+# Browser sign-in (recommended) — prints a code, opens your browser
+hostfunc login --url https://hostfunc.dev
+
+# CI / headless — use a workspace API token instead
+hostfunc login --token <api-token> --url https://hostfunc.dev`,
       },
       {
         title: "Project configuration",
@@ -622,7 +684,8 @@ hostfunc secrets set CLAUDE_API_KEY <value>`,
         title: "Command to API mapping",
         description: "CLI operations map directly to org-scoped API routes.",
         bullets: [
-          "`login` -> `GET /api/cli/login`",
+          "`login` (browser) -> `POST /api/auth/device/code` + `/device/token`, then `POST /api/cli/device/exchange`",
+          "`login --token` -> `GET /api/cli/login`",
           "`list` -> `GET /api/cli/functions`",
           "`deploy` -> `POST /api/cli/functions/deploy`",
           "`run` -> `POST /api/cli/functions/run`",
@@ -632,6 +695,7 @@ hostfunc secrets set CLAUDE_API_KEY <value>`,
       },
     ],
     related: [
+      { label: "VS Code Extension", href: "/docs/vscode-extension" },
       { label: "Security", href: "/docs/security" },
       { label: "Executions", href: "/docs/executions" },
     ],

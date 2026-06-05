@@ -1,7 +1,6 @@
 import { requireActiveOrg } from "@/lib/session";
 import { db, schema } from "@hostfunc/db";
 import { eq } from "drizzle-orm";
-import { ShieldCheck } from "lucide-react";
 import { GeneralSettingsClient } from "./general-settings-client";
 import { WorkspaceLogoCard } from "./workspace-logo-card";
 
@@ -17,7 +16,7 @@ export default async function GeneralOrgSettingsPage() {
       <div className="flex flex-col justify-between gap-6 border-b border-[var(--color-border)] pb-6 md:flex-row md:items-center">
         <div>
           <h3 className="flex items-center gap-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
-            General Settings 
+            General Settings
           </h3>
           <p className="mt-2 max-w-xl leading-relaxed text-[var(--color-bone-muted)]">
             Update workspace identity details used throughout your dashboard, links, and user-facing

@@ -37,7 +37,6 @@ import {
   ShieldCheck,
   UserPlus,
   UserX,
-  Users,
 } from "lucide-react";
 
 type Role = "admin" | "member";
@@ -382,7 +381,7 @@ export default function MembersOrgSettingsPage() {
       <div className="flex flex-col justify-between gap-6 border-b border-[var(--color-border)] pb-6 md:flex-row md:items-center">
         <div>
           <h3 className="flex items-center gap-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
-            Team Members 
+            Team Members
           </h3>
           <p className="mt-2 max-w-xl leading-relaxed text-[var(--color-bone-muted)]">
             Manage who has access to this organization. Owners and admins can invite new members,

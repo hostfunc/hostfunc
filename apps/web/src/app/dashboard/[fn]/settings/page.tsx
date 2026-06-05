@@ -17,7 +17,6 @@ import {
   getFunctionMarketplaceProfileForOrg,
 } from "@/server/functions";
 import { getEffectivePlan } from "@/server/plans";
-import { FileCode2, Globe, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -51,7 +50,7 @@ export default async function GeneralFunctionSettingsPage({
       <div className="flex flex-col justify-between gap-6 border-b border-[var(--color-border)] pb-6 md:flex-row md:items-center">
         <div>
           <h3 className="flex items-center gap-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
-            Function Settings 
+            Function Settings
           </h3>
           <p className="mt-2 max-w-xl leading-relaxed text-[var(--color-bone-muted)]">
             Manage name, description, and safety controls for this function.

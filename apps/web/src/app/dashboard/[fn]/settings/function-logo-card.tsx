@@ -16,7 +16,7 @@ import {
   isAcceptedLogoMime,
   isHttpLogo,
 } from "@/lib/logo";
-import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
+import { Loader2, Trash2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type ChangeEvent, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
