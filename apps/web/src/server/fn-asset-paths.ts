@@ -1,4 +1,12 @@
-export type AssetKind = "readme" | "image" | "font" | "other";
+export type AssetKind = "readme" | "image" | "font" | "html" | "style" | "script" | "other";
+
+/** The `index.html` at a function's root is served live at its public `/run` URL. */
+export const INDEX_HTML_PATH = "index.html";
+
+/** True when `path` is the root HTML page served by the function's `/run` URL. */
+export function isLiveServedHtml(path: string): boolean {
+  return path === INDEX_HTML_PATH;
+}
 
 export const ASSET_MAX_FILE_BYTES = Number(process.env.HOSTFUNC_ASSET_MAX_BYTES ?? 1_048_576);
 export const ASSET_MAX_FILES_PER_FN = Number(process.env.HOSTFUNC_ASSET_MAX_FILES ?? 25);
@@ -26,6 +34,9 @@ const FONT_MIMES: ReadonlySet<string> = new Set([
   "application/x-font-otf",
 ]);
 const TEXT_MIMES: ReadonlySet<string> = new Set(["text/markdown", "text/plain"]);
+const HTML_MIMES: ReadonlySet<string> = new Set(["text/html"]);
+const STYLE_MIMES: ReadonlySet<string> = new Set(["text/css"]);
+const SCRIPT_MIMES: ReadonlySet<string> = new Set(["text/javascript", "application/javascript"]);
 
 const EXT_TO_MIME: Record<string, string> = {
   png: "image/png",
@@ -41,6 +52,11 @@ const EXT_TO_MIME: Record<string, string> = {
   md: "text/markdown",
   markdown: "text/markdown",
   txt: "text/plain",
+  html: "text/html",
+  htm: "text/html",
+  css: "text/css",
+  js: "text/javascript",
+  mjs: "text/javascript",
 };
 
 export class AssetError extends Error {
@@ -90,6 +106,9 @@ export function classifyAsset(path: string, mime: string): { kind: AssetKind; mi
   const finalMime = normalizedMime || fallback || "application/octet-stream";
 
   if (path === "README.md") return { kind: "readme", mime: "text/markdown" };
+  if (HTML_MIMES.has(finalMime)) return { kind: "html", mime: "text/html" };
+  if (STYLE_MIMES.has(finalMime)) return { kind: "style", mime: "text/css" };
+  if (SCRIPT_MIMES.has(finalMime)) return { kind: "script", mime: "text/javascript" };
   if (IMAGE_MIMES.has(finalMime)) return { kind: "image", mime: finalMime };
   if (FONT_MIMES.has(finalMime)) return { kind: "font", mime: finalMime };
   if (TEXT_MIMES.has(finalMime)) return { kind: "other", mime: finalMime };

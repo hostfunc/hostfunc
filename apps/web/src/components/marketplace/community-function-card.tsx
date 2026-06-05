@@ -1,6 +1,7 @@
 import { FunctionLogo } from "@/components/function/function-logo";
 import { CodePreview } from "@/components/marketing/code-preview";
 import { FunctionActions } from "@/components/marketplace/function-actions";
+import { HtmlPreviewFrame } from "@/components/marketplace/html-preview-frame";
 import { Badge } from "@/components/ui/badge";
 import { WorkspaceLogo } from "@/components/workspace/workspace-logo";
 import { cn } from "@/lib/utils";
@@ -34,7 +35,7 @@ export function CommunityFunctionCard({
   return (
     <article
       className={cn(
-        "group rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 transition-all hover:border-[var(--color-amber)]/35 hover:bg-white/[0.04]",
+        "group flex flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 transition-all hover:border-[var(--color-amber)]/35 hover:bg-white/[0.04]",
         isList ? "p-5" : "p-6",
       )}
     >
@@ -131,7 +132,11 @@ export function CommunityFunctionCard({
           />
         </div>
       </div>
-      {fn.codePreview ? (
+      {fn.hasHtmlPage ? (
+        <Link href={`${basePath}/${fn.id}`} className="mt-4 flex min-h-0 w-full min-w-0 flex-1">
+          <HtmlPreviewFrame fnId={fn.id} compact />
+        </Link>
+      ) : fn.codePreview ? (
         <div className="mt-4 w-full min-w-0">
           <CodePreview code={fn.codePreview} compact />
         </div>

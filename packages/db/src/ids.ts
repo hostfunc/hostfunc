@@ -24,7 +24,8 @@ export type IdPrefix =
   | "fdc"
   | "fmc"
   | "fas"
-  | "fva";
+  | "fva"
+  | "dom";
 
 export function genId(prefix: IdPrefix): string {
   return `${prefix}_${ulid()}`;

@@ -17,7 +17,15 @@ const bytea = customType<{ data: Buffer; default: false }>({
   },
 });
 
-export const fnAssetKindEnum = pgEnum("fn_asset_kind", ["readme", "image", "font", "other"]);
+export const fnAssetKindEnum = pgEnum("fn_asset_kind", [
+  "readme",
+  "image",
+  "font",
+  "html",
+  "style",
+  "script",
+  "other",
+]);
 
 export const fnAsset = pgTable(
   "fn_asset",

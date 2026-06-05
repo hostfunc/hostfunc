@@ -1,4 +1,5 @@
 import { CommunityFunctionCard } from "@/components/marketplace/community-function-card";
+import { FeaturedTemplates } from "@/components/marketplace/featured-templates";
 import { MarketplaceFilters } from "@/components/marketplace/marketplace-filters";
 import type { MarketplaceView } from "@/components/marketplace/search-params";
 import { Button } from "@/components/ui/button";
@@ -150,6 +151,8 @@ export default async function DashboardMarketplacePage({
           </div>
         )}
       </section>
+
+      <FeaturedTemplates signedIn />
     </div>
   );
 }

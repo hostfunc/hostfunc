@@ -11,4 +11,5 @@ export * from "./github.js";
 export * from "./fnAiContext.js";
 export * from "./marketplace.js";
 export * from "./fnAssets.js";
+export * from "./customDomains.js";
 export * from "./relations.js";

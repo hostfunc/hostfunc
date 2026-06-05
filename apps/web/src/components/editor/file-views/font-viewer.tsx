@@ -72,12 +72,12 @@ export function FontViewer({ fnId, asset }: Props) {
   };
 
   return (
-    <div className="flex h-full flex-col bg-[#0d1117]">
-      <div className="flex items-center justify-between border-b border-white/5 bg-[#161b22] px-4 py-2.5">
+    <div className="flex h-full flex-col bg-ink">
+      <div className="flex items-center justify-between border-b border-border bg-ink-elevated px-4 py-2.5">
         <div className="flex items-center gap-3">
-          <span className="font-mono text-xs text-slate-200">{asset.path}</span>
-          <span className="text-[10px] text-slate-500">{asset.mime}</span>
-          <span className="text-[10px] text-slate-500">
+          <span className="font-mono text-xs text-bone">{asset.path}</span>
+          <span className="text-[10px] text-bone-faint">{asset.mime}</span>
+          <span className="text-[10px] text-bone-faint">
             {Math.max(1, Math.round(asset.sizeBytes / 1024))} KB
           </span>
         </div>
@@ -102,17 +102,17 @@ export function FontViewer({ fnId, asset }: Props) {
       </div>
       <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
         {loading ? (
-          <div className="inline-flex items-center gap-2 text-xs text-slate-400">
+          <div className="inline-flex items-center gap-2 text-xs text-bone-muted">
             <Loader2 className="size-4 animate-spin" /> Loading font…
           </div>
         ) : error ? (
-          <p className="text-xs text-rose-300">Could not load font: {error}</p>
+          <p className="text-xs text-rose">Could not load font: {error}</p>
         ) : (
           <>
             <div>
               <label
                 htmlFor="font-sample"
-                className="mb-1 block text-[11px] uppercase tracking-wide text-slate-400"
+                className="mb-1 block text-[11px] uppercase tracking-wide text-bone-muted"
               >
                 Sample text
               </label>
@@ -120,17 +120,17 @@ export function FontViewer({ fnId, asset }: Props) {
                 id="font-sample"
                 value={sampleText}
                 onChange={(event) => setSampleText(event.target.value)}
-                className="w-full rounded border border-white/10 bg-[#0b0f15] px-3 py-2 text-sm text-slate-100 outline-none focus:border-violet-400/50"
+                className="w-full rounded border border-border bg-ink px-3 py-2 text-sm text-bone outline-none focus:border-amber/50"
               />
             </div>
             <div className="space-y-3">
               {SAMPLE_SIZES.map((size) => (
-                <div key={size} className="rounded-lg border border-white/5 bg-[#0b0f15] p-4">
-                  <div className="mb-1 text-[10px] uppercase tracking-wider text-slate-500">
+                <div key={size} className="rounded-lg border border-border bg-ink p-4">
+                  <div className="mb-1 text-[10px] uppercase tracking-wider text-bone-faint">
                     {size}px
                   </div>
                   <p
-                    className="whitespace-pre-wrap break-words text-slate-100"
+                    className="whitespace-pre-wrap break-words text-bone"
                     style={{
                       fontFamily: `"${family}", system-ui, sans-serif`,
                       fontSize: size,
@@ -142,11 +142,11 @@ export function FontViewer({ fnId, asset }: Props) {
                 </div>
               ))}
             </div>
-            <div className="rounded-lg border border-white/10 bg-black/30 p-3 text-[11px] text-slate-300">
-              <p className="mb-2 text-[10px] uppercase tracking-wider text-slate-500">
+            <div className="rounded-lg border border-border bg-ink-overlay p-3 text-[11px] text-bone-muted">
+              <p className="mb-2 text-[10px] uppercase tracking-wider text-bone-faint">
                 Use inside your function
               </p>
-              <pre className="overflow-x-auto whitespace-pre text-[12px] text-slate-200">
+              <pre className="overflow-x-auto whitespace-pre text-[12px] text-bone">
                 {`const bytes = await fn.assets.bytes(${JSON.stringify(asset.path)});
 // Or use the public URL via fn.assets.url() to embed in HTML responses.`}
               </pre>

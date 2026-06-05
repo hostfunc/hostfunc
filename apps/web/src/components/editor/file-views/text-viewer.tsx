@@ -6,29 +6,14 @@ import { Loader2, Save } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { FileTreeAsset } from "../file-tree";
+import { HOSTFUNC_DARK_THEME, defineHostfuncTheme } from "../monaco-theme";
+import { languageFor } from "./language";
 
 interface Props {
   fnId: string;
   asset: FileTreeAsset;
   onAssetUpdated: (next: FileTreeAsset) => void;
   readOnly?: boolean;
-}
-
-const EXT_LANGUAGE: Record<string, string> = {
-  md: "markdown",
-  markdown: "markdown",
-  txt: "plaintext",
-  json: "json",
-  yaml: "yaml",
-  yml: "yaml",
-  svg: "xml",
-  html: "html",
-  css: "css",
-};
-
-function languageFor(path: string): string {
-  const ext = path.split(".").pop()?.toLowerCase() ?? "";
-  return EXT_LANGUAGE[ext] ?? "plaintext";
 }
 
 export function TextViewer({ fnId, asset, onAssetUpdated, readOnly = false }: Props) {
@@ -112,26 +97,26 @@ export function TextViewer({ fnId, asset, onAssetUpdated, readOnly = false }: Pr
   const dirty = content !== savedContent;
 
   return (
-    <div className="flex h-full flex-col bg-[#0d1117]">
-      <div className="flex items-center justify-between border-b border-white/5 bg-[#161b22] px-4 py-2.5">
+    <div className="flex h-full flex-col bg-ink">
+      <div className="flex items-center justify-between border-b border-border bg-ink-elevated px-4 py-2.5">
         <div className="flex items-center gap-3">
-          <span className="font-mono text-xs text-slate-200">{asset.path}</span>
-          <span className="text-[10px] text-slate-500">{asset.mime}</span>
+          <span className="font-mono text-xs text-bone">{asset.path}</span>
+          <span className="text-[10px] text-bone-faint">{asset.mime}</span>
         </div>
         {!readOnly ? (
           <div className="flex items-center gap-3">
-            <span className="inline-flex h-5 items-center gap-1 text-[10px] text-slate-400">
+            <span className="inline-flex h-5 items-center gap-1 text-[10px] text-bone-muted">
               {saving ? (
                 <>
                   <Loader2 className="size-3 animate-spin" /> Saving…
                 </>
               ) : dirty ? (
-                <span className="inline-flex items-center gap-1 text-yellow-300">
-                  <span className="size-1.5 rounded-full bg-yellow-400" /> unsaved
+                <span className="inline-flex items-center gap-1 text-amber">
+                  <span className="size-1.5 rounded-full bg-amber" /> unsaved
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-emerald-300">
-                  <span className="size-1.5 rounded-full bg-emerald-400" /> synced
+                <span className="inline-flex items-center gap-1 text-emerald">
+                  <span className="size-1.5 rounded-full bg-emerald" /> synced
                 </span>
               )}
             </span>
@@ -152,7 +137,8 @@ export function TextViewer({ fnId, asset, onAssetUpdated, readOnly = false }: Pr
           value={content}
           language={languageFor(asset.path)}
           onChange={(value) => setContent(value ?? "")}
-          theme="vs-dark"
+          theme={HOSTFUNC_DARK_THEME}
+          beforeMount={defineHostfuncTheme}
           options={{
             readOnly,
             minimap: { enabled: false },
@@ -162,7 +148,7 @@ export function TextViewer({ fnId, asset, onAssetUpdated, readOnly = false }: Pr
             padding: { top: 12 },
           }}
           loading={
-            <div className="flex h-full items-center justify-center text-xs text-slate-500">
+            <div className="flex h-full items-center justify-center text-xs text-bone-faint">
               Loading editor…
             </div>
           }

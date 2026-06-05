@@ -2,6 +2,7 @@ import { CommentsThread } from "@/app/marketplace/[fn]/comments-thread";
 import { FunctionLogo } from "@/components/function/function-logo";
 import { CodePreview } from "@/components/marketing/code-preview";
 import { FunctionActions } from "@/components/marketplace/function-actions";
+import { HtmlPreviewFrame } from "@/components/marketplace/html-preview-frame";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WorkspaceLogo } from "@/components/workspace/workspace-logo";
@@ -97,6 +98,13 @@ export default async function DashboardMarketplaceFunctionPage({
               </a>
             </div>
           </div>
+
+          {fn.hasHtmlPage ? (
+            <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-6">
+              <h2 className="font-display text-2xl text-[var(--color-bone)]">Live Preview</h2>
+              <HtmlPreviewFrame fnId={fn.id} />
+            </div>
+          ) : null}
 
           <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-6">
             <h2 className="font-display text-2xl text-[var(--color-bone)]">Source Preview</h2>

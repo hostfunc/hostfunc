@@ -15,12 +15,13 @@
     "./api": {
       "types": "./dist/api.d.ts",
       "import": "./dist/api.js"
+    },
+    "./custom-hostnames": {
+      "types": "./dist/custom-hostnames.d.ts",
+      "import": "./dist/custom-hostnames.js"
     }
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "files": ["dist", "README.md"],
   "scripts": {
     "build": "tsc -b",
     "dev": "tsc -b --watch --preserveWatchOutput",

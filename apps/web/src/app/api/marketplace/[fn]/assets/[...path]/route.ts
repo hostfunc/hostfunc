@@ -6,6 +6,17 @@ function compat<T>(value: T): T {
   return value;
 }
 
+/**
+ * CSP for user-authored HTML. The `sandbox` directive sandboxes the document
+ * even on direct navigation; combined with the consuming iframe's
+ * `sandbox="allow-scripts"` (no `allow-same-origin`) it runs at an opaque
+ * origin with no access to hostfunc cookies/storage.
+ */
+const USER_HTML_CSP =
+  "sandbox allow-scripts; default-src 'self' data: blob:; img-src 'self' data: blob:; " +
+  "style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; " +
+  "connect-src 'self'; frame-ancestors 'self'";
+
 async function loadPublicFn(fnId: string) {
   const rows = await db
     .select({
@@ -36,15 +47,20 @@ export async function GET(
     const blob = await getCurrentVersionAssetBlobByFn({ fnId: fn, path: path.join("/") });
     if (!blob) return Response.json({ error: "not_found" }, { status: 404 });
     const view = new Uint8Array(blob.content);
-    return new Response(view, {
-      status: 200,
-      headers: {
-        "content-type": blob.mime,
-        "cache-control": "public, max-age=300, s-maxage=86400, immutable",
-        "content-length": String(blob.sizeBytes),
-        "x-asset-sha256": blob.sha256,
-      },
-    });
+    const isHtml = blob.mime.startsWith("text/html");
+    const headers: Record<string, string> = {
+      "content-type": blob.mime,
+      "cache-control": "public, max-age=300, s-maxage=86400, immutable",
+      "content-length": String(blob.sizeBytes),
+      "x-asset-sha256": blob.sha256,
+      "x-content-type-options": "nosniff",
+    };
+    if (isHtml) {
+      // User-authored HTML may contain arbitrary scripts — sandbox it.
+      headers["content-security-policy"] = USER_HTML_CSP;
+      headers["x-frame-options"] = "SAMEORIGIN";
+    }
+    return new Response(view, { status: 200, headers });
   } catch (error) {
     if (error instanceof AssetError) {
       return Response.json({ error: error.code, message: error.message }, { status: error.status });

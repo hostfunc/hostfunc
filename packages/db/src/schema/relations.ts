@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import { account, session, user } from "./auth.js";
 import { plan, subscription } from "./billing.js";
+import { customDomain } from "./customDomains.js";
 import { execution, executionLog } from "./executions.js";
 import { fnAiContext } from "./fnAiContext.js";
 import { fnAsset, fnVersionAsset } from "./fnAssets.js";
@@ -36,6 +37,7 @@ export const organizationRelations = relations(organization, ({ many, one }) => 
   githubRepoAccess: many(githubRepoAccess),
   functionGitBindings: many(functionGitBinding),
   githubConnectionAudits: many(githubConnectionAudit),
+  customDomains: many(customDomain),
   subscription: one(subscription),
 }));
 
@@ -81,6 +83,7 @@ export const fnRelations = relations(fn, ({ one, many }) => ({
   }),
   assets: many(fnAsset),
   versionAssets: many(fnVersionAsset),
+  customDomains: many(customDomain),
 }));
 
 export const fnMarketplaceProfileRelations = relations(fnMarketplaceProfile, ({ one }) => ({
@@ -159,6 +162,18 @@ export const fnVersionAssetRelations = relations(fnVersionAsset, ({ one }) => ({
   organization: one(organization, {
     fields: [fnVersionAsset.orgId],
     references: [organization.id],
+  }),
+}));
+
+export const customDomainRelations = relations(customDomain, ({ one }) => ({
+  organization: one(organization, {
+    fields: [customDomain.orgId],
+    references: [organization.id],
+  }),
+  fn: one(fn, { fields: [customDomain.fnId], references: [fn.id] }),
+  createdBy: one(user, {
+    fields: [customDomain.createdById],
+    references: [user.id],
   }),
 }));
 

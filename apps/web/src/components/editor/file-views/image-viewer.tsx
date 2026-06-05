@@ -59,16 +59,16 @@ export function ImageViewer({ fnId, asset }: Props) {
   };
 
   return (
-    <div className="flex h-full flex-col bg-[#0d1117]">
-      <div className="flex items-center justify-between border-b border-white/5 bg-[#161b22] px-4 py-2.5">
+    <div className="flex h-full flex-col bg-ink">
+      <div className="flex items-center justify-between border-b border-border bg-ink-elevated px-4 py-2.5">
         <div className="flex items-center gap-3">
-          <span className="font-mono text-xs text-slate-200">{asset.path}</span>
-          <span className="text-[10px] text-slate-500">{asset.mime}</span>
-          <span className="text-[10px] text-slate-500">
+          <span className="font-mono text-xs text-bone">{asset.path}</span>
+          <span className="text-[10px] text-bone-faint">{asset.mime}</span>
+          <span className="text-[10px] text-bone-faint">
             {Math.max(1, Math.round(asset.sizeBytes / 1024))} KB
           </span>
           {dimensions ? (
-            <span className="text-[10px] text-slate-500">
+            <span className="text-[10px] text-bone-faint">
               {dimensions.width}×{dimensions.height}
             </span>
           ) : null}
@@ -90,22 +90,22 @@ export function ImageViewer({ fnId, asset }: Props) {
           >
             <Copy className="mr-1 size-3" /> URL
           </Button>
-          <div className="ml-2 flex items-center gap-1 rounded-md border border-white/10 bg-black/20 p-0.5">
+          <div className="ml-2 flex items-center gap-1 rounded-md border border-border bg-ink-overlay p-0.5">
             <button
               type="button"
               onClick={() => setZoom((z) => Math.max(0.1, z - 0.25))}
-              className="rounded p-1 text-slate-300 hover:bg-white/5"
+              className="rounded p-1 text-bone-muted hover:bg-white/5"
               aria-label="Zoom out"
             >
               <ZoomOut className="size-3.5" />
             </button>
-            <span className="px-1 text-[11px] tabular-nums text-slate-300">
+            <span className="px-1 text-[11px] tabular-nums text-bone-muted">
               {Math.round(zoom * 100)}%
             </span>
             <button
               type="button"
               onClick={() => setZoom((z) => Math.min(8, z + 0.25))}
-              className="rounded p-1 text-slate-300 hover:bg-white/5"
+              className="rounded p-1 text-bone-muted hover:bg-white/5"
               aria-label="Zoom in"
             >
               <ZoomIn className="size-3.5" />
@@ -113,7 +113,7 @@ export function ImageViewer({ fnId, asset }: Props) {
             <button
               type="button"
               onClick={() => setZoom(1)}
-              className="rounded p-1 text-slate-300 hover:bg-white/5"
+              className="rounded p-1 text-bone-muted hover:bg-white/5"
               aria-label="Reset zoom"
             >
               <Maximize2 className="size-3.5" />
@@ -126,14 +126,14 @@ export function ImageViewer({ fnId, asset }: Props) {
         className="relative flex flex-1 items-center justify-center overflow-auto"
         style={{
           backgroundImage:
-            "linear-gradient(45deg, #1a1f29 25%, transparent 25%), linear-gradient(-45deg, #1a1f29 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1a1f29 75%), linear-gradient(-45deg, transparent 75%, #1a1f29 75%)",
+            "linear-gradient(45deg, #211e1a 25%, transparent 25%), linear-gradient(-45deg, #211e1a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #211e1a 75%), linear-gradient(-45deg, transparent 75%, #211e1a 75%)",
           backgroundSize: "16px 16px",
           backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0",
-          backgroundColor: "#0b0f15",
+          backgroundColor: "#0a0908",
         }}
       >
         {loading ? (
-          <div className="inline-flex items-center gap-2 text-xs text-slate-400">
+          <div className="inline-flex items-center gap-2 text-xs text-bone-muted">
             <Loader2 className="size-4 animate-spin" /> Loading…
           </div>
         ) : src ? (
@@ -148,7 +148,7 @@ export function ImageViewer({ fnId, asset }: Props) {
             }}
           />
         ) : (
-          <p className="text-xs text-slate-500">Image unavailable.</p>
+          <p className="text-xs text-bone-faint">Image unavailable.</p>
         )}
       </div>
     </div>

@@ -9,6 +9,7 @@
 - [ ] Stripe webhook points to `/api/webhooks/stripe` with live signing secret.
 - [ ] Google + GitHub OAuth callback URLs set to production domain.
 - [ ] Release workflow has production approval enabled.
+- [ ] (If enabling custom domains) `hostfunc.app` SaaS zone, `DOMAIN_INDEX` KV, API token scopes, and `CF_SAAS_*` env set per `docs/custom-domains-setup.md`.
 
 ## Dry Run (Staging-like)
 

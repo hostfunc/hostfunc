@@ -1,9 +1,11 @@
 "use client";
 
 import {
+  Braces,
   ChevronDown,
   ChevronRight,
   FileCode,
+  FileCode2,
   FilePlus,
   FileText,
   Folder,
@@ -12,6 +14,7 @@ import {
   Type as FontIcon,
   Image as ImageIcon,
   Loader2,
+  Palette,
   PanelLeftClose,
   PanelLeftOpen,
   Pencil,
@@ -33,7 +36,7 @@ import {
 export interface FileTreeAsset {
   id: string;
   path: string;
-  kind: "readme" | "image" | "font" | "other";
+  kind: "readme" | "image" | "font" | "html" | "style" | "script" | "other";
   mime: string;
   sizeBytes: number;
   sha256: string;
@@ -80,6 +83,19 @@ const SYNTHETIC_INDEX: FileNode = {
 const NAME_REGEX = /^[A-Za-z0-9._\-+@()\[\] ]+$/;
 const README_STARTER =
   "# README\n\nDescribe what this function does, how to call it, and any noteworthy edge cases.";
+const HTML_STARTER = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My function</title>
+  </head>
+  <body>
+    <h1>Hello from hostfunc</h1>
+    <p>Edit index.html to build your page. It is served at your function URL.</p>
+  </body>
+</html>
+`;
 
 const COLLAPSED_KEY = "hostfunc:editor:fileTreeCollapsed";
 const WIDTH_KEY = "hostfunc:editor:fileTreeWidth";
@@ -88,7 +104,18 @@ const MAX_WIDTH = 480;
 const COLLAPSED_WIDTH = 36;
 const DEFAULT_WIDTH = 260;
 
-const TEXT_EXTENSIONS = new Set(["md", "markdown", "txt"]);
+const TEXT_EXTENSIONS = new Set(["md", "markdown", "txt", "html", "htm", "css", "js", "mjs"]);
+
+const EXT_TO_MIME: Record<string, string> = {
+  md: "text/markdown",
+  markdown: "text/markdown",
+  txt: "text/plain",
+  html: "text/html",
+  htm: "text/html",
+  css: "text/css",
+  js: "text/javascript",
+  mjs: "text/javascript",
+};
 
 function buildTree(assets: FileTreeAsset[], stagedFolders: string[]): TreeNode[] {
   const root: FolderNode = { type: "folder", name: "", path: "", children: [] };
@@ -148,6 +175,9 @@ function iconForAsset(node: FileNode) {
   if (a.kind === "readme") return FileText;
   if (a.kind === "image") return ImageIcon;
   if (a.kind === "font") return FontIcon;
+  if (a.kind === "html") return FileCode2;
+  if (a.kind === "style") return Palette;
+  if (a.kind === "script") return Braces;
   return FileText;
 }
 
@@ -400,8 +430,9 @@ export function FileTree({
       setPendingError("Use Upload for images and fonts.");
       return;
     }
-    const mime = ext === "md" || ext === "markdown" ? "text/markdown" : "text/plain";
-    const contentText = name === "README.md" ? README_STARTER : "";
+    const mime = EXT_TO_MIME[ext] ?? "text/plain";
+    const contentText =
+      name === "README.md" ? README_STARTER : ext === "html" || ext === "htm" ? HTML_STARTER : "";
 
     setBusy(true);
     try {
@@ -472,10 +503,8 @@ export function FileTree({
           className="flex items-center gap-1.5 rounded px-2 py-[5px]"
           style={{ paddingLeft: `${depth * 14 + 6}px` }}
         >
-          {isFolder ? <ChevronRight className="size-3 shrink-0 text-slate-500" /> : null}
-          <Icon
-            className={`size-3.5 shrink-0 ${isFolder ? "text-amber-300/80" : "text-slate-400"}`}
-          />
+          {isFolder ? <ChevronRight className="size-3 shrink-0 text-bone-faint" /> : null}
+          <Icon className={`size-3.5 shrink-0 ${isFolder ? "text-amber/80" : "text-bone-muted"}`} />
           <input
             // biome-ignore lint/a11y/noAutofocus: inline new-row appears as a direct response to user click
             autoFocus
@@ -502,16 +531,16 @@ export function FileTree({
             }}
             placeholder={isFolder ? "folder-name" : "file.md"}
             aria-invalid={pendingError ? "true" : "false"}
-            className={`h-6 flex-1 rounded border bg-[#0b0f15] px-1.5 text-[12px] text-slate-200 outline-none ${
+            className={`h-6 flex-1 rounded border bg-ink px-1.5 text-[12px] text-bone outline-none ${
               pendingError
-                ? "border-rose-400/60 focus:border-rose-400"
-                : "border-violet-400/40 focus:border-violet-400"
+                ? "border-rose/60 focus:border-rose"
+                : "border-amber/40 focus:border-amber"
             }`}
           />
         </div>
         {pendingError ? (
           <p
-            className="mt-0.5 text-[10px] text-rose-300"
+            className="mt-0.5 text-[10px] text-rose"
             style={{ paddingLeft: `${depth * 14 + 28}px` }}
           >
             {pendingError}
@@ -531,17 +560,17 @@ export function FileTree({
         <div key={`folder:${node.path}`}>
           <div
             className={`group mx-1 flex items-center rounded transition hover:bg-white/5 ${
-              isDropTarget ? "bg-emerald-500/10 ring-1 ring-emerald-500/40" : ""
+              isDropTarget ? "bg-emerald/10 ring-1 ring-emerald/40" : ""
             }`}
           >
             <button
               type="button"
               onClick={() => toggleFolder(node.path)}
-              className="flex flex-1 items-center gap-1.5 px-2 py-[5px] text-left text-[12px] text-slate-200"
+              className="flex flex-1 items-center gap-1.5 px-2 py-[5px] text-left text-[12px] text-bone"
               style={{ paddingLeft: `${depth * 14 + 6}px` }}
             >
-              <Chevron className="size-3 shrink-0 text-slate-400" />
-              <FolderIcon className="size-3.5 shrink-0 text-amber-400/70" />
+              <Chevron className="size-3 shrink-0 text-bone-muted" />
+              <FolderIcon className="size-3.5 shrink-0 text-amber/70" />
               <span className="truncate font-medium">{node.name}</span>
             </button>
             {!readOnly ? (
@@ -554,7 +583,7 @@ export function FileTree({
                     e.stopPropagation();
                     startNew("file", node.path);
                   }}
-                  className="rounded p-1 text-slate-400 hover:bg-white/10 hover:text-slate-100"
+                  className="rounded p-1 text-bone-muted hover:bg-white/10 hover:text-bone"
                 >
                   <FilePlus className="size-3" />
                 </button>
@@ -566,7 +595,7 @@ export function FileTree({
                     e.stopPropagation();
                     startNew("folder", node.path);
                   }}
-                  className="rounded p-1 text-slate-400 hover:bg-white/10 hover:text-slate-100"
+                  className="rounded p-1 text-bone-muted hover:bg-white/10 hover:text-bone"
                 >
                   <FolderPlus className="size-3" />
                 </button>
@@ -579,7 +608,7 @@ export function FileTree({
                     setDropFolder(node.path);
                     fileInputRef.current?.click();
                   }}
-                  className="rounded p-1 text-slate-400 hover:bg-white/10 hover:text-slate-100"
+                  className="rounded p-1 text-bone-muted hover:bg-white/10 hover:text-bone"
                 >
                   <Upload className="size-3" />
                 </button>
@@ -596,7 +625,7 @@ export function FileTree({
               {node.children.map((child) => renderNode(child, depth + 1))}
               {node.children.length === 0 && !(pending && pending.parent === node.path) ? (
                 <div
-                  className="px-2 py-[5px] text-[10px] text-slate-500"
+                  className="px-2 py-[5px] text-[10px] text-bone-faint"
                   style={{ paddingLeft: `${(depth + 1) * 14 + 6}px` }}
                 >
                   empty folder
@@ -620,7 +649,7 @@ export function FileTree({
           className="mx-1 flex items-center gap-1.5 rounded px-2 py-[5px]"
           style={{ paddingLeft: `${depth * 14 + 6}px` }}
         >
-          <Icon className="size-3.5 text-slate-400" />
+          <Icon className="size-3.5 text-bone-muted" />
           <input
             // biome-ignore lint/a11y/noAutofocus: inline rename input appears in response to user action
             autoFocus
@@ -636,7 +665,7 @@ export function FileTree({
               }
             }}
             onBlur={() => void onCommitRename(node.path)}
-            className="h-6 flex-1 rounded border border-violet-400/40 bg-[#0b0f15] px-1.5 text-[12px] text-slate-200 outline-none"
+            className="h-6 flex-1 rounded border border-amber/40 bg-ink px-1.5 text-[12px] text-bone outline-none"
           />
         </div>
       );
@@ -646,7 +675,7 @@ export function FileTree({
       <div
         key={`file:${node.path}`}
         className={`group mx-1 flex items-center gap-1.5 rounded px-2 py-[5px] transition hover:bg-white/5 ${
-          isSelected ? "bg-violet-500/10" : ""
+          isSelected ? "bg-amber-soft" : ""
         }`}
         style={{ paddingLeft: `${depth * 14 + 6}px` }}
       >
@@ -654,15 +683,13 @@ export function FileTree({
           type="button"
           onClick={() => onSelect(node.path)}
           className={`flex flex-1 items-center gap-2 truncate text-left text-[12px] transition ${
-            isSelected ? "text-violet-200" : "text-slate-200"
+            isSelected ? "text-amber-hover" : "text-bone"
           }`}
         >
-          <Icon
-            className={`size-3.5 shrink-0 ${isSelected ? "text-violet-300" : "text-slate-400"}`}
-          />
+          <Icon className={`size-3.5 shrink-0 ${isSelected ? "text-amber" : "text-bone-muted"}`} />
           <span className="truncate">{node.name}</span>
           {node.asset ? (
-            <span className="ml-auto text-[10px] text-slate-500">
+            <span className="ml-auto text-[10px] text-bone-faint">
               {formatSize(node.asset.sizeBytes)}
             </span>
           ) : null}
@@ -673,7 +700,7 @@ export function FileTree({
               type="button"
               aria-label="Rename"
               onClick={() => setRenamingPath(node.path)}
-              className="rounded p-1 text-slate-400 hover:bg-white/10 hover:text-slate-100"
+              className="rounded p-1 text-bone-muted hover:bg-white/10 hover:text-bone"
             >
               <Pencil className="size-3" />
             </button>
@@ -681,7 +708,7 @@ export function FileTree({
               type="button"
               aria-label="Delete"
               onClick={() => void onDelete(node.path)}
-              className="rounded p-1 text-rose-300 hover:bg-rose-500/10"
+              className="rounded p-1 text-rose hover:bg-rose/10"
             >
               <Trash2 className="size-3" />
             </button>
@@ -695,7 +722,7 @@ export function FileTree({
     return (
       <aside
         ref={asideRef}
-        className="relative flex shrink-0 flex-col items-center border-r border-white/5 bg-[#0b0f15] py-2"
+        className="relative flex shrink-0 flex-col items-center border-r border-border bg-ink py-2"
         style={{ width: COLLAPSED_WIDTH }}
       >
         <button
@@ -704,11 +731,11 @@ export function FileTree({
           aria-pressed="true"
           title="Expand files"
           onClick={() => setCollapsed(false)}
-          className="rounded p-1.5 text-slate-300 transition hover:bg-white/10 hover:text-slate-50"
+          className="rounded p-1.5 text-bone-muted transition hover:bg-white/10 hover:text-bone"
         >
           <PanelLeftOpen className="size-4" />
         </button>
-        <div className="mt-2 rotate-180 text-[9px] uppercase tracking-widest text-slate-600 [writing-mode:vertical-rl]">
+        <div className="mt-2 rotate-180 text-[9px] uppercase tracking-widest text-bone-faint [writing-mode:vertical-rl]">
           Files
         </div>
       </aside>
@@ -718,23 +745,23 @@ export function FileTree({
   return (
     <aside
       ref={asideRef}
-      className={`relative flex shrink-0 flex-col border-r border-white/5 bg-[#0b0f15] ${
-        draggingOver === "" ? "ring-1 ring-emerald-500/60" : ""
+      className={`relative flex shrink-0 flex-col border-r border-border bg-ink ${
+        draggingOver === "" ? "ring-1 ring-emerald/60" : ""
       }`}
       style={{ width }}
       onDragOver={(event) => handleDragOver(event, "")}
       onDragLeave={() => setDraggingOver(null)}
       onDrop={(event) => handleDrop(event, "")}
     >
-      <div className="flex items-center justify-between border-b border-white/5 px-3 py-2">
-        <span className="text-[10px] uppercase tracking-wider text-slate-400">Files</span>
+      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+        <span className="text-[10px] uppercase tracking-wider text-bone-muted">Files</span>
         <div className="flex items-center gap-1">
           {!readOnly ? (
             <>
               <button
                 type="button"
                 onClick={() => startNew("file", "")}
-                className="rounded p-1 text-slate-300 transition hover:bg-white/10 hover:text-slate-50"
+                className="rounded p-1 text-bone-muted transition hover:bg-white/10 hover:text-bone"
                 aria-label="New file"
                 title="New file"
               >
@@ -743,7 +770,7 @@ export function FileTree({
               <button
                 type="button"
                 onClick={() => startNew("folder", "")}
-                className="rounded p-1 text-slate-300 transition hover:bg-white/10 hover:text-slate-50"
+                className="rounded p-1 text-bone-muted transition hover:bg-white/10 hover:text-bone"
                 aria-label="New folder"
                 title="New folder"
               >
@@ -755,7 +782,7 @@ export function FileTree({
                   setDropFolder("");
                   fileInputRef.current?.click();
                 }}
-                className="rounded p-1 text-slate-300 transition hover:bg-white/10 hover:text-slate-50"
+                className="rounded p-1 text-bone-muted transition hover:bg-white/10 hover:text-bone"
                 aria-label="Upload"
                 title="Upload files"
               >
@@ -769,7 +796,7 @@ export function FileTree({
             aria-label="Collapse files"
             aria-pressed="false"
             title="Collapse files"
-            className="rounded p-1 text-slate-400 transition hover:bg-white/10 hover:text-slate-100"
+            className="rounded p-1 text-bone-muted transition hover:bg-white/10 hover:text-bone"
           >
             <PanelLeftClose className="size-3.5" />
           </button>
@@ -781,12 +808,12 @@ export function FileTree({
         {pending && pending.parent === "" ? renderPendingRow(0) : null}
         {tree.map((node) => renderNode(node, 0))}
         {tree.length === 0 && !pending ? (
-          <div className="px-3 py-8 text-center text-[11px] leading-relaxed text-slate-500">
+          <div className="px-3 py-8 text-center text-[11px] leading-relaxed text-bone-faint">
             <p>Drop files here, or use the toolbar above to add a README, fonts, or images.</p>
           </div>
         ) : null}
       </div>
-      <div className="border-t border-white/5 px-3 py-2 text-[10px] text-slate-500">
+      <div className="border-t border-border px-3 py-2 text-[10px] text-bone-faint">
         {busy ? (
           <span className="inline-flex items-center gap-1.5">
             <Loader2 className="size-3 animate-spin" /> Working…
@@ -838,7 +865,7 @@ export function FileTree({
             setWidth(DEFAULT_WIDTH);
           }
         }}
-        className="absolute right-0 top-0 z-10 h-full w-1 cursor-col-resize bg-transparent outline-none transition hover:bg-violet-500/40 focus-visible:bg-violet-500/60"
+        className="absolute right-0 top-0 z-10 h-full w-1 cursor-col-resize bg-transparent outline-none transition hover:bg-amber/40 focus-visible:bg-amber/60"
       />
     </aside>
   );

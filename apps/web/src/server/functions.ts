@@ -656,6 +656,8 @@ export interface MarketplaceFunctionItem {
   updatedAt: Date;
   publishedAt: Date | null;
   codePreview: string | null;
+  /** True when the deployed version ships an `index.html` (renderable preview). */
+  hasHtmlPage: boolean;
   hasStarred: boolean;
 }
 
@@ -725,6 +727,11 @@ function marketplaceSelect(userId?: string) {
     updatedAt: schema.fn.updatedAt,
     publishedAt: schema.fnMarketplaceProfile.publishedAt,
     code: schema.fnVersion.code,
+    hasHtmlPage: sql<boolean>`exists(
+      select 1 from ${schema.fnVersionAsset}
+      where ${schema.fnVersionAsset.versionId} = ${schema.fn.currentVersionId}
+        and ${schema.fnVersionAsset.path} = 'index.html'
+    )`,
     hasStarred: userId
       ? sql<boolean>`exists(
           select 1 from ${schema.fnStar}
@@ -759,6 +766,7 @@ function toMarketplaceItem(
         updatedAt: Date;
         publishedAt: Date | null;
         code: string | null;
+        hasHtmlPage: boolean;
         hasStarred: boolean;
       }
     : never,
@@ -785,6 +793,7 @@ function toMarketplaceItem(
     updatedAt: row.updatedAt,
     publishedAt: row.publishedAt,
     codePreview: row.code ? row.code.slice(0, 1800) : null,
+    hasHtmlPage: row.hasHtmlPage,
     hasStarred: row.hasStarred,
   };
 }

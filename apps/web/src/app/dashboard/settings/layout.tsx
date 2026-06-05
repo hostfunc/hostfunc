@@ -25,6 +25,11 @@ const orgNavItems: SettingsNavItem[] = [
     icon: "blocks",
   },
   {
+    title: "Domains",
+    href: "/dashboard/settings/domains",
+    icon: "globe",
+  },
+  {
     title: "API Tokens",
     href: "/dashboard/settings/tokens",
     icon: "keyRound",

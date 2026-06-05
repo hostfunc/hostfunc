@@ -1,5 +1,11 @@
 import { type BuildResult, type Message, build } from "esbuild";
 
+export interface BundleAsset {
+  path: string;
+  mime: string;
+  content: Buffer | Uint8Array;
+}
+
 export interface BundleOptions {
   /** User-authored TypeScript source. */
   code: string;
@@ -7,8 +13,15 @@ export interface BundleOptions {
   fnId: string;
   /** Version id; embedded as a build-time define so the SDK can find KV blobs. */
   versionId?: string;
-  /** Hard upper bound for the bundled output. */
+  /** Asset blobs to embed directly into the worker module (small ones only). */
+  assets?: BundleAsset[];
+  /** Hard upper bound for the user-authored code. Defaults to 1_000_000. */
   maxSizeBytes?: number;
+}
+
+export interface SkippedAsset {
+  path: string;
+  reason: "too_large" | "budget_exhausted";
 }
 
 export interface BundleResult {
@@ -16,6 +29,10 @@ export interface BundleResult {
   sourceMap?: string;
   sizeBytes: number;
   warnings: string[];
+  /** Asset paths embedded directly into the bundle — no KV needed at runtime. */
+  embeddedAssetPaths: string[];
+  /** Assets too large / over budget to embed; still need the KV fallback. */
+  skippedAssets: SkippedAsset[];
 }
 
 export class BundleError extends Error {
@@ -31,6 +48,16 @@ export class BundleError extends Error {
 const RUNTIME_SHIM = `
 // Injected by hostfunc at deploy time. Provides @hostfunc/fn to user code.
 const __ofn_state = { request: null, env: null };
+
+// Decodes a base64 string to bytes. atob yields a Latin-1 binary string, so a
+// per-char code copy is the correct (and binary-safe) decode in a Worker.
+function __ofn_b64_to_bytes(b64) {
+  if (b64 === "") return new Uint8Array(0);
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
 
 const __ofn_assets_module = {
   _key(path) {
@@ -60,6 +87,11 @@ const __ofn_assets_module = {
   },
   async bytes(path) {
     const key = this._key(path);
+    // Assets embedded into the bundle at deploy time take priority — they need
+    // no KV binding and no control-plane round-trip.
+    if (Object.prototype.hasOwnProperty.call(__OFN_EMBEDDED_ASSETS, key)) {
+      return __ofn_b64_to_bytes(__OFN_EMBEDDED_ASSETS[key]);
+    }
     const env = __ofn_state.env;
     const ctx = __ofn_ctx();
     const versionId = ctx.versionId || __HOSTFUNC_VERSION_ID__;
@@ -390,7 +422,9 @@ async function __ofn_resolve_slug(ctx, owner, fnSlug) {
 }
 `;
 
-const ENTRY_WRAPPER = (userCode: string) => `
+const ENTRY_WRAPPER = (userCode: string, embeddedAssetsLiteral: string) => `
+// Static assets embedded at deploy time (normalized path -> base64). {} when none.
+const __OFN_EMBEDDED_ASSETS = ${embeddedAssetsLiteral};
 ${RUNTIME_SHIM}
 
 // Virtual module: @hostfunc/fn
@@ -413,6 +447,104 @@ const getNamespace = __ofn_vector_module.getNamespace;
 ${userCode}
 // User code ends
 
+// --- hostfunc static HTML / asset serving -------------------------------
+const __OFN_HTML_CSP =
+  "sandbox allow-scripts; default-src 'self' data: blob:; img-src 'self' data: blob:; " +
+  "style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; " +
+  "connect-src 'self'; frame-ancestors 'self'";
+const __OFN_ASSET_MIME = {
+  html: "text/html; charset=utf-8",
+  htm: "text/html; charset=utf-8",
+  css: "text/css; charset=utf-8",
+  js: "text/javascript; charset=utf-8",
+  mjs: "text/javascript; charset=utf-8",
+  json: "application/json; charset=utf-8",
+  txt: "text/plain; charset=utf-8",
+  svg: "image/svg+xml",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  ico: "image/x-icon",
+  woff: "font/woff",
+  woff2: "font/woff2",
+  ttf: "font/ttf",
+  otf: "font/otf",
+};
+function __ofn_asset_mime(path) {
+  const ext = (path.split(".").pop() || "").toLowerCase();
+  return __OFN_ASSET_MIME[ext] || "application/octet-stream";
+}
+function __ofn_inject_base(html, runPath) {
+  if (!runPath) return html;
+  const tag = '<base href="' + runPath + (runPath.endsWith("/") ? "" : "/") + '">';
+  const head = html.match(/<head[^>]*>/i);
+  if (head && head.index != null) {
+    const at = head.index + head[0].length;
+    return html.slice(0, at) + tag + html.slice(at);
+  }
+  const htmlTag = html.match(/<html[^>]*>/i);
+  if (htmlTag && htmlTag.index != null) {
+    const at = htmlTag.index + htmlTag[0].length;
+    return html.slice(0, at) + "<head>" + tag + "</head>" + html.slice(at);
+  }
+  return tag + html;
+}
+async function __ofn_serve_asset(request) {
+  // Only browser-style GETs serve static assets; everything else runs main()/email().
+  if (request.method !== "GET") return null;
+  if (request.headers.get("x-hostfunc-invocation-kind") === "email") return null;
+  const subPath = request.headers.get("x-hostfunc-asset-path");
+  const explicit = typeof subPath === "string" && subPath.length > 0;
+  let assetPath;
+  if (explicit) {
+    assetPath = subPath.replace(/^\\/+/, "");
+    if (!assetPath || assetPath.endsWith("/")) assetPath = assetPath + "index.html";
+  } else {
+    // Bare /run/<org>/<slug>: serve index.html when the function ships one.
+    // A missing index.html still falls through to main() below.
+    assetPath = "index.html";
+  }
+  let bytes = null;
+  try {
+    bytes = await assets.bytes(assetPath);
+  } catch (_e) {
+    bytes = null;
+  }
+  if (!bytes) {
+    // An explicit sub-path miss is a real 404; a missing index.html falls
+    // through to main() so API-only functions behave exactly as before.
+    if (explicit) {
+      return new Response("Not found", {
+        status: 404,
+        headers: {
+          "content-type": "text/plain; charset=utf-8",
+          "x-content-type-options": "nosniff",
+        },
+      });
+    }
+    return null;
+  }
+  const mime = __ofn_asset_mime(assetPath);
+  const isHtml = mime.indexOf("text/html") === 0;
+  const headers = { "content-type": mime, "x-content-type-options": "nosniff" };
+  let body = bytes;
+  if (isHtml) {
+    headers["content-security-policy"] = __OFN_HTML_CSP;
+    headers["cache-control"] = "no-store";
+    if (!explicit) {
+      const runPath = request.headers.get("x-hostfunc-run-path") || "";
+      const html = __ofn_inject_base(new TextDecoder().decode(bytes), runPath);
+      body = new TextEncoder().encode(html);
+    }
+  } else {
+    headers["cache-control"] = "public, max-age=300, s-maxage=86400, immutable";
+  }
+  return new Response(body, { status: 200, headers });
+}
+// ------------------------------------------------------------------------
+
 // Worker entrypoint
 export default {
   async fetch(request, env, ctx) {
@@ -420,6 +552,8 @@ export default {
     __ofn_state.env = env;
     const debug = request.headers.get("x-hostfunc-debug") === "1";
     try {
+      const __ofn_asset_res = await __ofn_serve_asset(request);
+      if (__ofn_asset_res) return __ofn_asset_res;
       const payload = request.method === "POST" || request.method === "PUT"
         ? await request.json().catch(() => ({}))
         : Object.fromEntries(new URL(request.url).searchParams);
@@ -434,7 +568,7 @@ export default {
             message: "function must export 'email' for email triggers"
           }), { status: 500, headers: { "content-type": "application/json" } });
         }
-        result = await email(payload);
+        result = await email(payload, request);
       } else {
         if (typeof main !== "function") {
           return new Response(JSON.stringify({
@@ -442,9 +576,21 @@ export default {
             message: "function must export 'main'"
           }), { status: 500, headers: { "content-type": "application/json" } });
         }
-        result = await main(payload);
+        result = await main(payload, request);
       }
       const elapsed = Date.now() - started;
+
+      // Val Town-style: a handler may return a web Response directly. Anything
+      // else is JSON-serialized exactly as before (full backward compatibility).
+      if (result instanceof Response) {
+        const passthrough = new Response(result.body, {
+          status: result.status,
+          statusText: result.statusText,
+          headers: result.headers,
+        });
+        passthrough.headers.set("x-hostfunc-wall-ms", String(elapsed));
+        return passthrough;
+      }
 
       return new Response(JSON.stringify(result ?? null), {
         status: 200,
@@ -511,9 +657,73 @@ function __ofn_error_response(err, debug) {
 }
 `;
 
+/** User code + shim ceiling. Embedded assets are budgeted separately. */
+const PER_ASSET_EMBED_CAP = 512 * 1024;
+const TOTAL_EMBED_BUDGET = 2 * 1024 * 1024;
+/** Generous guard on the whole worker script; Cloudflare's real cap is gzipped. */
+const MAX_SCRIPT_SIZE = 8_000_000;
+const TEXT_ASSET_EXTS = new Set(["html", "htm", "css", "js", "mjs", "svg", "ico", "json", "txt"]);
+
+/** Mirrors the worker shim's `__ofn_assets_module._key()` path normalization. */
+function normalizeAssetKey(path: string): string {
+  return path.replace(/\\/g, "/").replace(/^\.\//, "").replace(/^\/+/, "");
+}
+
+interface EmbedPlan {
+  /** JSON object literal `{ key: base64 }`, ready to inject into the worker. */
+  literal: string;
+  embeddedAssetPaths: string[];
+  skippedAssets: SkippedAsset[];
+}
+
+/**
+ * Decides which assets are embedded into the worker bundle. Small text assets
+ * (index.html, css, js, icons) are prioritised so they always fit a tight
+ * budget; assets over the per-asset cap or the cumulative budget are skipped
+ * and left to the KV / control-plane fallback.
+ */
+function planEmbeddedAssets(assets: BundleAsset[]): EmbedPlan {
+  const extOf = (p: string) => (p.split(".").pop() ?? "").toLowerCase();
+  const sorted = [...assets].sort((a, b) => {
+    const aText = TEXT_ASSET_EXTS.has(extOf(a.path)) ? 0 : 1;
+    const bText = TEXT_ASSET_EXTS.has(extOf(b.path)) ? 0 : 1;
+    if (aText !== bText) return aText - bText;
+    return a.content.byteLength - b.content.byteLength;
+  });
+
+  const embedded: Record<string, string> = {};
+  const embeddedAssetPaths: string[] = [];
+  const skippedAssets: SkippedAsset[] = [];
+  let cumulative = 0;
+
+  for (const asset of sorted) {
+    const buf = asset.content instanceof Uint8Array ? asset.content : new Uint8Array(asset.content);
+    const size = buf.byteLength;
+    if (size > PER_ASSET_EMBED_CAP) {
+      skippedAssets.push({ path: asset.path, reason: "too_large" });
+      continue;
+    }
+    if (cumulative + size > TOTAL_EMBED_BUDGET) {
+      skippedAssets.push({ path: asset.path, reason: "budget_exhausted" });
+      continue;
+    }
+    cumulative += size;
+    embedded[normalizeAssetKey(asset.path)] = Buffer.from(buf).toString("base64");
+    embeddedAssetPaths.push(asset.path);
+  }
+
+  return { literal: JSON.stringify(embedded), embeddedAssetPaths, skippedAssets };
+}
+
 export async function bundleFunction(opts: BundleOptions): Promise<BundleResult> {
-  const maxSize = opts.maxSizeBytes ?? 1_000_000;
-  const wrapped = ENTRY_WRAPPER(normalizeUserCode(opts.code));
+  const maxCodeSize = opts.maxSizeBytes ?? 1_000_000;
+  const codeBytes = Buffer.byteLength(opts.code, "utf8");
+  if (codeBytes > maxCodeSize) {
+    throw new BundleError(`user code is ${codeBytes} bytes, exceeds ${maxCodeSize}`, []);
+  }
+
+  const embed = planEmbeddedAssets(opts.assets ?? []);
+  const wrapped = ENTRY_WRAPPER(normalizeUserCode(opts.code), embed.literal);
 
   let result: BuildResult;
   try {
@@ -557,8 +767,8 @@ export async function bundleFunction(opts: BundleOptions): Promise<BundleResult>
   }
 
   const sizeBytes = Buffer.byteLength(codeFile.text, "utf8");
-  if (sizeBytes > maxSize) {
-    throw new BundleError(`bundle is ${sizeBytes} bytes, exceeds ${maxSize}`, []);
+  if (sizeBytes > MAX_SCRIPT_SIZE) {
+    throw new BundleError(`worker script is ${sizeBytes} bytes, exceeds ${MAX_SCRIPT_SIZE}`, []);
   }
 
   return {
@@ -566,6 +776,8 @@ export async function bundleFunction(opts: BundleOptions): Promise<BundleResult>
     ...(sourceMapFile?.text ? { sourceMap: sourceMapFile.text } : {}),
     sizeBytes,
     warnings: result.warnings.map((w) => w.text),
+    embeddedAssetPaths: embed.embeddedAssetPaths,
+    skippedAssets: embed.skippedAssets,
   };
 }
 

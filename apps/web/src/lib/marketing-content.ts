@@ -441,6 +441,16 @@ export async function main(input: { url: string }) {
       icon: "code",
     },
     {
+      title: "Host websites, not just APIs",
+      body: "Ship an index.html with your function — hostfunc serves it as a real web page at your URL, with CSS, JS, and images included.",
+      icon: "globe",
+    },
+    {
+      title: "Custom domains, auto SSL",
+      body: "Point your own domain at any website. Add a DNS record and hostfunc provisions and renews the certificate automatically.",
+      icon: "link",
+    },
+    {
       title: "Encrypted secrets",
       body: "AES-256-GCM at rest. Fetched at execution time over a signed callback. Never in bindings.",
       icon: "lock",

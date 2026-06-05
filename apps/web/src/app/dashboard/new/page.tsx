@@ -13,12 +13,17 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  Clock,
   Code,
+  FileCode,
   GitBranch,
   Globe,
+  KeyRound,
   Monitor,
   Sparkles,
   Terminal,
+  Webhook,
+  Workflow,
   Wrench,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
@@ -371,9 +376,10 @@ function NewFunctionPageClient() {
                     {filteredTemplateOptions.map((tmpl) => {
                       const isActive = selectedTemplate === tmpl.id;
                       const Icon = tmpl.icon;
-                      const category = FUNCTION_TEMPLATES.find(
-                        (template) => template.id === tmpl.id,
-                      )?.category;
+                      const record = FUNCTION_TEMPLATES.find((template) => template.id === tmpl.id);
+                      const category = record?.category;
+                      const secretCount = record?.requiredSecrets.length ?? 0;
+                      const triggerKind = record?.trigger.kind ?? "http";
 
                       return (
                         <button
@@ -420,6 +426,26 @@ function NewFunctionPageClient() {
                               <p className="mt-1 line-clamp-2 text-xs text-[var(--color-bone-muted)]">
                                 {tmpl.description}
                               </p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-[var(--color-bone-faint)]">
+                              <span className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-white/[0.03] px-1.5 py-0.5 font-mono uppercase tracking-wide">
+                                {triggerKind === "cron" ? (
+                                  <Clock className="h-2.5 w-2.5" />
+                                ) : (
+                                  <Globe className="h-2.5 w-2.5" />
+                                )}
+                                {triggerKind}
+                              </span>
+                              {secretCount > 0 ? (
+                                <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-amber-300">
+                                  <KeyRound className="h-2.5 w-2.5" />
+                                  {secretCount} secret{secretCount > 1 ? "s" : ""}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-1.5 py-0.5 text-emerald-300">
+                                  No secrets
+                                </span>
+                              )}
                             </div>
                           </div>
                         </button>
@@ -485,6 +511,56 @@ function NewFunctionPageClient() {
                     functions are available on Pro and Team plans from function settings.
                   </p>
                 </div>
+                {templateRecord ? (
+                  <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.02] px-4 py-3 text-xs">
+                    <p className="font-medium uppercase tracking-wide text-[var(--color-bone-faint)]">
+                      What this template needs
+                    </p>
+                    <p className="mt-2 flex items-start gap-2 text-[var(--color-bone-muted)]">
+                      {templateRecord.trigger.kind === "cron" ? (
+                        <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-amber)]" />
+                      ) : (
+                        <Globe className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-amber)]" />
+                      )}
+                      <span>{templateRecord.trigger.hint}</span>
+                    </p>
+                    {templateRecord.requiredSecrets.length > 0 ? (
+                      <p className="mt-2 flex flex-wrap items-start gap-x-1.5 gap-y-1 text-[var(--color-bone-muted)]">
+                        <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-amber)]" />
+                        <span>Add</span>
+                        {templateRecord.requiredSecrets.map((key) => (
+                          <code
+                            key={key}
+                            className="rounded bg-white/[0.06] px-1 py-0.5 font-mono text-[var(--color-bone)]"
+                          >
+                            {key}
+                          </code>
+                        ))}
+                        <span>under Settings → Secrets once the function is created.</span>
+                      </p>
+                    ) : (
+                      <p className="mt-2 flex items-start gap-2 text-[var(--color-bone-muted)]">
+                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                        <span>No secrets or external credentials needed — ready to run.</span>
+                      </p>
+                    )}
+                    {templateRecord.assets && templateRecord.assets.length > 0 ? (
+                      <p className="mt-2 flex flex-wrap items-start gap-x-1.5 gap-y-1 text-[var(--color-bone-muted)]">
+                        <FileCode className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-amber)]" />
+                        <span>Ships with</span>
+                        {templateRecord.assets.map((asset) => (
+                          <code
+                            key={asset.path}
+                            className="rounded bg-white/[0.06] px-1 py-0.5 font-mono text-[var(--color-bone)]"
+                          >
+                            {asset.path}
+                          </code>
+                        ))}
+                        <span>— editable in the file tree with a live preview.</span>
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
                 <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.02] px-4 py-3">
                   <p className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-[var(--color-bone-faint)]">
                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/70 bg-white">
@@ -754,6 +830,8 @@ function resolveTemplateIcon(category: string) {
   if (category === "integrations") return Globe;
   if (category === "notifications") return Monitor;
   if (category === "data") return Terminal;
+  if (category === "webhooks") return Webhook;
+  if (category === "automation") return Workflow;
   return Wrench;
 }
 
