@@ -1261,6 +1261,27 @@ export async function listSecretsForFunction(orgId: string, fnId: string) {
   return rows;
 }
 
+/** Deployed/draft versions for a function, newest first. Excludes `code`/`sourceMap`. */
+export async function listVersionsForFunction(orgId: string, fnId: string, limit = 10) {
+  const rows = await db
+    .select({
+      id: schema.fnVersion.id,
+      sizeBytes: schema.fnVersion.sizeBytes,
+      sha256: schema.fnVersion.sha256,
+      status: schema.fnVersion.status,
+      createdAt: schema.fnVersion.createdAt,
+    })
+    .from(schema.fnVersion)
+    .where(
+      compat(
+        sql`${schema.fnVersion.orgId} = ${orgId} and ${schema.fnVersion.fnId} = ${fnId}`,
+      ) as never,
+    )
+    .orderBy(compat(sql`${schema.fnVersion.createdAt} desc`) as never)
+    .limit(Math.min(Math.max(limit, 1), 25));
+  return rows;
+}
+
 export async function setSecretForFunction(input: {
   orgId: string;
   fnId: string;

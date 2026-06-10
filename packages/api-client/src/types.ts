@@ -122,3 +122,63 @@ export interface DraftConflict {
   serverCode: string;
   serverSha256: string;
 }
+
+/** A trigger bound to a function. `config` shape varies by `kind` (web owns the precise schema). */
+export interface TriggerSummary {
+  id: string;
+  fnId: string;
+  orgId: string;
+  kind: TriggerKind;
+  config: Record<string, unknown>;
+  enabled: boolean;
+}
+
+export interface ListTriggersResult {
+  ok: true;
+  items: TriggerSummary[];
+}
+
+/** One row of a function's recent execution history. Dates are ISO strings over the wire. */
+export interface ExecutionSummary {
+  id: string;
+  fnId: string;
+  fnSlug: string;
+  status: ExecutionStatus;
+  triggerKind: string;
+  wallMs: number;
+  cpuMs: number;
+  errorCode: string | null;
+  errorMessage: string | null;
+  startedAt: string;
+  endedAt: string | null;
+}
+
+export interface ListExecutionsResult {
+  ok: true;
+  items: ExecutionSummary[];
+}
+
+/** A secret KEY (never its value) set on a function. */
+export interface SecretKeySummary {
+  id: string;
+  key: string;
+  updatedAt: string;
+}
+
+export interface ListSecretsResult {
+  ok: true;
+  items: SecretKeySummary[];
+}
+
+export interface VersionSummary {
+  id: string;
+  sizeBytes: number;
+  sha256: string;
+  status: "draft" | "deploying" | "deployed" | "failed";
+  createdAt: string;
+}
+
+export interface ListVersionsResult {
+  ok: true;
+  items: VersionSummary[];
+}
