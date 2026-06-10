@@ -15,6 +15,7 @@
     "vscode": "^1.90.0"
   },
   "categories": ["Other"],
+  "icon": "assets/icon.png",
   "main": "./dist/extension.js",
   "activationEvents": ["workspaceContains:hostfunc.json"],
   "contributes": {
@@ -87,8 +88,13 @@
       "properties": {
         "hostfunc.baseUrl": {
           "type": "string",
-          "default": "https://hostfunc.dev",
+          "default": "https://hostfunc.io",
           "description": "Base URL of the hostfunc control plane to connect to."
+        },
+        "hostfunc.pushOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Save to the server automatically: when you save a function's index.ts, push it to the server draft."
         }
       }
     }

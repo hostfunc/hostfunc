@@ -80,7 +80,7 @@ npx ovsx publish hostfunc.vsix -p "$OVSX_PAT"
 - VS Marketplace listing: <https://marketplace.visualstudio.com/items?itemName=hostfunc.hostfunc-vscode>
 - Open VSX listing: <https://open-vsx.org/extension/hostfunc/hostfunc-vscode>
 - Install end-to-end: `code --install-extension hostfunc.hostfunc-vscode`, then run the
-  sign-in → deploy → run loop against `https://hostfunc.dev`.
+  sign-in → deploy → run loop against `https://hostfunc.io`.
 
 ## Rollback / unpublish
 

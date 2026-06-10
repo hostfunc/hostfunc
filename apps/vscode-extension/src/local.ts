@@ -121,32 +121,57 @@ export class LocalSync {
   }
 
   /** `hostfunc push` — write local index.ts to the server draft, handling conflicts. */
-  async push(): Promise<boolean> {
+  async push(opts: { auto?: boolean } = {}): Promise<boolean> {
     const found = await this.findProjectRoot();
     if (!found) {
-      vscode.window.showWarningMessage("No hostfunc project found in the workspace.");
+      if (!opts.auto)
+        vscode.window.showWarningMessage("No hostfunc project found in the workspace.");
       return false;
     }
-    const { root, config } = found;
+    return this.pushFrom(found.root, found.config, opts);
+  }
+
+  /**
+   * Save-to-server: when a project's entry file is saved in the editor, push the draft
+   * automatically. Quietly no-ops for unrelated saves, when signed out, or when nothing changed.
+   */
+  async pushOnSave(saved: vscode.Uri): Promise<void> {
+    if (!this.auth.isSignedIn()) return;
+    if (!saved.path.endsWith(`/${ENTRY_FILE}`)) return;
+    const found = await this.findProjectForFile(saved);
+    if (!found) return;
+    // Only the project's entry file at its root is the source of truth for the draft.
+    if (saved.toString() !== vscode.Uri.joinPath(found.root, ENTRY_FILE).toString()) return;
+    await this.pushFrom(found.root, found.config, { auto: true });
+  }
+
+  /** Core push from a known project root. Shared by the manual command and save-to-server. */
+  private async pushFrom(
+    root: vscode.Uri,
+    config: ProjectConfig,
+    opts: { auto?: boolean } = {},
+  ): Promise<boolean> {
     const code = dec.decode(
       await vscode.workspace.fs.readFile(vscode.Uri.joinPath(root, ENTRY_FILE)),
     );
     if (sha256(code) === config.sha256) {
-      vscode.window.showInformationMessage("Nothing to push — local code matches the server.");
+      if (!opts.auto) {
+        vscode.window.showInformationMessage("Nothing to push — local code matches the server.");
+      }
       return true;
     }
 
     const client = this.auth.client();
     try {
       const result = await client.pushDraft({ fnId: config.fnId, code, baseSha256: config.sha256 });
-      await this.updateBase(root, config, result.sha256);
+      await this.updateBase(root, config, result.sha256, opts.auto);
       return true;
     } catch (error) {
       if (error instanceof DraftConflictError) {
         return this.resolveConflict(root, config, code, error);
       }
       vscode.window.showErrorMessage(
-        `hostfunc: push failed — ${error instanceof Error ? error.message : String(error)}`,
+        `hostfunc: ${opts.auto ? "save to server" : "push"} failed — ${error instanceof Error ? error.message : String(error)}`,
       );
       return false;
     }
@@ -231,13 +256,22 @@ export class LocalSync {
     await this.write(root, `${TYPES_DIR}/${SDK_DTS_NAME}`, await this.readSdkDts());
   }
 
-  private async updateBase(root: vscode.Uri, config: ProjectConfig, newSha: string): Promise<void> {
+  private async updateBase(
+    root: vscode.Uri,
+    config: ProjectConfig,
+    newSha: string,
+    auto = false,
+  ): Promise<void> {
     await this.write(
       root,
       PROJECT_CONFIG_FILE,
       serializeProjectConfig({ ...config, sha256: newSha }),
     );
-    vscode.window.showInformationMessage(`Pushed ${config.slug}.`);
+    if (auto) {
+      vscode.window.setStatusBarMessage(`$(cloud-upload) hostfunc: saved ${config.slug}`, 3000);
+    } else {
+      vscode.window.showInformationMessage(`Pushed ${config.slug}.`);
+    }
   }
 
   private async readSdkDts(): Promise<string> {
@@ -265,6 +299,26 @@ export class LocalSync {
       } catch {
         // not a hostfunc project — keep looking
       }
+    }
+    return null;
+  }
+
+  /** Walks up from a file to the nearest ancestor directory containing a hostfunc.json. */
+  private async findProjectForFile(
+    file: vscode.Uri,
+  ): Promise<{ root: vscode.Uri; config: ProjectConfig } | null> {
+    let dir = vscode.Uri.joinPath(file, "..");
+    for (let depth = 0; depth < 64; depth++) {
+      const configUri = vscode.Uri.joinPath(dir, PROJECT_CONFIG_FILE);
+      try {
+        const text = dec.decode(await vscode.workspace.fs.readFile(configUri));
+        return { root: dir, config: parseProjectConfig(text) };
+      } catch {
+        // not here — keep walking up
+      }
+      const parent = vscode.Uri.joinPath(dir, "..");
+      if (parent.path === dir.path) break; // reached filesystem root
+      dir = parent;
     }
     return null;
   }

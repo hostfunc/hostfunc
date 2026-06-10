@@ -1,6 +1,6 @@
 # hostfunc for VS Code
 
-Build, deploy, and run [hostfunc](https://hostfunc.dev) functions without leaving your editor.
+Build, deploy, and run [hostfunc](https://hostfunc.io) functions without leaving your editor.
 
 > **Status: M1** — sign-in, function browsing, deploy, and run-with-payload. Local-first file sync,
 > secrets/triggers, marketplace, and MCP wiring land in later milestones.
@@ -31,7 +31,7 @@ See the in-app docs at `/docs/vscode-extension` for the full user guide.
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| `hostfunc.baseUrl` | `https://hostfunc.dev` | Control-plane URL. Point at `http://localhost:3000` for local dev, or your self-hosted instance. |
+| `hostfunc.baseUrl` | `https://hostfunc.io` | Control-plane URL. Point at `http://localhost:3000` for local dev, or your self-hosted instance. |
 
 ---
 

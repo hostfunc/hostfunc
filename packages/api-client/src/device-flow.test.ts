@@ -15,21 +15,21 @@ describe("requestDeviceCode", () => {
       jsonResponse({
         device_code: "dev_1",
         user_code: "ABCD-1234",
-        verification_uri: "https://hostfunc.dev/device",
-        verification_uri_complete: "https://hostfunc.dev/device?user_code=ABCD-1234",
+        verification_uri: "https://hostfunc.io/device",
+        verification_uri_complete: "https://hostfunc.io/device?user_code=ABCD-1234",
         expires_in: 600,
         interval: 5,
       }),
     ) as unknown as typeof fetch;
 
     const code = await requestDeviceCode({
-      baseUrl: "https://hostfunc.dev/",
+      baseUrl: "https://hostfunc.io/",
       clientId: "hostfunc-cli",
       fetch: fetchImpl,
     });
     expect(code.user_code).toBe("ABCD-1234");
     const [url, init] = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(url).toBe("https://hostfunc.dev/api/auth/device/code");
+    expect(url).toBe("https://hostfunc.io/api/auth/device/code");
     expect(JSON.parse((init as RequestInit).body as string)).toEqual({ client_id: "hostfunc-cli" });
   });
 
@@ -37,7 +37,7 @@ describe("requestDeviceCode", () => {
     const fetchImpl = vi.fn(async () => jsonResponse({}, false, 500)) as unknown as typeof fetch;
     await expect(
       requestDeviceCode({
-        baseUrl: "https://hostfunc.dev",
+        baseUrl: "https://hostfunc.io",
         clientId: "hostfunc-vscode",
         fetch: fetchImpl,
       }),
@@ -47,7 +47,7 @@ describe("requestDeviceCode", () => {
 
 describe("pollForToken", () => {
   const baseDeps = {
-    baseUrl: "https://hostfunc.dev",
+    baseUrl: "https://hostfunc.io",
     clientId: "hostfunc-vscode",
     deviceCode: "dev_1",
     intervalSeconds: 1,

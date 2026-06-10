@@ -37,7 +37,7 @@ export class AuthManager {
   get baseUrl(): string {
     return vscode.workspace
       .getConfiguration("hostfunc")
-      .get<string>("baseUrl", "https://hostfunc.dev")
+      .get<string>("baseUrl", "https://hostfunc.io")
       .replace(/\/+$/, "");
   }
 

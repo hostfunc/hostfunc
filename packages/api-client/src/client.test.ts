@@ -24,12 +24,12 @@ describe("HostfuncApiClient", () => {
   it("sends the bearer token and base url, strips trailing slashes", async () => {
     const { fetchImpl, calls } = mockFetch([{ body: { ok: true, items: [] } }]);
     const client = new HostfuncApiClient({
-      baseUrl: "https://hostfunc.dev/",
+      baseUrl: "https://hostfunc.io/",
       getToken: () => TOKEN,
       fetch: fetchImpl,
     });
     await client.listFunctions();
-    expect(calls[0]?.url).toBe("https://hostfunc.dev/api/cli/functions");
+    expect(calls[0]?.url).toBe("https://hostfunc.io/api/cli/functions");
     const headers = calls[0]?.init?.headers as Record<string, string>;
     expect(headers.authorization).toBe(`Bearer ${TOKEN}`);
     expect(headers["content-type"]).toBe("application/json");
@@ -38,7 +38,7 @@ describe("HostfuncApiClient", () => {
   it("awaits an async token provider", async () => {
     const { fetchImpl, calls } = mockFetch([{ body: { ok: true, actor: {}, membership: null } }]);
     const client = new HostfuncApiClient({
-      baseUrl: "https://hostfunc.dev",
+      baseUrl: "https://hostfunc.io",
       getToken: async () => TOKEN,
       fetch: fetchImpl,
     });
@@ -50,7 +50,7 @@ describe("HostfuncApiClient", () => {
   it("throws not_authenticated (401) when no token is available", async () => {
     const { fetchImpl } = mockFetch([{ body: {} }]);
     const client = new HostfuncApiClient({
-      baseUrl: "https://hostfunc.dev",
+      baseUrl: "https://hostfunc.io",
       getToken: () => null,
       fetch: fetchImpl,
     });
@@ -60,7 +60,7 @@ describe("HostfuncApiClient", () => {
   it("surfaces the server error message and status on non-ok", async () => {
     const { fetchImpl } = mockFetch([{ ok: false, status: 404, body: { error: "not_found" } }]);
     const client = new HostfuncApiClient({
-      baseUrl: "https://hostfunc.dev",
+      baseUrl: "https://hostfunc.io",
       getToken: () => TOKEN,
       fetch: fetchImpl,
     });
@@ -77,12 +77,12 @@ describe("HostfuncApiClient", () => {
       { body: { ok: true, status: 200, executionId: "exec_1", result: {} } },
     ]);
     const client = new HostfuncApiClient({
-      baseUrl: "https://hostfunc.dev",
+      baseUrl: "https://hostfunc.io",
       getToken: () => TOKEN,
       fetch: fetchImpl,
     });
     await client.listFunctions("hello world");
-    expect(calls[0]?.url).toBe("https://hostfunc.dev/api/cli/functions?query=hello%20world");
+    expect(calls[0]?.url).toBe("https://hostfunc.io/api/cli/functions?query=hello%20world");
 
     await client.run("fn_1", { name: "x" }, "cron");
     expect(calls[1]?.init?.method).toBe("POST");
@@ -96,7 +96,7 @@ describe("HostfuncApiClient", () => {
   it("pushDraft sends fnId/code/baseSha256 and returns the new sha", async () => {
     const { fetchImpl, calls } = mockFetch([{ body: { ok: true, sha256: "abc123" } }]);
     const client = new HostfuncApiClient({
-      baseUrl: "https://hostfunc.dev",
+      baseUrl: "https://hostfunc.io",
       getToken: () => TOKEN,
       fetch: fetchImpl,
     });
@@ -118,7 +118,7 @@ describe("HostfuncApiClient", () => {
       },
     ]);
     const client = new HostfuncApiClient({
-      baseUrl: "https://hostfunc.dev",
+      baseUrl: "https://hostfunc.io",
       getToken: () => TOKEN,
       fetch: fetchImpl,
     });
@@ -134,13 +134,13 @@ describe("HostfuncApiClient", () => {
       { ok: true, status: 201, body: { ok: true, fnId: "fn_new", slug: "hello" } },
     ]);
     const client = new HostfuncApiClient({
-      baseUrl: "https://hostfunc.dev",
+      baseUrl: "https://hostfunc.io",
       getToken: () => TOKEN,
       fetch: fetchImpl,
     });
     const result = await client.createFunction({ slug: "hello" });
     expect(result.fnId).toBe("fn_new");
-    expect(calls[0]?.url).toBe("https://hostfunc.dev/api/cli/functions");
+    expect(calls[0]?.url).toBe("https://hostfunc.io/api/cli/functions");
     expect(JSON.parse(calls[0]?.init?.body as string)).toEqual({ slug: "hello" });
   });
 
@@ -158,7 +158,7 @@ describe("HostfuncApiClient", () => {
       },
     ]);
     const client = new HostfuncApiClient({
-      baseUrl: "https://hostfunc.dev",
+      baseUrl: "https://hostfunc.io",
       getToken: () => null,
       fetch: fetchImpl,
     });

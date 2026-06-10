@@ -47,6 +47,15 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(auth.onDidChangeAuth(syncContext));
 
+  // Save-to-server: saving a function's index.ts pushes the draft automatically.
+  context.subscriptions.push(
+    vscode.workspace.onDidSaveTextDocument((doc) => {
+      if (vscode.workspace.getConfiguration("hostfunc").get<boolean>("pushOnSave", true)) {
+        void local.pushOnSave(doc.uri);
+      }
+    }),
+  );
+
   registerCommands(context, {
     auth,
     tree,

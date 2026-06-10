@@ -14,7 +14,7 @@ It is `private` and never published; it only ships transpiled types/JS to its wo
 import { HostfuncApiClient } from "@hostfunc/api-client";
 
 const client = new HostfuncApiClient({
-  baseUrl: "https://hostfunc.dev",
+  baseUrl: "https://hostfunc.io",
   getToken: () => process.env.HOSTFUNC_TOKEN, // sync or async; `hfn_live_…` PAT
 });
 

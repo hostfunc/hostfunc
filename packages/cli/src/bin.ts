@@ -28,8 +28,8 @@ Usage:
   hostfunc help
 
 Examples:
-  hostfunc login --url https://hostfunc.dev
-  hostfunc login --token hfn_live_xxx --url https://hostfunc.dev
+  hostfunc login --url https://hostfunc.io
+  hostfunc login --token hfn_live_xxx --url https://hostfunc.io
   hostfunc init --fnId fn_123
   hostfunc run --payload ./payload.json
 `;

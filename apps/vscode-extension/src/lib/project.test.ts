@@ -10,7 +10,7 @@ import {
 } from "./project.js";
 
 const CONFIG: ProjectConfig = {
-  baseUrl: "https://hostfunc.dev",
+  baseUrl: "https://hostfunc.io",
   fnId: "fn_1",
   orgSlug: "acme",
   slug: "hello",
