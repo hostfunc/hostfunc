@@ -15,6 +15,19 @@ export interface DcvRecord {
 }
 
 /**
+ * A DNS record the user must create for inbound email on their custom domain
+ * (MX + verification records). Surfaced from the Resend Domains API response.
+ */
+export interface InboundEmailRecord {
+  kind: "mx" | "txt" | "cname";
+  name: string;
+  value: string;
+  priority?: number;
+  /** Raw Resend per-record status, display only. */
+  status?: string;
+}
+
+/**
  * Provisioning lifecycle for a custom domain:
  * - `pending_dns`  — created in Cloudflare; waiting for the user's DNS / ownership records.
  * - `pending_ssl`  — ownership verified; Cloudflare is issuing the TLS certificate.
@@ -52,6 +65,14 @@ export const customDomain = pgTable(
     ownershipVerification: jsonb("ownership_verification").$type<DcvRecord | null>(),
     /** Last error surfaced by Cloudflare, shown when `status = failed`. */
     lastError: text("last_error"),
+    /** Resend domain id once the domain is registered for inbound email. */
+    resendDomainId: text("resend_domain_id"),
+    /** Raw Resend domain status (e.g. not_started/pending/verified/failed). */
+    emailStatus: text("email_status"),
+    /** DNS records (MX + verification) the user must add for inbound email. */
+    emailRecords: jsonb("email_records").$type<InboundEmailRecord[]>(),
+    /** Last time we refreshed the Resend domain status. */
+    emailStatusCheckedAt: timestamp("email_status_checked_at", { withTimezone: true }),
     createdById: text("created_by_id")
       .notNull()
       .references(() => user.id, { onDelete: "restrict" }),

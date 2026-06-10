@@ -22,6 +22,8 @@ const schema = z
     GITHUB_APP_PRIVATE_KEY: z.string().optional(),
     GITHUB_APP_WEBHOOK_SECRET: z.string().optional(),
     RESEND_API_KEY: z.string().optional(),
+    /** Svix signing secret for the Resend Inbound webhook (custom-domain email). */
+    RESEND_INBOUND_WEBHOOK_SECRET: z.string().min(1).optional(),
     EMAIL_FROM: z.string().email(),
     REDIS_URL: z.string().url().default("redis://127.0.0.1:6379"),
     SECRETS_MASTER_KEY: z

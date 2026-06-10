@@ -43,6 +43,9 @@ export async function upsertTriggerForFunction(input: {
   enabled?: boolean;
 }) {
   validateConfigByKind(input.kind, input.config);
+  // Canonical lowercase match column for inbound mail; null for non-email kinds.
+  const emailAddress =
+    input.kind === "email" ? (input.config.email?.address.toLowerCase() ?? null) : null;
   await db
     .insert(schema.trigger)
     .values({
@@ -51,12 +54,14 @@ export async function upsertTriggerForFunction(input: {
       fnId: input.fnId,
       kind: input.kind,
       config: input.config,
+      emailAddress,
       enabled: input.enabled ?? true,
     })
     .onConflictDoUpdate({
       target: [schema.trigger.fnId, schema.trigger.kind],
       set: {
         config: input.config,
+        emailAddress,
         enabled: input.enabled ?? true,
         updatedAt: new Date(),
       },

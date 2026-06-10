@@ -10,6 +10,7 @@ import {
   mapCfStatus,
   provisionDomain,
 } from "@/server/custom-domains";
+import { deleteResendDomain } from "@/server/resend-inbound";
 import type { DcvRecord } from "@hostfunc/db";
 import { db, genId, schema } from "@hostfunc/db";
 import { and, count, eq } from "drizzle-orm";
@@ -153,7 +154,7 @@ export async function removeDomainAction(input: unknown): Promise<DomainActionRe
         eq(schema.customDomain.id, parsed.data.domainId),
         eq(schema.customDomain.orgId, orgId),
       ),
-      columns: { id: true, hostname: true, cfHostnameId: true },
+      columns: { id: true, hostname: true, cfHostnameId: true, resendDomainId: true },
     });
     if (!row) return { ok: false, error: "Domain not found." };
 
@@ -161,6 +162,7 @@ export async function removeDomainAction(input: unknown): Promise<DomainActionRe
     // so a partial prior failure still converges to "gone".
     await deleteDomainIndex(row.hostname).catch(() => {});
     if (row.cfHostnameId) await deprovisionDomain(row.cfHostnameId).catch(() => {});
+    if (row.resendDomainId) await deleteResendDomain(row.resendDomainId).catch(() => {});
     await db.delete(schema.customDomain).where(eq(schema.customDomain.id, row.id));
 
     revalidatePath("/dashboard/settings/domains");

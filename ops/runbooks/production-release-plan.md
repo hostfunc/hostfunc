@@ -66,6 +66,28 @@ Fresh values for production — never reuse staging.
    Platforms + Zone SSL edit on the SaaS zone only); record the rotation
    cadence in [production-env-matrix](../production-env-matrix.md).
 
+## Gate 5b — Inbound email (email triggers)
+
+1. **Platform domains (Cloudflare Email Routing)**:
+   - hostfunc.io zone → Email → Email Routing: enable (CF auto-creates the MX +
+     SPF records at the apex; they coexist with the site's A records). Set the
+     catch-all rule → "Send to Worker" → `hostfunc-email`.
+   - Same zone → Email Routing subdomains: add `staging-mail.hostfunc.io`,
+     catch-all → `hostfunc-email-staging`.
+   - Both email workers' `CONTROL_PLANE_TOKEN` secret must equal the matching
+     web env's `TRIGGER_CONTROL_TOKEN`.
+   - Web env: `HOSTFUNC_MAIL_DOMAIN` = `staging-mail.hostfunc.io` (staging) /
+     `hostfunc.io` (production).
+2. **Custom domains (Resend Inbound)**:
+   - Resend dashboard → Webhooks: add an endpoint per environment pointing at
+     `https://staging.hostfunc.io/api/webhooks/resend-inbound` /
+     `https://app.hostfunc.io/api/webhooks/resend-inbound`, event
+     `email.received`; copy each signing secret into that env's
+     `RESEND_INBOUND_WEBHOOK_SECRET`.
+   - Customer side: the domains page shows the MX/TXT records to add at their
+     registrar once they generate an address on the domain (lazy Resend
+     registration — nothing to pre-provision).
+
 ## Gate 6 — Billing
 
 [stripe-live-cutover](./stripe-live-cutover.md): live keys, live webhook

@@ -11,7 +11,8 @@ CONTROL_PLANE_TOKEN = "dev-trigger-token"
 # Staging
 # Secrets via `wrangler secret put CONTROL_PLANE_TOKEN --env staging`
 # (matches web TRIGGER_CONTROL_TOKEN).
-# After deploy: bind under Cloudflare Email Routing for staging-mail.hostfunc.io.
+# After deploy: add staging-mail.hostfunc.io as an Email Routing subdomain on the
+# hostfunc.io zone with catch-all -> this worker (staging trigger addresses).
 # ──────────────────────────────────────────────────────────
 [env.staging]
 name = "hostfunc-email-staging"
@@ -26,7 +27,9 @@ CONTROL_PLANE_URL = "https://staging.hostfunc.io"
 # ──────────────────────────────────────────────────────────
 # Production
 # Secrets via `wrangler secret put CONTROL_PLANE_TOKEN --env production`.
-# After deploy: bind under Email Routing for mail.hostfunc.io.
+# After deploy: enable Email Routing on the hostfunc.io zone (apex) and set the
+# catch-all rule to send to this worker. Generated trigger addresses live at
+# @hostfunc.io in production.
 # ──────────────────────────────────────────────────────────
 [env.production]
 name = "hostfunc-email"

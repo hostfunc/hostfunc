@@ -1,3 +1,4 @@
+import { env } from "@/lib/env";
 import { requireActiveOrg } from "@/lib/session";
 import { getEffectivePlan } from "@/server/plans";
 import { db, schema } from "@hostfunc/db";
@@ -31,7 +32,14 @@ export default async function TriggersFunctionSettingsPage({
     .from(schema.apiToken)
     .where(eq(schema.apiToken.orgId, orgId));
   const hasApiTokens = Number(tokenRow?.n ?? 0) > 0;
-  const [triggers, plan] = await Promise.all([loadTriggers(fnRow.id), getEffectivePlan(orgId)]);
+  const [triggers, plan, activeDomain] = await Promise.all([
+    loadTriggers(fnRow.id),
+    getEffectivePlan(orgId),
+    db.query.customDomain.findFirst({
+      where: and(eq(schema.customDomain.fnId, fnRow.id), eq(schema.customDomain.status, "active")),
+      columns: { hostname: true },
+    }),
+  ]);
   const canUseHttpAuth = plan.planSlug !== "free";
 
   return (
@@ -60,6 +68,9 @@ export default async function TriggersFunctionSettingsPage({
         fnSlug={fnRow.slug}
         hasApiTokens={hasApiTokens}
         canUseHttpAuth={canUseHttpAuth}
+        isDev={env.NODE_ENV === "development"}
+        activeCustomDomainHostname={activeDomain?.hostname ?? null}
+        platformMailDomain={env.HOSTFUNC_MAIL_DOMAIN}
       />
     </div>
   );

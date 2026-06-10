@@ -39,6 +39,12 @@ export const trigger = pgTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     kind: triggerKindEnum("kind").notNull(),
     config: jsonb("config").$type<TriggerConfig>().notNull().default({}),
+    /**
+     * Canonical (lowercased) inbound address for kind="email" triggers; null for
+     * other kinds. `config.email.address` mirrors it for display — this column
+     * is what inbound mail is matched against.
+     */
+    emailAddress: text("email_address"),
     enabled: boolean("enabled").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -46,5 +52,6 @@ export const trigger = pgTable(
   (t) => ({
     fnKindUnique: uniqueIndex("trigger_fn_kind_unique").on(t.fnId, t.kind),
     orgIdx: index("trigger_org_idx").on(t.orgId),
+    emailAddressUnique: uniqueIndex("trigger_email_address_unique").on(t.emailAddress),
   }),
 );

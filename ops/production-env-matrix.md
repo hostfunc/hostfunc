@@ -51,6 +51,8 @@ The workflow passes `CHANGESETS_GITHUB_TOKEN` to Changesets before falling back 
 | `GOOGLE_CLIENT_SECRET` | Google OAuth provider secret | Auth |
 | `EMAIL_FROM` | Transactional sender address | Product |
 | `RESEND_API_KEY` | Email provider key | Product |
+| `RESEND_INBOUND_WEBHOOK_SECRET` | Svix signing secret for the Resend Inbound webhook (custom-domain email triggers) | Product |
+| `HOSTFUNC_MAIL_DOMAIN` | Inbound trigger-address domain — staging `staging-mail.hostfunc.io`, production `hostfunc.io` | Product |
 | `SECRETS_MASTER_KEY` | Envelope encryption master key | Security |
 | `EXEC_TOKEN_SECRET` | Runtime callback signing secret | Runtime |
 | `HOSTFUNC_RUNTIME_URL` | Public runtime base URL | Runtime |

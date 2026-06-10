@@ -21,12 +21,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { DcvRecord } from "@hostfunc/db";
+import type { DcvRecord, InboundEmailRecord } from "@hostfunc/db";
 import {
   ArrowUpRight,
   CheckCircle2,
   Globe,
   Loader2,
+  Mail,
   Plus,
   ShieldCheck,
   Trash2,
@@ -47,6 +48,9 @@ interface DomainRow {
   ownershipVerification: DcvRecord | null;
   lastError: string | null;
   fnSlug: string;
+  resendDomainId: string | null;
+  emailStatus: string | null;
+  emailRecords: InboundEmailRecord[];
 }
 
 interface Website {
@@ -127,6 +131,139 @@ function DnsRecordRow({ record }: { record: DcvRecord }) {
         </div>
       </div>
       <CopyButton value={record.value} idleLabel="Copy" successLabel="Copied" title="Copy value" />
+    </div>
+  );
+}
+
+function EmailRecordRow({ record }: { record: InboundEmailRecord }) {
+  return (
+    <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-lg border border-[var(--color-border)] bg-black/25 px-3 py-2.5">
+      <Badge
+        variant="outline"
+        className="w-14 justify-center border-[var(--color-border)] bg-white/[0.03] uppercase text-[10px] tracking-wide text-[var(--color-bone-muted)]"
+      >
+        {record.kind}
+      </Badge>
+      <div className="min-w-0 space-y-1">
+        <div className="flex items-center gap-2">
+          <span className="shrink-0 text-[11px] uppercase tracking-wide text-[var(--color-bone-faint)]">
+            Name
+          </span>
+          <code className="truncate font-mono text-xs text-[var(--color-bone)]">{record.name}</code>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="shrink-0 text-[11px] uppercase tracking-wide text-[var(--color-bone-faint)]">
+            Value
+          </span>
+          <code className="truncate font-mono text-xs text-[var(--color-bone)]">
+            {record.value}
+          </code>
+          {record.priority !== undefined ? (
+            <span className="shrink-0 rounded border border-[var(--color-border)] bg-white/[0.03] px-1.5 py-0.5 text-[10px] text-[var(--color-bone-muted)]">
+              priority {record.priority}
+            </span>
+          ) : null}
+        </div>
+      </div>
+      <CopyButton value={record.value} idleLabel="Copy" successLabel="Copied" title="Copy value" />
+    </div>
+  );
+}
+
+/**
+ * Inbound-email setup for a custom domain: the MX/TXT records the user adds
+ * at their registrar, with live verification status from Resend. Appears once
+ * an email-trigger address has been generated on this domain.
+ */
+function InboundEmailPanel({ domain }: { domain: DomainRow }) {
+  const [emailStatus, setEmailStatus] = useState(domain.emailStatus ?? "pending");
+  const [records, setRecords] = useState<InboundEmailRecord[]>(domain.emailRecords);
+  const [checking, setChecking] = useState(false);
+
+  const verified = emailStatus === "verified";
+
+  async function check(manual: boolean): Promise<void> {
+    if (manual) setChecking(true);
+    try {
+      const res = await fetch(`/api/workspace/domains/${domain.id}/email-status`, {
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        if (manual) toast.error("Couldn't check email status. Try again in a moment.");
+        return;
+      }
+      const data = (await res.json()) as {
+        emailStatus: string;
+        emailRecords?: InboundEmailRecord[];
+      };
+      setEmailStatus(data.emailStatus);
+      if (data.emailRecords?.length) setRecords(data.emailRecords);
+    } finally {
+      if (manual) setChecking(false);
+    }
+  }
+
+  // Poll until Resend reports the domain verified.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: poll restarts on status only
+  useEffect(() => {
+    if (verified) return;
+    const t = setInterval(() => void check(false), 5000);
+    return () => clearInterval(t);
+  }, [verified]);
+
+  return (
+    <div className="space-y-3 rounded-xl border border-[var(--color-border)] bg-white/[0.02] p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm text-[var(--color-bone-muted)]">
+          <Mail className="h-4 w-4 text-[var(--color-bone-faint)]" />
+          Inbound email
+        </div>
+        <Badge
+          variant="outline"
+          className={cn(
+            "gap-1.5",
+            verified
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+              : "border-amber-500/40 bg-amber-500/10 text-amber-200",
+          )}
+        >
+          {verified ? (
+            <CheckCircle2 className="h-3 w-3" />
+          ) : (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          )}
+          {verified ? "Receiving" : "Add DNS records"}
+        </Badge>
+      </div>
+      {verified ? (
+        <p className="text-xs text-[var(--color-bone-muted)]">
+          Email sent to your generated address on @{domain.hostname} now triggers your function.
+        </p>
+      ) : (
+        <>
+          <p className="text-xs leading-relaxed text-[var(--color-bone-muted)]">
+            To receive trigger email at <code className="font-mono">@{domain.hostname}</code>, add
+            these records at your registrar (e.g. Namecheap → Advanced DNS). The MX record must have
+            the lowest priority value on the name.
+          </p>
+          <div className="space-y-2">
+            {records.map((r) => (
+              <EmailRecordRow key={`${r.kind}:${r.name}:${r.value}`} record={r} />
+            ))}
+          </div>
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={checking}
+              onClick={() => void check(true)}
+            >
+              {checking ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
+              Check now
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -340,6 +477,9 @@ export function DomainsClient({
         ownershipVerification: d.ownershipVerification,
         lastError: null,
         fnSlug: d.fnSlug,
+        resendDomainId: null,
+        emailStatus: null,
+        emailRecords: [],
       };
       setDomains((prev) => [row, ...prev.filter((p) => p.id !== row.id)]);
       setActiveDomain(row);
@@ -425,48 +565,51 @@ export function DomainsClient({
         <SettingsCard>
           <ul className="divide-y divide-[var(--color-border)]">
             {domains.map((d) => (
-              <li key={d.id} className="flex items-center justify-between gap-4 px-5 py-4">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4 shrink-0 text-[var(--color-bone-faint)]" />
-                    <span className="truncate font-medium text-[var(--color-bone)]">
-                      {d.hostname}
-                    </span>
+              <li key={d.id} className="space-y-3 px-5 py-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 shrink-0 text-[var(--color-bone-faint)]" />
+                      <span className="truncate font-medium text-[var(--color-bone)]">
+                        {d.hostname}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 truncate pl-6 text-xs text-[var(--color-bone-muted)]">
+                      serves /{d.fnSlug}
+                      {d.status === "failed" && d.lastError ? ` — ${d.lastError}` : ""}
+                    </p>
                   </div>
-                  <p className="mt-0.5 truncate pl-6 text-xs text-[var(--color-bone-muted)]">
-                    serves /{d.fnSlug}
-                    {d.status === "failed" && d.lastError ? ` — ${d.lastError}` : ""}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <DomainStatusBadge status={d.status} />
-                  {d.status !== "active" ? (
+                  <div className="flex shrink-0 items-center gap-2">
+                    <DomainStatusBadge status={d.status} />
+                    {d.status !== "active" ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setActiveDomain(d);
+                          setWizardOpen(true);
+                        }}
+                      >
+                        Setup
+                      </Button>
+                    ) : null}
                     <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setActiveDomain(d);
-                        setWizardOpen(true);
-                      }}
+                      variant="ghost"
+                      size="icon"
+                      className="text-[var(--color-bone-faint)] hover:text-red-300"
+                      disabled={pending && removingId === d.id}
+                      onClick={() => removeDomain(d.id)}
+                      title="Remove domain"
                     >
-                      Setup
+                      {pending && removingId === d.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
                     </Button>
-                  ) : null}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-[var(--color-bone-faint)] hover:text-red-300"
-                    disabled={pending && removingId === d.id}
-                    onClick={() => removeDomain(d.id)}
-                    title="Remove domain"
-                  >
-                    {pending && removingId === d.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
-                  </Button>
+                  </div>
                 </div>
+                {d.resendDomainId ? <InboundEmailPanel domain={d} /> : null}
               </li>
             ))}
           </ul>
