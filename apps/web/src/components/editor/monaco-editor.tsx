@@ -5,6 +5,7 @@ import { DiffEditor, Editor } from "@monaco-editor/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { HOSTFUNC_HOVER_DOCS, HOSTFUNC_TYPES_DTS, type SdkHoverDoc } from "./hostfunc-types";
+import { HOSTFUNC_DARK_THEME, defineHostfuncTheme } from "./monaco-theme";
 
 interface Props {
   value: string;
@@ -199,7 +200,7 @@ function PanelShell({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       style={{ left, top, width: PANEL_WIDTH }}
-      className="fixed z-[9999] max-h-[70vh] overflow-y-auto overflow-x-hidden rounded-xl border border-white/[0.12] bg-[#0d1117] shadow-[0_8px_32px_rgba(0,0,0,0.6)] ring-1 ring-black/20"
+      className="fixed z-[9999] max-h-[70vh] overflow-y-auto overflow-x-hidden rounded-xl border border-border-strong bg-ink-elevated shadow-[0_8px_32px_rgba(0,0,0,0.6)] ring-1 ring-black/20"
     >
       {children}
     </div>
@@ -225,52 +226,52 @@ function SdkHoverPanel({
 }) {
   return (
     <PanelShell x={x} y={y} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
-      <div className="border-b border-white/[0.08] bg-[#161b22] px-4 py-3">
-        <div className="font-mono text-sm font-semibold text-violet-300">{doc.title}</div>
-        <div className="mt-0.5 text-[12px] leading-relaxed text-slate-400">{doc.summary}</div>
+      <div className="border-b border-border bg-ink-overlay px-4 py-3">
+        <div className="font-mono text-sm font-semibold text-amber">{doc.title}</div>
+        <div className="mt-0.5 text-[12px] leading-relaxed text-bone-muted">{doc.summary}</div>
       </div>
 
       <div className="space-y-4 px-4 py-4">
         <div>
-          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-bone-faint">
             Import
           </div>
-          <pre className="overflow-x-auto rounded-md border border-white/[0.08] bg-black/50 px-3 py-2 font-mono text-[12px] text-emerald-300">
+          <pre className="overflow-x-auto rounded-md border border-border bg-ink px-3 py-2 font-mono text-[12px] text-syntax-string">
             {doc.canonicalImport}
           </pre>
         </div>
 
         <div>
-          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-bone-faint">
             Key exports
           </div>
-          <div className="overflow-hidden rounded-md border border-white/[0.08]">
+          <div className="overflow-hidden rounded-md border border-border">
             {doc.api.map((row, i) => (
               <div
                 key={row.symbol}
                 className={`flex items-baseline gap-3 px-3 py-2 font-mono text-[12px] ${
-                  i < doc.api.length - 1 ? "border-b border-white/[0.06]" : ""
+                  i < doc.api.length - 1 ? "border-b border-border" : ""
                 }`}
               >
-                <span className="flex-shrink-0 text-amber-300">{row.symbol}</span>
-                <span className="truncate text-slate-400">{row.sig}</span>
+                <span className="flex-shrink-0 text-syntax-function">{row.symbol}</span>
+                <span className="truncate text-bone-muted">{row.sig}</span>
               </div>
             ))}
           </div>
         </div>
 
         <div>
-          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-bone-faint">
             Example
           </div>
-          <pre className="overflow-x-auto rounded-md border border-white/[0.08] bg-black/50 px-3 py-2 font-mono text-[12px] leading-relaxed text-slate-300">
+          <pre className="overflow-x-auto rounded-md border border-border bg-ink px-3 py-2 font-mono text-[12px] leading-relaxed text-bone-muted">
             {doc.example}
           </pre>
         </div>
 
         {doc.tip && (
-          <div className="rounded-md border border-slate-700/50 bg-slate-800/40 px-3 py-2 text-[11px] text-slate-400">
-            <span className="font-semibold text-slate-300">Note: </span>
+          <div className="rounded-md border border-border bg-ink-overlay px-3 py-2 text-[11px] text-bone-muted">
+            <span className="font-semibold text-bone">Note: </span>
             {doc.tip}
           </div>
         )}
@@ -286,28 +287,28 @@ function SdkHoverPanel({
 function partKindToClass(kind: string): string {
   switch (kind) {
     case "keyword":
-      return "text-violet-300";
+      return "text-syntax-keyword";
     case "functionName":
     case "methodName":
     case "memberFunctionElement":
-      return "text-amber-300";
+      return "text-syntax-function";
     case "parameterName":
-      return "text-orange-300";
+      return "text-syntax-property";
     case "typeName":
     case "interfaceName":
     case "typeParameterName":
     case "aliasName":
-      return "text-sky-300";
+      return "text-syntax-type";
     case "moduleName":
     case "externalModuleName":
-      return "text-emerald-300";
+      return "text-emerald";
     case "propertyName":
     case "memberVariableElement":
-      return "text-blue-300";
+      return "text-syntax-property";
     case "stringLiteral":
-      return "text-amber-200";
+      return "text-syntax-string";
     default:
-      return "text-slate-300";
+      return "text-bone-muted";
   }
 }
 
@@ -341,7 +342,7 @@ function SymbolHoverPanel({
   return (
     <PanelShell x={x} y={y} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       {/* Signature */}
-      <div className="border-b border-white/[0.08] bg-[#161b22] px-4 py-3">
+      <div className="border-b border-border bg-ink-overlay px-4 py-3">
         <pre className="overflow-x-auto font-mono text-[12px] leading-relaxed">
           {signatureParts.map((part, i) => (
             <span key={`${i}:${part.kind}`} className={partKindToClass(part.kind)}>
@@ -353,15 +354,15 @@ function SymbolHoverPanel({
 
       <div className="space-y-4 px-4 py-4">
         {/* Documentation prose */}
-        {docs && <p className="text-[12px] leading-relaxed text-slate-300">{docs}</p>}
+        {docs && <p className="text-[12px] leading-relaxed text-bone-muted">{docs}</p>}
 
         {/* @param */}
         {paramTags.length > 0 && (
           <div>
-            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-bone-faint">
               Parameters
             </div>
-            <div className="overflow-hidden rounded-md border border-white/[0.08]">
+            <div className="overflow-hidden rounded-md border border-border">
               {paramTags.map((tag, i) => {
                 const parts = tag.text ?? [];
                 // First part is usually the param name (kind: "parameterName")
@@ -375,13 +376,13 @@ function SymbolHoverPanel({
                   <div
                     key={`${i}:${namePart?.text ?? "param"}`}
                     className={`flex items-baseline gap-3 px-3 py-2 font-mono text-[12px] ${
-                      i < paramTags.length - 1 ? "border-b border-white/[0.06]" : ""
+                      i < paramTags.length - 1 ? "border-b border-border" : ""
                     }`}
                   >
-                    <span className="flex-shrink-0 text-orange-300">
+                    <span className="flex-shrink-0 text-syntax-property">
                       {namePart?.text ?? `param${i}`}
                     </span>
-                    {desc && <span className="font-sans text-slate-400">{desc}</span>}
+                    {desc && <span className="font-sans text-bone-muted">{desc}</span>}
                   </div>
                 );
               })}
@@ -392,13 +393,13 @@ function SymbolHoverPanel({
         {/* @returns */}
         {returnsTags.length > 0 && (
           <div>
-            <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-bone-faint">
               Returns
             </div>
             {returnsTags.map((tag) => (
               <p
                 key={`returns:${renderTagText(tag.text).slice(0, 40)}`}
-                className="text-[12px] leading-relaxed text-slate-300"
+                className="text-[12px] leading-relaxed text-bone-muted"
               >
                 {renderTagText(tag.text)}
               </p>
@@ -409,14 +410,14 @@ function SymbolHoverPanel({
         {/* @throws */}
         {throwsTags.length > 0 && (
           <div>
-            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-bone-faint">
               Throws
             </div>
             <div className="space-y-1">
               {throwsTags.map((tag) => (
                 <p
                   key={`throws:${renderTagText(tag.text).slice(0, 40)}`}
-                  className="text-[12px] leading-relaxed text-slate-300"
+                  className="text-[12px] leading-relaxed text-bone-muted"
                 >
                   {renderTagText(tag.text)}
                 </p>
@@ -428,13 +429,13 @@ function SymbolHoverPanel({
         {/* @example */}
         {exampleTags.length > 0 && (
           <div>
-            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-bone-faint">
               Example
             </div>
             {exampleTags.map((tag) => (
               <pre
                 key={`example:${renderTagText(tag.text).slice(0, 40)}`}
-                className="overflow-x-auto rounded-md border border-white/[0.08] bg-black/50 px-3 py-2 font-mono text-[12px] leading-relaxed text-slate-300"
+                className="overflow-x-auto rounded-md border border-border bg-ink px-3 py-2 font-mono text-[12px] leading-relaxed text-bone-muted"
               >
                 {renderTagText(tag.text).replace(/^\n/, "")}
               </pre>
@@ -445,10 +446,10 @@ function SymbolHoverPanel({
         {/* Other tags */}
         {otherTags.map((tag, i) => (
           <div key={`${i}:${tag.name}`}>
-            <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-bone-faint">
               {tag.name}
             </div>
-            <p className="text-[12px] leading-relaxed text-slate-300">{renderTagText(tag.text)}</p>
+            <p className="text-[12px] leading-relaxed text-bone-muted">{renderTagText(tag.text)}</p>
           </div>
         ))}
       </div>
@@ -468,10 +469,10 @@ function severityLabel(sev: number): string {
 }
 
 function severityClasses(sev: number) {
-  if (sev >= 8) return { label: "text-red-400", msg: "text-red-300", dot: "bg-red-400" };
-  if (sev >= 4) return { label: "text-amber-400", msg: "text-amber-200", dot: "bg-amber-400" };
-  if (sev >= 2) return { label: "text-sky-400", msg: "text-sky-300", dot: "bg-sky-400" };
-  return { label: "text-slate-400", msg: "text-slate-300", dot: "bg-slate-500" };
+  if (sev >= 8) return { label: "text-rose", msg: "text-rose", dot: "bg-rose" };
+  if (sev >= 4) return { label: "text-amber", msg: "text-amber", dot: "bg-amber" };
+  if (sev >= 2) return { label: "text-cyan", msg: "text-cyan", dot: "bg-cyan" };
+  return { label: "text-bone-muted", msg: "text-bone-muted", dot: "bg-bone-faint" };
 }
 
 function DiagnosticPanel({
@@ -489,7 +490,7 @@ function DiagnosticPanel({
 }) {
   return (
     <PanelShell x={x} y={y} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
-      <div className="divide-y divide-white/[0.06]">
+      <div className="divide-y divide-border">
         {markers.map((mk) => {
           const cls = severityClasses(mk.severity);
           const badge = [mk.source, mk.code !== undefined ? `(${mk.code})` : ""]
@@ -505,7 +506,7 @@ function DiagnosticPanel({
                   {severityLabel(mk.severity)}
                 </span>
                 {badge && (
-                  <span className="ml-auto font-mono text-[10px] text-slate-500">{badge}</span>
+                  <span className="ml-auto font-mono text-[10px] text-bone-faint">{badge}</span>
                 )}
               </div>
               <p className={`text-[12px] leading-relaxed ${cls.msg}`}>{mk.message}</p>
@@ -682,9 +683,10 @@ export function MonacoEditor({ value, packageNames, onChange, onSave, readOnly =
         height="100%"
         defaultLanguage="typescript"
         defaultPath="file:///main.ts"
-        theme="vs-dark"
+        theme={HOSTFUNC_DARK_THEME}
         value={value}
         onChange={(v) => onChange(v ?? "")}
+        beforeMount={defineHostfuncTheme}
         onMount={handleMount}
         options={{
           fontSize: 14,
@@ -795,7 +797,8 @@ export function MonacoDiffEditor({ originalValue, modifiedValue, packageNames }:
       original={originalValue}
       modified={modifiedValue}
       language="typescript"
-      theme="vs-dark"
+      theme={HOSTFUNC_DARK_THEME}
+      beforeMount={defineHostfuncTheme}
       onMount={handleMount}
       options={{
         readOnly: true,

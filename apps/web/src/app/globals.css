@@ -4,6 +4,7 @@
   --font-sans: var(--font-geist);
   --font-display: var(--font-display);
   --font-mono: var(--font-mono);
+  --font-pixel: var(--font-pixel);
 
   --color-ink: #0a0908;
   --color-ink-elevated: #131211;
@@ -110,6 +111,9 @@
   }
   .font-mono {
     font-family: var(--font-mono);
+  }
+  .font-pixel {
+    font-family: var(--font-pixel);
   }
   .text-balance {
     text-wrap: balance;

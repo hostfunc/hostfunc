@@ -39,7 +39,7 @@ export interface MarketingContent {
   primaryCta: MarketingLink;
   secondaryCta: MarketingLink;
   navLinks: MarketingLink[];
-  trustItems: string[];
+  trustItems: { label: string; icon: string }[];
 
   /** Hero animated editor — typed character by character */
   heroEditor: {
@@ -179,11 +179,11 @@ export const marketingContent: MarketingContent = {
   ],
 
   trustItems: [
-    "Cloudflare Workers runtime",
-    "MCP-native",
-    "AGPL-3.0",
-    "TypeScript-first",
-    "Self-hostable",
+    { label: "Cloudflare Workers runtime", icon: "cloudflare" },
+    { label: "MCP-native", icon: "mcp" },
+    { label: "AGPL-3.0", icon: "agpl" },
+    { label: "TypeScript-first", icon: "typescript" },
+    { label: "Self-hostable", icon: "self-host" },
   ],
 
   heroEditor: {
@@ -439,6 +439,21 @@ export async function main(input: { url: string }) {
       title: "Web editor with live deploy",
       body: "Monaco-based, full TypeScript support, deploy in ~3 seconds with one click.",
       icon: "code",
+    },
+    {
+      title: "VS Code extension",
+      body: "Browse, deploy, and run your functions without leaving your editor. Sign in from the browser, stream logs inline, switch workspaces in a click.",
+      icon: "blocks",
+    },
+    {
+      title: "Host websites, not just APIs",
+      body: "Ship an index.html with your function — hostfunc serves it as a real web page at your URL, with CSS, JS, and images included.",
+      icon: "globe",
+    },
+    {
+      title: "Custom domains, auto SSL",
+      body: "Point your own domain at any website. Add a DNS record and hostfunc provisions and renews the certificate automatically.",
+      icon: "link",
     },
     {
       title: "Encrypted secrets",

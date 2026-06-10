@@ -1,13 +1,14 @@
 "use server";
 
 import { requireOrgPermission } from "@/lib/session";
+import { upsertFunctionAsset } from "@/server/fn-assets";
 import { createFunction } from "@/server/functions";
 import { saveFunctionGithubBinding } from "@/server/github-integrations";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { TEMPLATES, TEMPLATE_IDS } from "@/lib/templates";
+import { FUNCTION_TEMPLATES, TEMPLATES, TEMPLATE_IDS } from "@/lib/templates";
 
 const createSchema = z.object({
   slug: z
@@ -51,6 +52,17 @@ export async function createFunctionAction(_prevState: any, formData: FormData) 
     description: parsed.data.description,
     starterCode: code,
   });
+
+  // Attach any files the chosen template ships with (e.g. a served index.html).
+  const template = FUNCTION_TEMPLATES.find((entry) => entry.id === parsed.data.templateId);
+  for (const asset of template?.assets ?? []) {
+    await upsertFunctionAsset({
+      fnId,
+      path: asset.path,
+      mime: asset.mime,
+      content: Buffer.from(asset.content, "utf8"),
+    });
+  }
 
   if (parsed.data.githubRepoId && parsed.data.githubBranch) {
     await saveFunctionGithubBinding({

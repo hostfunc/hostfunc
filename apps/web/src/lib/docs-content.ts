@@ -54,6 +54,8 @@ export const docsSections: DocsSection[] = [
     links: [
       { name: "Functions", href: "/docs/functions" },
       { name: "Triggers", href: "/docs/triggers" },
+      { name: "Websites", href: "/docs/websites" },
+      { name: "Custom Domains", href: "/docs/custom-domains" },
       { name: "Executions", href: "/docs/executions" },
     ],
   },
@@ -62,6 +64,7 @@ export const docsSections: DocsSection[] = [
     links: [
       { name: "Security", href: "/docs/security" },
       { name: "CLI", href: "/docs/cli" },
+      { name: "VS Code Extension", href: "/docs/vscode-extension" },
       { name: "MCP", href: "/docs/mcp" },
     ],
   },
@@ -172,6 +175,127 @@ hostfunc logs --executionId <execution_id>`,
       { label: "Functions", href: "/docs/functions" },
       { label: "Executions and Logs", href: "/docs/executions" },
       { label: "MCP", href: "/docs/mcp" },
+    ],
+  },
+  "/docs/websites": {
+    title: "Websites & Static Assets",
+    summary:
+      "Attach an `index.html` to a function and hostfunc serves it as a live web page at the function's run URL — static sites and dynamic pages, not just JSON APIs.",
+    highlights: [
+      "A function with an `index.html` asset is served as a web page at `/run/:orgSlug/:fnSlug`.",
+      "CSS, JS, images, and fonts are served as sibling assets; relative links resolve automatically.",
+      "`main()` still handles API and POST requests — or return a web `Response` for dynamic HTML.",
+      "Assets are embedded into the deployed worker — there is no extra storage to configure.",
+    ],
+    guideSections: [
+      {
+        title: "1. Add an index.html",
+        description:
+          "Attach an `index.html` file to a function — drop it into the editor file tree, or start from the `HTML page` template. A browser request to the function URL renders the page instead of running `main()`.",
+        bullets: [
+          "The page is served at the function's run URL — `/run/:orgSlug/:fnSlug`.",
+          "A function with no `index.html` still runs `main()`, so API-only functions are unchanged.",
+        ],
+        code: `# A function 'site' in the 'acme' org renders its index.html here:
+curl https://run.hostfunc.io/run/acme/site`,
+      },
+      {
+        title: "2. Add CSS, JS, and images",
+        description:
+          "Attach as many sibling assets as you need. Each is served by sub-path, and hostfunc injects a `<base>` tag so relative links resolve without hardcoding the run path.",
+        bullets: [
+          "A `style.css` asset is served at `/run/:orgSlug/:fnSlug/style.css`.",
+          "Reference assets with relative paths like `./style.css` — the injected `<base>` makes them resolve.",
+          "Supported types: HTML, CSS, JS, JSON, SVG, PNG, JPEG, GIF, WebP, ICO, and web fonts.",
+        ],
+      },
+      {
+        title: "3. Mix a website with an API",
+        description:
+          "A static page and a dynamic handler can live in the same function. A browser GET renders `index.html`; a POST runs `main()`. For dynamic HTML, `main()` can return a standard web `Response` instead of a JSON value.",
+        code: `export async function main(input, request) {
+  // Return a web Response for full control of status, headers, and body.
+  return new Response("<h1>Hello from hostfunc</h1>", {
+    headers: { "content-type": "text/html" },
+  });
+}`,
+      },
+      {
+        title: "4. Deploy",
+        description:
+          "Assets are bundled into the deployed worker at deploy time, so the page is served straight from the edge with no extra infrastructure to configure. Re-deploy to publish changes.",
+        bullets: [
+          "Editing an asset updates the draft — deploy again to make it live.",
+          "Small text assets (HTML, CSS, JS) always travel inside the worker bundle.",
+        ],
+      },
+    ],
+    related: [
+      { label: "Custom Domains", href: "/docs/custom-domains" },
+      { label: "Functions", href: "/docs/functions" },
+      { label: "Triggers", href: "/docs/triggers" },
+      { label: "Getting Started", href: "/docs/getting-started" },
+    ],
+  },
+  "/docs/custom-domains": {
+    title: "Custom Domains",
+    summary:
+      "Serve a deployed website from your own domain (`www.yoursite.com`) instead of the `run.hostfunc.io` URL. hostfunc provisions and renews SSL automatically — you add a couple of DNS records and watch it go live.",
+    highlights: [
+      "Each domain points at one deployed website in your workspace.",
+      "SSL certificates are issued and renewed automatically via Cloudflare for SaaS — no certs to manage.",
+      "Subdomains (`www.example.com`) connect with a single CNAME; root domains are supported with extra DNS steps.",
+      "Managed from Workspace Settings → Domains, with live status as your domain verifies.",
+    ],
+    guideSections: [
+      {
+        title: "1. Deploy the website first",
+        description:
+          "A custom domain attaches to a function that already serves a website. Deploy the function so it has a live version, then it becomes selectable as a domain target. See Websites for how a function serves HTML.",
+        bullets: [
+          "Only deployed functions in your workspace appear in the domain target picker.",
+          "One domain serves one website; add more domains to point at other websites.",
+        ],
+      },
+      {
+        title: "2. Add your domain",
+        description:
+          "In Workspace Settings → Domains, choose Add domain, enter the hostname you own, and pick which website it should serve. hostfunc registers the hostname and returns the exact DNS records to add.",
+        bullets: [
+          "Enter a bare hostname — `www.example.com`, no `https://` and no path.",
+          "A subdomain like `www` or `app` is the simplest to connect.",
+        ],
+      },
+      {
+        title: "3. Add the DNS records at your registrar",
+        description:
+          "Copy the CNAME (and any TXT validation records) into your registrar's DNS editor — Namecheap, GoDaddy, Cloudflare, etc. The Domains screen shows provider-specific hints next to each record.",
+        bullets: [
+          "Subdomain: add a `CNAME` from your host (e.g. `www`) to the target shown (e.g. `cname.hostfunc.app`).",
+          "TXT records prove you control the domain so the SSL certificate can be issued.",
+          "Root/apex domains can't use a CNAME — use your registrar's ALIAS/ANAME or CNAME-flattening to the same target, or point `www` and add an apex redirect.",
+        ],
+      },
+      {
+        title: "4. Wait for verification and SSL",
+        description:
+          "The Domains screen polls automatically: it moves from “Add DNS records” to “Issuing SSL” to “Live”. DNS propagation and certificate issuance can take a few minutes (occasionally longer) — you can close the page and come back.",
+        bullets: [
+          "“Add DNS records” — waiting for your records to be visible.",
+          "“Issuing SSL” — records verified, certificate being provisioned.",
+          "“Live” — your site is served at `https://yourdomain` with a valid certificate.",
+        ],
+      },
+      {
+        title: "5. Remove a domain",
+        description:
+          "Removing a domain stops routing it, deletes the hostname from Cloudflare, and frees it so it can be claimed again. Your website keeps serving on its `run.hostfunc.io` URL.",
+      },
+    ],
+    related: [
+      { label: "Websites", href: "/docs/websites" },
+      { label: "Functions", href: "/docs/functions" },
+      { label: "Security", href: "/docs/security" },
     ],
   },
   "/docs/functions": {
@@ -458,12 +582,67 @@ export async function main(input: { customerId: string }) {
       { label: "MCP", href: "/docs/mcp" },
     ],
   },
+  "/docs/vscode-extension": {
+    title: "VS Code Extension",
+    summary:
+      "The hostfunc extension brings your functions into VS Code: browse them, deploy, run with a payload, and stream execution logs — without leaving the editor. Sign in happens in your browser; no token to copy.",
+    highlights: [
+      "Browser sign-in via the OAuth device flow; tokens are stored in VS Code SecretStorage, scoped per workspace.",
+      "Functions explorer with deploy and run-with-payload, plus execution logs in the hostfunc Output channel.",
+      "Switch between workspaces (organizations) from the status bar.",
+      "Point `hostfunc.baseUrl` at localhost or a self-hosted instance for development.",
+    ],
+    guideSections: [
+      {
+        title: "1. Install",
+        description:
+          'Install from the Visual Studio Marketplace (and Open VSX for Cursor, Windsurf, and VSCodium). Search the Extensions view for "hostfunc", or install from the command line.',
+        code: `# VS Code
+code --install-extension hostfunc.hostfunc-vscode
+
+# Cursor / Windsurf / VSCodium (Open VSX)
+# Extensions view → search "hostfunc" → Install`,
+      },
+      {
+        title: "2. Sign in",
+        description:
+          "Open the hostfunc view in the Activity Bar and click Sign in. A code appears and your browser opens to authorize the device — confirm the code matches, then approve.",
+        bullets: [
+          "The extension polls until you approve, then stores a workspace-scoped token securely.",
+          "The status bar shows your active workspace; click it to switch workspaces.",
+          "Run the `hostfunc: Sign Out` command to remove stored tokens.",
+        ],
+      },
+      {
+        title: "3. Deploy and run",
+        description:
+          "Each function in the explorer has inline actions. Deploy publishes the current draft to a live version; Run prompts for a JSON payload and invokes the deployed function.",
+        bullets: [
+          "Run output and execution logs stream into the hostfunc Output channel.",
+          "Open in Dashboard jumps to the function's editor on the web.",
+          "Refresh re-loads the function list for the active workspace.",
+        ],
+      },
+      {
+        title: "Configuration",
+        description: "Settings live under the `hostfunc` namespace.",
+        bullets: [
+          "`hostfunc.baseUrl` — control-plane URL. Defaults to `https://hostfunc.io`; set it to `http://localhost:3000` for local development.",
+        ],
+      },
+    ],
+    related: [
+      { label: "CLI", href: "/docs/cli" },
+      { label: "Security", href: "/docs/security" },
+      { label: "Getting Started", href: "/docs/getting-started" },
+    ],
+  },
   "/docs/cli": {
     title: "CLI",
     summary:
       "Public npm package `@hostfunc/cli` supports login, init, list, deploy, run, logs, and secrets set flows.",
     highlights: [
-      "CLI authenticates with API token and base URL config.",
+      "`hostfunc login` signs you in through your browser (OAuth device flow); `--token` stays available for CI/headless.",
       "Deploy/run/logs/secrets map to `/api/cli/*` routes.",
       "CLI reads project config from `hostfunc.json` and user credentials from `~/.hostfunc`.",
       "Supported runtime is Node.js >=22 and CLI telemetry is disabled.",
@@ -471,9 +650,15 @@ export async function main(input: { customerId: string }) {
     guideSections: [
       {
         title: "Install and authenticate",
-        description: "Install CLI globally, then log in once per environment.",
+        description:
+          "Install the CLI globally, then sign in once per environment. `hostfunc login` opens your browser to authorize the device; use `--token` for CI or headless environments.",
         code: `npm install -g @hostfunc/cli
-hostfunc login --token <api-token> --url http://localhost:3000`,
+
+# Browser sign-in (recommended) — prints a code, opens your browser
+hostfunc login --url https://hostfunc.io
+
+# CI / headless — use a workspace API token instead
+hostfunc login --token <api-token> --url https://hostfunc.io`,
       },
       {
         title: "Project configuration",
@@ -499,7 +684,8 @@ hostfunc secrets set CLAUDE_API_KEY <value>`,
         title: "Command to API mapping",
         description: "CLI operations map directly to org-scoped API routes.",
         bullets: [
-          "`login` -> `GET /api/cli/login`",
+          "`login` (browser) -> `POST /api/auth/device/code` + `/device/token`, then `POST /api/cli/device/exchange`",
+          "`login --token` -> `GET /api/cli/login`",
           "`list` -> `GET /api/cli/functions`",
           "`deploy` -> `POST /api/cli/functions/deploy`",
           "`run` -> `POST /api/cli/functions/run`",
@@ -509,6 +695,7 @@ hostfunc secrets set CLAUDE_API_KEY <value>`,
       },
     ],
     related: [
+      { label: "VS Code Extension", href: "/docs/vscode-extension" },
       { label: "Security", href: "/docs/security" },
       { label: "Executions", href: "/docs/executions" },
     ],

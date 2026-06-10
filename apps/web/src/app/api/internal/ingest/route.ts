@@ -1,5 +1,6 @@
 import { env } from "@/lib/env";
 import { redis } from "@/lib/redis";
+import { isAuthorizedBearer } from "@/lib/timing-safe";
 import { toStreamLine } from "@/server/live-log-events";
 import { captureServerError } from "@/server/observability";
 import { enforceRateLimit } from "@/server/rate-limit";
@@ -53,11 +54,7 @@ export async function POST(req: NextRequest) {
   }
 
   const auth = req.headers.get("authorization");
-  const allowed = new Set([
-    `Bearer ${env.RUNTIME_INGEST_TOKEN}`,
-    `Bearer ${env.RUNTIME_LOOKUP_TOKEN}`,
-  ]);
-  if (!auth || !allowed.has(auth)) {
+  if (!isAuthorizedBearer(auth, [env.RUNTIME_INGEST_TOKEN, env.RUNTIME_LOOKUP_TOKEN])) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 

@@ -12,7 +12,7 @@ import {
   type VersionId,
 } from "@hostfunc/executor-core";
 import { CloudflareApi, CloudflareApiCallError } from "./api.js";
-import { BundleError, bundleFunction } from "./bundler.js";
+import { BundleError, type BundleResult, bundleFunction } from "./bundler.js";
 
 export interface CloudflareConfig {
   accountId: string;
@@ -50,20 +50,17 @@ export class CloudflareExecutor implements ExecutorBackend {
   }
 
   async deploy(input: DeployInput): Promise<DeployResult> {
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-    let bundle: any;
-    try {
-      bundle = await bundleFunction({
-        code: input.bundle.code,
-        fnId: input.functionId,
-        versionId: input.versionId,
-      });
-    } catch (e) {
+    const bundle: BundleResult = await bundleFunction({
+      code: input.bundle.code,
+      fnId: input.functionId,
+      versionId: input.versionId,
+      ...(input.assets ? { assets: input.assets } : {}),
+    }).catch((e) => {
       if (e instanceof BundleError) {
         throw new HostFuncError("INFRA_DEPLOY_FAILED", e.message, e);
       }
       throw e;
-    }
+    });
 
     const scriptName = scriptNameFor(input.functionId, input.versionId);
 
@@ -72,7 +69,7 @@ export class CloudflareExecutor implements ExecutorBackend {
         target: this.target(),
         scriptName,
         moduleCode: bundle.code,
-        sourceMap: bundle.sourceMap,
+        ...(bundle.sourceMap ? { sourceMap: bundle.sourceMap } : {}),
         tags: [`org:${input.orgId}`, `fn:${input.functionId}`],
         bindings: [
           { type: "plain_text", name: "HOSTFUNC_FN_ID", text: input.functionId },
@@ -93,9 +90,13 @@ export class CloudflareExecutor implements ExecutorBackend {
         ],
       });
 
-      if (this.cfg.assetsKvId && input.assets && input.assets.length > 0) {
+      // Embedded assets travel inside the bundle; only assets too large to
+      // embed still need a KV upload (and only when a KV namespace is wired up).
+      const skippedPaths = new Set(bundle.skippedAssets.map((s) => s.path));
+      const assetsForKv = (input.assets ?? []).filter((a) => skippedPaths.has(a.path));
+      if (this.cfg.assetsKvId && assetsForKv.length > 0) {
         const keyPrefix = `${input.functionId}@${input.versionId}`;
-        for (const asset of input.assets) {
+        for (const asset of assetsForKv) {
           const buf =
             asset.content instanceof Uint8Array
               ? asset.content
@@ -104,6 +105,11 @@ export class CloudflareExecutor implements ExecutorBackend {
             contentType: asset.mime,
           });
         }
+      } else if (!this.cfg.assetsKvId && bundle.skippedAssets.length > 0) {
+        const skipped = bundle.skippedAssets.map((s) => s.path).join(", ");
+        bundle.warnings.push(
+          `${bundle.skippedAssets.length} asset(s) exceed the embed budget and FN_ASSETS_KV is not configured — they will not be served: ${skipped}`,
+        );
       }
 
       const deployResult: DeployResult & {

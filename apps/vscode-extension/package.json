@@ -1,0 +1,122 @@
+{
+  "name": "hostfunc-vscode",
+  "displayName": "hostfunc",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Build, deploy, and run hostfunc functions without leaving your editor.",
+  "license": "AGPL-3.0-only",
+  "publisher": "hostfunc",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hostfunc/hostfunc.git",
+    "directory": "apps/vscode-extension"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["Other"],
+  "icon": "assets/icon.png",
+  "main": "./dist/extension.js",
+  "activationEvents": ["workspaceContains:hostfunc.json"],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "hostfunc",
+          "title": "hostfunc",
+          "icon": "assets/icons/hostfunc.svg"
+        }
+      ]
+    },
+    "views": {
+      "hostfunc": [
+        {
+          "id": "hostfunc.functions",
+          "name": "Functions",
+          "icon": "assets/icons/hostfunc.svg"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "hostfunc.functions",
+        "contents": "Sign in to your hostfunc workspace to browse, deploy, and run functions.\n[Sign in to hostfunc](command:hostfunc.signIn)",
+        "when": "!hostfunc.signedIn"
+      }
+    ],
+    "commands": [
+      { "command": "hostfunc.signIn", "title": "Sign In", "category": "hostfunc", "icon": "$(sign-in)" },
+      { "command": "hostfunc.signOut", "title": "Sign Out", "category": "hostfunc", "icon": "$(sign-out)" },
+      { "command": "hostfunc.switchOrg", "title": "Switch Workspace", "category": "hostfunc", "icon": "$(arrow-swap)" },
+      { "command": "hostfunc.refreshFunctions", "title": "Refresh", "category": "hostfunc", "icon": "$(refresh)" },
+      { "command": "hostfunc.deploy", "title": "Deploy", "category": "hostfunc", "icon": "$(rocket)" },
+      { "command": "hostfunc.run", "title": "Run with Payload…", "category": "hostfunc", "icon": "$(play)" },
+      { "command": "hostfunc.openInDashboard", "title": "Open in Dashboard", "category": "hostfunc", "icon": "$(link-external)" },
+      { "command": "hostfunc.copyFnId", "title": "Copy Function ID", "category": "hostfunc" },
+      { "command": "hostfunc.init", "title": "New Function Project…", "category": "hostfunc", "icon": "$(new-folder)" },
+      { "command": "hostfunc.pull", "title": "Pull to Workspace", "category": "hostfunc", "icon": "$(cloud-download)" },
+      { "command": "hostfunc.push", "title": "Push Local Changes", "category": "hostfunc", "icon": "$(cloud-upload)" },
+      { "command": "hostfunc.deployLocal", "title": "Deploy Local Project", "category": "hostfunc", "icon": "$(rocket)" }
+    ],
+    "menus": {
+      "view/title": [
+        { "command": "hostfunc.init", "when": "view == hostfunc.functions && hostfunc.signedIn", "group": "navigation@0" },
+        { "command": "hostfunc.refreshFunctions", "when": "view == hostfunc.functions", "group": "navigation@1" },
+        { "command": "hostfunc.switchOrg", "when": "view == hostfunc.functions && hostfunc.signedIn", "group": "navigation@2" },
+        { "command": "hostfunc.signOut", "when": "view == hostfunc.functions && hostfunc.signedIn", "group": "1_account@1" }
+      ],
+      "view/item/context": [
+        { "command": "hostfunc.pull", "when": "view == hostfunc.functions && viewItem == hostfunc.function", "group": "inline@0" },
+        { "command": "hostfunc.deploy", "when": "view == hostfunc.functions && viewItem == hostfunc.function", "group": "inline@1" },
+        { "command": "hostfunc.run", "when": "view == hostfunc.functions && viewItem == hostfunc.function", "group": "inline@2" },
+        { "command": "hostfunc.openInDashboard", "when": "view == hostfunc.functions && viewItem == hostfunc.function", "group": "1_run@1" },
+        { "command": "hostfunc.copyFnId", "when": "view == hostfunc.functions && viewItem == hostfunc.function", "group": "9_meta@1" }
+      ],
+      "commandPalette": [
+        { "command": "hostfunc.deploy", "when": "false" },
+        { "command": "hostfunc.run", "when": "false" },
+        { "command": "hostfunc.openInDashboard", "when": "false" },
+        { "command": "hostfunc.copyFnId", "when": "false" },
+        { "command": "hostfunc.pull", "when": "hostfunc.signedIn" },
+        { "command": "hostfunc.push", "when": "hostfunc.signedIn" },
+        { "command": "hostfunc.init", "when": "hostfunc.signedIn" },
+        { "command": "hostfunc.deployLocal", "when": "hostfunc.signedIn" }
+      ]
+    },
+    "configuration": {
+      "title": "hostfunc",
+      "properties": {
+        "hostfunc.baseUrl": {
+          "type": "string",
+          "default": "https://hostfunc.io",
+          "description": "Base URL of the hostfunc control plane to connect to."
+        },
+        "hostfunc.pushOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Save to the server automatically: when you save a function's index.ts, push it to the server draft."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs --production",
+    "dev": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "package": "vsce package --no-dependencies -o hostfunc.vsix",
+    "clean": "rm -rf dist .turbo *.tsbuildinfo *.vsix"
+  },
+  "dependencies": {
+    "@hostfunc/api-client": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.24.2",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

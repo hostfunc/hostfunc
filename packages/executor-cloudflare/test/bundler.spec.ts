@@ -20,6 +20,7 @@ interface InvokeOptions {
   maxCallDepth?: number;
   debug?: boolean;
   body?: unknown;
+  invocationKind?: string;
 }
 
 async function invokeWorker({
@@ -30,6 +31,7 @@ async function invokeWorker({
   maxCallDepth = 3,
   debug = false,
   body = {},
+  invocationKind,
 }: InvokeOptions): Promise<Response> {
   const mod = (await import(
     `data:text/javascript;base64,${Buffer.from(code, "utf8").toString("base64")}`
@@ -46,6 +48,7 @@ async function invokeWorker({
   };
   if (runtimeUrl !== null) headers["x-hostfunc-runtime-url"] = runtimeUrl;
   if (debug) headers["x-hostfunc-debug"] = "1";
+  if (invocationKind) headers["x-hostfunc-invocation-kind"] = invocationKind;
   const request = new Request(`${RUNTIME_URL}/run/my-org/caller`, {
     method: "POST",
     headers,
@@ -76,11 +79,7 @@ describe("bundleFunction shim routing", () => {
       "fetch",
       vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
         const url =
-          typeof input === "string"
-            ? input
-            : input instanceof URL
-              ? input.toString()
-              : input.url;
+          typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
         requests.push({ url, init });
 
         if (url.startsWith(`${CONTROL_PLANE}/api/internal/secrets/get`)) {
@@ -120,9 +119,9 @@ describe("bundleFunction shim routing", () => {
     expect(
       requests.some((r) => r.url.startsWith(`${CONTROL_PLANE}/api/internal/secrets/get`)),
     ).toBe(true);
-    expect(
-      requests.some((r) => r.url.includes("/api/internal/resolve?slug=my-org%2Ftest")),
-    ).toBe(true);
+    expect(requests.some((r) => r.url.includes("/api/internal/resolve?slug=my-org%2Ftest"))).toBe(
+      true,
+    );
   });
 
   it("returns HTTP 400 missing_secret when a required secret is absent (no stack leak)", async () => {
@@ -137,7 +136,8 @@ describe("bundleFunction shim routing", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: string | URL | Request) => {
-        const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
         if (url.includes("/api/internal/secrets/get")) {
           return new Response(JSON.stringify({ found: false }), {
             status: 404,
@@ -169,7 +169,8 @@ describe("bundleFunction shim routing", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: string | URL | Request) => {
-        const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
         if (url.includes("/api/internal/resolve")) {
           return new Response(JSON.stringify({ fnId: null }), { status: 200 });
         }
@@ -246,10 +247,7 @@ describe("bundleFunction shim routing", () => {
         // Respect AbortSignal so AbortSignal.timeout() actually fires.
         return await new Promise<Response>((resolve, reject) => {
           const signal = init?.signal as AbortSignal | undefined;
-          const timer = setTimeout(
-            () => resolve(new Response("{}", { status: 200 })),
-            1000,
-          );
+          const timer = setTimeout(() => resolve(new Response("{}", { status: 200 })), 1000);
           signal?.addEventListener("abort", () => {
             clearTimeout(timer);
             const err = new Error("aborted");
@@ -276,7 +274,10 @@ describe("bundleFunction shim routing", () => {
     `;
     const { code } = await bundleFunction({ code: source, fnId: "fn_stack" });
 
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 200 })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("{}", { status: 200 })),
+    );
 
     const responseProd = await invokeWorker({ code });
     expect(responseProd.status).toBe(500);
@@ -306,7 +307,8 @@ describe("bundleFunction shim routing", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: string | URL | Request) => {
-        const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
         seenUrls.push(url);
         if (url.includes("/api/internal/resolve")) {
           return new Response(JSON.stringify({ fnId: null }), { status: 200 });
@@ -344,7 +346,8 @@ describe("bundleFunction shim routing", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: string | URL | Request) => {
-        const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
         if (url.endsWith("/api/internal/ai/ask")) {
           return new Response(JSON.stringify({ text: "ok" }), {
             status: 200,
@@ -366,5 +369,80 @@ describe("bundleFunction shim routing", () => {
     const body = (await response.json()) as { ai: { text: string }; up: { upserted: number } };
     expect(body.ai.text).toBe("ok");
     expect(body.up.upserted).toBe(1);
+  });
+
+  it("passes a Response returned by main() straight through", async () => {
+    const source = `
+      export async function main() {
+        return new Response("<h1>hi</h1>", {
+          status: 201,
+          headers: { "content-type": "text/html" },
+        });
+      }
+    `;
+    const { code } = await bundleFunction({ code: source, fnId: "fn_resp" });
+    const response = await invokeWorker({ code });
+    expect(response.status).toBe(201);
+    expect(response.headers.get("content-type")).toContain("text/html");
+    expect(response.headers.get("x-hostfunc-wall-ms")).toBeTruthy();
+    expect(await response.text()).toBe("<h1>hi</h1>");
+  });
+
+  it("still JSON-serializes a plain value returned by main()", async () => {
+    const source = `
+      export async function main() {
+        return { ok: true, n: 7 };
+      }
+    `;
+    const { code } = await bundleFunction({ code: source, fnId: "fn_json" });
+    const response = await invokeWorker({ code });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("application/json");
+    expect(await response.json()).toEqual({ ok: true, n: 7 });
+  });
+
+  it("passes the request to main() as a second argument", async () => {
+    const source = `
+      export async function main(_input, request) {
+        return { method: request.method, hasUrl: request.url.includes("/run/my-org/caller") };
+      }
+    `;
+    const { code } = await bundleFunction({ code: source, fnId: "fn_req" });
+    const response = await invokeWorker({ code });
+    expect(await response.json()).toEqual({ method: "POST", hasUrl: true });
+  });
+
+  it("lets email() return a Response", async () => {
+    const source = `
+      export async function email() {
+        return new Response("delivered", { status: 202 });
+      }
+    `;
+    const { code } = await bundleFunction({ code: source, fnId: "fn_email_resp" });
+    const response = await invokeWorker({ code, invocationKind: "email" });
+    expect(response.status).toBe(202);
+    expect(await response.text()).toBe("delivered");
+  });
+
+  it("embeds small assets and skips ones over the per-asset cap", async () => {
+    const result = await bundleFunction({
+      code: "export async function main() { return {}; }",
+      fnId: "fn_embed",
+      assets: [
+        { path: "index.html", mime: "text/html", content: Buffer.from("<html></html>") },
+        {
+          path: "huge.bin",
+          mime: "application/octet-stream",
+          content: Buffer.alloc(600 * 1024, 1),
+        },
+      ],
+    });
+    expect(result.embeddedAssetPaths).toEqual(["index.html"]);
+    expect(result.skippedAssets).toEqual([{ path: "huge.bin", reason: "too_large" }]);
+  });
+
+  it("rejects user code over the code-size limit", async () => {
+    const huge = `export async function main() { return ${JSON.stringify("x".repeat(1_000_001))}; }`;
+    await expect(bundleFunction({ code: huge, fnId: "fn_too_big" })).rejects.toThrow(/user code/);
   });
 });

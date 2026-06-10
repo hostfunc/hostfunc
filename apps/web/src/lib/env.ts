@@ -40,6 +40,12 @@ const schema = z
     CF_FN_INDEX_KV_ID: z.string().optional(),
     CF_EGRESS_COUNTERS_KV_ID: z.string().optional(),
     CF_FN_ASSETS_KV_ID: z.string().optional(),
+    // Cloudflare for SaaS (custom domains). Optional so dev/CI boot without it;
+    // the feature is gated on CF_SAAS_ZONE_ID and the UI hides when unset.
+    CF_SAAS_ZONE_ID: z.string().min(1).optional(),
+    CF_SAAS_CNAME_TARGET: z.string().min(1).default("cname.hostfunc.app"),
+    CF_SAAS_FALLBACK_ORIGIN: z.string().min(1).optional(),
+    CF_DOMAIN_INDEX_KV_ID: z.string().optional(),
     HOSTFUNC_USE_WFP: z
       .enum(["true", "false"])
       .default("false")
@@ -59,6 +65,11 @@ const schema = z
     POSTHOG_PROJECT_ID: z.string().optional(),
     SENTRY_DSN: z.string().url().optional(),
     ALERT_WEBHOOK_URL: z.string().url().optional(),
+    // Supabase Storage — backs workspace logo uploads. Optional so dev/CI boot
+    // without it; the upload route returns a clean 503 when unset.
+    SUPABASE_URL: z.string().url().optional(),
+    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+    SUPABASE_LOGO_BUCKET: z.string().min(1).default("workspace-logos"),
   })
   .superRefine((value, ctx) => {
     if (value.NODE_ENV !== "production") return;

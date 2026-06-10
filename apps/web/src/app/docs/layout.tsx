@@ -1,11 +1,12 @@
 "use client";
 
 import { DocsSearch } from "@/app/docs/_components/docs-search";
+import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 import { assertDocsContentIntegrity, docsSections } from "@/lib/docs-content";
 import { cn } from "@/lib/utils";
-import { Hexagon, LayoutDashboard, Menu, X } from "lucide-react";
+import { LayoutDashboard, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -24,10 +25,10 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
         <div className="flex h-16 w-full items-center gap-4 px-6 lg:px-8">
           <div className="flex shrink-0 items-center gap-6">
             <Link href="/" className="flex items-center gap-2 group w-max">
-              <Hexagon className="h-5 w-5 text-[var(--color-amber)] transition-colors group-hover:text-[var(--color-amber-hover)]" />
-              <span className="font-display text-xl tracking-tight text-[var(--color-bone)]">
-                hostfunc
-              </span>
+              <Logo
+                iconClassName="transition-opacity group-hover:opacity-80"
+                wordmarkClassName="text-xl tracking-tight"
+              />
               <span className="ml-2 hidden rounded-full border border-[var(--color-border)] bg-white/[0.03] px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[var(--color-bone-muted)] sm:block">
                 Docs
               </span>

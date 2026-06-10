@@ -2,7 +2,6 @@ import { requireActiveOrg } from "@/lib/session";
 import { getEffectivePlan } from "@/server/plans";
 import { db, schema } from "@hostfunc/db";
 import { and, count, eq } from "drizzle-orm";
-import { RadioTower } from "lucide-react";
 import { loadTriggers } from "./actions";
 import { TriggersClient } from "./triggers-client";
 
@@ -40,7 +39,7 @@ export default async function TriggersFunctionSettingsPage({
       <div className="flex flex-col justify-between gap-6 border-b border-[var(--color-border)] pb-6 md:flex-row md:items-center">
         <div>
           <h3 className="flex items-center gap-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
-            Invocation Triggers <RadioTower className="h-6 w-6 text-[var(--color-amber)]" />
+            Invocation Triggers
           </h3>
           <p className="mt-2 text-sm text-[var(--color-bone-muted)]">
             Configure how this function is invoked across HTTP, Cron, Email, and MCP.

@@ -58,6 +58,10 @@ The workflow passes `CHANGESETS_GITHUB_TOKEN` to Changesets before falling back 
 | `RUNTIME_INVOKE_TOKEN` | Server-side `/run` from web (CLI route, email inbound); must match runtime worker | Runtime |
 | `RUNTIME_INGEST_TOKEN` | Runtime ingest auth token | Runtime |
 | `TRIGGER_CONTROL_TOKEN` | Cron/internal trigger auth token | Runtime |
+| `CF_SAAS_ZONE_ID` | Cloudflare for SaaS zone id (`hostfunc.app`); custom-domains feature gate | Runtime |
+| `CF_SAAS_CNAME_TARGET` | CNAME target shown to users (`cname.hostfunc.app`) | Runtime |
+| `CF_SAAS_FALLBACK_ORIGIN` | SaaS zone fallback origin (`fallback.hostfunc.app`) | Runtime |
+| `CF_DOMAIN_INDEX_KV_ID` | KV namespace id for custom-hostname → fn index; must match runtime `DOMAIN_INDEX` | Runtime |
 | `STRIPE_SECRET_KEY` | Stripe live API secret | Billing |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signature secret | Billing |
 | `MCP_ALLOWED_ORIGINS` | MCP CORS allowlist | Security |
@@ -76,6 +80,7 @@ The workflow passes `CHANGESETS_GITHUB_TOKEN` to Changesets before falling back 
 | `LOOKUP_API_TOKEN` | Control plane lookup token | Runtime |
 | `RUNTIME_INVOKE_TOKEN` | Must match web + cron workers for internal `/run` | Runtime |
 | `WORKERS_SUBDOMAIN` | Cloudflare workers subdomain | Runtime |
+| `DOMAIN_INDEX` (KV binding) | Custom-hostname → `{orgSlug, fnSlug}` index; id must match web `CF_DOMAIN_INDEX_KV_ID` | Runtime |
 
 ### Cron (`apps/cron`) - Cloudflare
 
@@ -104,4 +109,7 @@ The workflow passes `CHANGESETS_GITHUB_TOKEN` to Changesets before falling back 
 - App: `app.hostfunc.io` -> Vercel
 - Runtime: `run.hostfunc.io` -> Cloudflare Worker route
 - Optional API alias: `api.hostfunc.io` -> Vercel (`apps/web`)
+- Custom domains (Cloudflare for SaaS): dedicated zone `hostfunc.app` with
+  `cname.hostfunc.app` (CNAME target), `fallback.hostfunc.app` (fallback origin),
+  and a `*/*` worker route to the runtime worker. See `docs/custom-domains-setup.md`.
 

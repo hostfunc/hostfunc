@@ -18,7 +18,7 @@ export function TemplateMarquee({ templates }: Props) {
       {highlighted.map((template) => (
         <article
           key={template.templateId}
-          className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 p-7 transition-all hover:border-[var(--color-amber)]/35 hover:bg-white/[0.04]"
+          className="group flex flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/75 p-7 transition-all hover:border-[var(--color-amber)]/35 hover:bg-white/[0.04]"
         >
           <div className="flex items-start justify-between gap-3">
             <span className="text-3xl">{template.icon}</span>
@@ -30,7 +30,7 @@ export function TemplateMarquee({ templates }: Props) {
           <p className="mt-3 text-sm leading-relaxed text-[var(--color-bone-muted)]">
             {template.description}
           </p>
-          <CodePreview code={template.snippet} className="mt-4" />
+          <CodePreview code={template.snippet} fill className="mt-4 flex-1 min-h-0" />
           <div className="mt-5 flex justify-end">
             <Button
               asChild

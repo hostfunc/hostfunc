@@ -47,10 +47,10 @@ export default async function FunctionsExplorerPage({
     <div className="mx-auto max-w-screen-2xl animate-in space-y-6 fade-in duration-500">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-[var(--color-amber)]">
+          {/* <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-[var(--color-amber)]">
             <Sparkles className="size-3.5" />
             Functions
-          </div>
+          </div> */}
           <h1 className="mt-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
             Functions Explorer
           </h1>

@@ -59,6 +59,7 @@ import {
   IntegrationConfigError,
   resolveAiConfigForGeneration,
 } from "@/server/integrations";
+import { deleteLogoObject } from "@/server/logo-storage";
 import { inferPayloadStatic, parsePayloadCandidate } from "@/server/payload-inference";
 import { getOrgPlan } from "@/server/plan";
 import { db, genId, schema, sql } from "@hostfunc/db";
@@ -98,6 +99,9 @@ const setSecretSchema = z.object({
 const deleteSecretSchema = z.object({
   fnId: z.string(),
   key: z.string().min(1).max(128),
+});
+const deleteFunctionSchema = z.object({
+  fnId: z.string(),
 });
 const addPackageSchema = z.object({
   fnId: z.string(),
@@ -857,6 +861,90 @@ export async function deleteSecret(input: z.infer<typeof deleteSecretSchema>) {
   await assertOrgOwnsFunction(orgId, parsed.fnId);
   await deleteSecretForFunction(orgId, parsed.fnId, parsed.key);
   revalidatePath(`/dashboard/${parsed.fnId}/settings`);
+  return { ok: true };
+}
+
+export async function deleteFunction(input: z.infer<typeof deleteFunctionSchema>) {
+  const { orgId } = await requireOrgPermission("deploy_function");
+  const parsed = deleteFunctionSchema.parse(input);
+
+  // Gather everything the cascade is about to destroy, before deleting.
+  const fnRows = await db
+    .select({
+      id: schema.fn.id,
+      slug: schema.fn.slug,
+      logo: schema.fn.logo,
+      forkedFromFnId: schema.fn.forkedFromFnId,
+    })
+    .from(schema.fn)
+    .where(
+      compatWhere(sql`${schema.fn.id} = ${parsed.fnId} and ${schema.fn.orgId} = ${orgId}`) as never,
+    )
+    .limit(1);
+  const fnRow = fnRows[0];
+  if (!fnRow) throw new Error("not found");
+
+  const orgRows = await db
+    .select({ slug: schema.organization.slug })
+    .from(schema.organization)
+    .where(compatWhere(sql`${schema.organization.id} = ${orgId}`) as never)
+    .limit(1);
+  const orgSlug = orgRows[0]?.slug ?? null;
+
+  const versions = await db
+    .select({ id: schema.fnVersion.id, backendHandle: schema.fnVersion.backendHandle })
+    .from(schema.fnVersion)
+    .where(compatWhere(sql`${schema.fnVersion.fnId} = ${parsed.fnId}`) as never);
+
+  await db.transaction(async (tx) => {
+    // execution.versionId references fn_version with ON DELETE RESTRICT, so the
+    // executions must be cleared before the fn delete cascades into fn_version.
+    await tx
+      .delete(schema.execution)
+      .where(compatWhere(sql`${schema.execution.fnId} = ${parsed.fnId}`) as never);
+    // Cascades into fn_version, drafts, secrets, triggers, assets, the github
+    // binding, AI context, and the marketplace profile/stars/comments/forks.
+    await tx
+      .delete(schema.fn)
+      .where(
+        compatWhere(
+          sql`${schema.fn.id} = ${parsed.fnId} and ${schema.fn.orgId} = ${orgId}`,
+        ) as never,
+      );
+    // Deleting a fork removes its fn_fork row; refresh the source's fork count.
+    if (fnRow.forkedFromFnId) {
+      await tx
+        .update(schema.fnMarketplaceProfile)
+        .set({
+          forkCount: sql<number>`(
+            select count(*)::int from ${schema.fnFork}
+            where ${schema.fnFork.sourceFnId} = ${fnRow.forkedFromFnId}
+          )`,
+          updatedAt: new Date(),
+        })
+        .where(
+          compatWhere(sql`${schema.fnMarketplaceProfile.fnId} = ${fnRow.forkedFromFnId}`) as never,
+        );
+    }
+  });
+
+  // Best-effort external cleanup — the DB is the source of truth, so a failure
+  // tearing down a Worker, storage object, or cache entry must not surface.
+  await Promise.all(
+    versions
+      .filter((version) => version.backendHandle)
+      .map((version) => executor.delete(parsed.fnId, version.id).catch(() => {})),
+  );
+  if (fnRow.logo) {
+    await deleteLogoObject(fnRow.logo).catch(() => {});
+  }
+  if (orgSlug) {
+    await purgeLookupCache(orgSlug, fnRow.slug).catch(() => {});
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/functions");
+  revalidatePath("/marketplace");
   return { ok: true };
 }
 

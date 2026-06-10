@@ -15,8 +15,8 @@
 
 **The open-source platform for tiny, composable TypeScript functions.**
 
-Write a function. Deploy in seconds. Trigger via HTTP, cron, email, or AI agents.  
-Self-host on your own cloud or use the managed version.
+Write a function. Deploy in seconds. Serve a JSON API — or a whole website.  
+Trigger via HTTP, cron, email, or AI agents. Self-host on your own cloud or use the managed version.
 
 [![License: AGPL-3.0-only](https://img.shields.io/badge/License-AGPL--3.0--only-blue.svg)](./LICENSE)
 [![Status: Pre-Alpha](https://img.shields.io/badge/Status-Pre--Alpha-orange.svg)](#)
@@ -64,6 +64,7 @@ We've designed **hostfunc** to give you exactly what you need to build powerful,
 | :--- | :--- |
 | ⚡️ **Instant Deployments** | Push TypeScript files and watch them go globally live in milliseconds. |
 | 🪝 **Multiple Triggers** | Execute your code via HTTP endpoints, recurring `cron` schedules, inbound emails, and AI (MCP) tool bindings. |
+| 🌐 **Host Websites** | Attach an `index.html` (plus CSS, JS, and images) and hostfunc serves it as a live web page at your function's URL — static sites and dynamic pages, not just JSON APIs. |
 | 🔐 **Encrypted Secret Vault** | Envelope-encrypted environment variables injected safely at runtime — never exposed in your logs or storage. |
 | 🧩 **Composable Invocation** | Functions can easily call other functions via the type-safe `fn.executeFunction()` API with full loop detection built-in. |
 | 🔬 **Deep Observability** | Native per-execution metrics: wall time, CPU time, memory peak, egress bytes, and structured log streaming. |

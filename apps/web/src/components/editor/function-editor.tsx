@@ -30,6 +30,7 @@ import { DeployButton } from "./deploy-button";
 import { EditorExecutionPane } from "./execution-pane";
 import { FileTree, type FileTreeAsset } from "./file-tree";
 import { FontViewer } from "./file-views/font-viewer";
+import { HtmlEditor } from "./file-views/html-editor";
 import { ImageViewer } from "./file-views/image-viewer";
 import { ReadmeEditor } from "./file-views/readme-editor";
 import { TextViewer } from "./file-views/text-viewer";
@@ -347,18 +348,18 @@ export function FunctionEditor({
   );
 
   return (
-    <div className="flex h-full flex-col bg-[#0d1117] overflow-hidden">
+    <div className="flex h-full flex-col bg-ink overflow-hidden">
       {/* Editor Header Bar */}
-      <div className="flex items-center justify-between border-b border-white/5 bg-[#161b22] px-4 py-3 relative z-10 shadow-sm">
+      <div className="flex items-center justify-between border-b border-border bg-ink-elevated px-4 py-3 relative z-10 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="flex items-center h-5">
             {dirty ? (
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber" />
               </span>
             ) : (
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
             )}
           </div>
           <span className="text-xs font-mono text-muted-foreground tracking-tight">
@@ -369,7 +370,7 @@ export function FunctionEditor({
               href={`https://github.com/${gitBinding.repoFullName}/tree/${encodeURIComponent(gitBinding.branch)}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[#0b0f15] px-2 py-0.5 text-[11px] text-[var(--color-bone)] transition hover:border-white/30 hover:bg-[#111827]"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-ink px-2 py-0.5 text-[11px] text-[var(--color-bone)] transition hover:border-border-strong hover:bg-ink-elevated"
             >
               <img
                 src="/Github%20logo.svg"
@@ -410,9 +411,9 @@ export function FunctionEditor({
       </div>
 
       {hasPendingDiff ? (
-        <div className="border-b border-emerald-500/30 bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 px-4 py-3">
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-emerald-400/25 bg-black/15 px-3 py-2">
-            <p className="text-xs text-emerald-100">
+        <div className="border-b border-emerald/30 bg-gradient-to-r from-emerald/15 to-emerald/5 px-4 py-3">
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-emerald/25 bg-ink-overlay px-3 py-2">
+            <p className="text-xs text-emerald">
               AI generated a patch. Review diff, then accept or discard.
             </p>
             <div className="flex items-center gap-2">
@@ -421,7 +422,7 @@ export function FunctionEditor({
                 size="sm"
                 variant="outline"
                 onClick={revertGeneratedCode}
-                className="border-red-500/40 bg-red-500/10 text-red-200 hover:bg-red-500/20"
+                className="border-rose/40 bg-rose/10 text-rose hover:bg-rose/20"
               >
                 Revert
               </Button>
@@ -429,7 +430,7 @@ export function FunctionEditor({
                 type="button"
                 size="sm"
                 onClick={() => void acceptGeneratedCode()}
-                className="bg-emerald-500 text-black hover:bg-emerald-400"
+                className="bg-emerald text-black hover:bg-emerald/90"
               >
                 Accept Diff
               </Button>
@@ -439,7 +440,7 @@ export function FunctionEditor({
       ) : null}
 
       {/* Editor Area: file tree + main pane */}
-      <div className="flex flex-1 min-h-0 border-b border-white/5">
+      <div className="flex flex-1 min-h-0 border-b border-border">
         <FileTree
           fnId={fnId}
           assets={assets}
@@ -474,6 +475,14 @@ export function FunctionEditor({
                   onAssetUpdated={handleAssetUpdated}
                   readOnly={readOnly}
                 />
+              ) : selectedAsset.kind === "html" ? (
+                <HtmlEditor
+                  fnId={fnId}
+                  asset={selectedAsset}
+                  assets={assets}
+                  onAssetUpdated={handleAssetUpdated}
+                  readOnly={readOnly}
+                />
               ) : selectedAsset.kind === "image" ? (
                 <ImageViewer fnId={fnId} asset={selectedAsset} />
               ) : selectedAsset.kind === "font" ? (
@@ -487,7 +496,7 @@ export function FunctionEditor({
                 />
               )
             ) : (
-              <div className="flex h-full items-center justify-center text-xs text-slate-500">
+              <div className="flex h-full items-center justify-center text-xs text-bone-faint">
                 Select a file to start editing.
               </div>
             )}
@@ -522,16 +531,16 @@ export function FunctionEditor({
                 }}
               />
               <aside
-                className="flex h-full shrink-0 flex-col border-l border-white/10 bg-[#0f141d]"
+                className="flex h-full shrink-0 flex-col border-l border-border bg-ink"
                 style={{ width: aiPanelWidth }}
               >
-                <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                <div className="flex items-center justify-between border-b border-border px-4 py-3">
                   <div className="flex items-center gap-2">
                     <div className="inline-flex items-center gap-2 rounded-full border border-violet-400/35 bg-violet-500/15 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-violet-200">
                       <Bot className="size-3" />
                       AI Assistant
                     </div>
-                    <span className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[10px] text-slate-300">
+                    <span className="inline-flex items-center gap-1 rounded-md border border-border bg-ink-overlay px-2 py-1 text-[10px] text-bone-muted">
                       <AiProviderIcon provider={aiProvider} />
                       {aiProvider} · {aiModel}
                     </span>
@@ -541,32 +550,32 @@ export function FunctionEditor({
                     size="sm"
                     variant="ghost"
                     onClick={() => setShowAiPanel(false)}
-                    className="h-7 px-2 text-xs text-slate-300 hover:text-white"
+                    className="h-7 px-2 text-xs text-bone-muted hover:text-white"
                   >
                     Close
                   </Button>
                 </div>
 
-                <details open className="border-b border-white/10 px-4 py-3">
+                <details open className="border-b border-border px-4 py-3">
                   <summary className="flex cursor-pointer list-none items-center justify-between text-xs marker:content-none">
                     <div className="space-y-1">
-                      <p className="flex items-center gap-2 font-medium text-slate-200">
+                      <p className="flex items-center gap-2 font-medium text-bone">
                         <BookText className="size-3.5 text-violet-300" /> Docs attached
                       </p>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[11px] text-bone-muted">
                         Select per-function notes, URLs, and files to include in every generation.
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="rounded-full border border-white/10 bg-black/30 px-2 py-0.5 text-[10px] text-slate-300">
+                      <span className="rounded-full border border-border bg-ink-overlay px-2 py-0.5 text-[10px] text-bone-muted">
                         {selectedContextIds.length}/{enabledContexts.length} selected
                       </span>
-                      <ChevronDown className="size-4 text-slate-400" />
+                      <ChevronDown className="size-4 text-bone-muted" />
                     </div>
                   </summary>
-                  <div className="mt-3 space-y-2 rounded-lg border border-white/10 bg-black/20 p-3">
+                  <div className="mt-3 space-y-2 rounded-lg border border-border bg-ink-overlay p-3">
                     {enabledContexts.length === 0 ? (
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[11px] text-bone-muted">
                         No docs attached yet. Add notes, URLs, or upload markdown / JSON files to
                         give the AI richer context.
                       </p>
@@ -582,7 +591,7 @@ export function FunctionEditor({
                                 : FileText;
                           return (
                             <li key={ctx.id}>
-                              <label className="flex cursor-pointer items-center gap-3 rounded-md border border-white/10 bg-[#0b0f15] px-2.5 py-1.5 text-xs text-slate-200 hover:border-white/25">
+                              <label className="flex cursor-pointer items-center gap-3 rounded-md border border-border bg-ink px-2.5 py-1.5 text-xs text-bone hover:border-border-strong">
                                 <input
                                   type="checkbox"
                                   checked={checked}
@@ -597,12 +606,12 @@ export function FunctionEditor({
                                   }}
                                   className="h-3.5 w-3.5 accent-violet-400"
                                 />
-                                <Icon className="size-3.5 text-slate-400" />
+                                <Icon className="size-3.5 text-bone-muted" />
                                 <span className="flex-1 truncate">{ctx.name}</span>
-                                <span className="rounded-sm border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">
+                                <span className="rounded-sm border border-border bg-white/5 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-bone-muted">
                                   {ctx.kind}
                                 </span>
-                                <span className="text-[10px] text-slate-500">
+                                <span className="text-[10px] text-bone-faint">
                                   {Math.max(1, Math.round(ctx.bytes / 1024))} KB
                                 </span>
                               </label>
@@ -612,7 +621,7 @@ export function FunctionEditor({
                       </ul>
                     )}
                     <div className="flex items-center justify-between pt-1 text-[11px]">
-                      <span className="text-slate-500">
+                      <span className="text-bone-faint">
                         Up to 20 docs · ~60 KB budget merged into each prompt.
                       </span>
                       <Link
@@ -625,21 +634,21 @@ export function FunctionEditor({
                   </div>
                 </details>
 
-                <details className="border-b border-white/10 px-4 py-3">
+                <details className="border-b border-border px-4 py-3">
                   <summary className="flex cursor-pointer list-none items-center justify-between text-xs marker:content-none">
                     <div className="space-y-1">
-                      <p className="font-medium text-slate-200">Advanced options</p>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="font-medium text-bone">Advanced options</p>
+                      <p className="text-[11px] text-bone-muted">
                         Model selection, docs lookup, and domains.
                       </p>
                     </div>
-                    <ChevronDown className="size-4 text-slate-400" />
+                    <ChevronDown className="size-4 text-bone-muted" />
                   </summary>
-                  <div className="mt-3 space-y-3 rounded-lg border border-white/10 bg-black/20 p-3">
+                  <div className="mt-3 space-y-3 rounded-lg border border-border bg-ink-overlay p-3">
                     <div className="space-y-1.5">
                       <label
                         htmlFor="aiGeneratorModel"
-                        className="text-[11px] font-medium uppercase tracking-wide text-slate-400"
+                        className="text-[11px] font-medium uppercase tracking-wide text-bone-muted"
                       >
                         Provider and model
                       </label>
@@ -656,8 +665,8 @@ export function FunctionEditor({
                             }}
                             className={`inline-flex h-10 w-10 items-center justify-center rounded-md border px-0 text-sm transition ${
                               aiProvider === "openai"
-                                ? "border-emerald-400/60 bg-emerald-500/15 text-emerald-100"
-                                : "border-white/15 bg-[#0b0f15] text-slate-300 hover:border-white/30"
+                                ? "border-emerald/60 bg-emerald/15 text-emerald"
+                                : "border-border-strong bg-ink text-bone-muted hover:border-border-strong"
                             }`}
                           >
                             <span className="sr-only">OpenAI</span>
@@ -674,8 +683,8 @@ export function FunctionEditor({
                             }}
                             className={`inline-flex h-10 w-10 items-center justify-center rounded-md border px-0 text-sm transition ${
                               aiProvider === "claude"
-                                ? "border-amber-400/60 bg-amber-500/15 text-amber-100"
-                                : "border-white/15 bg-[#0b0f15] text-slate-300 hover:border-white/30"
+                                ? "border-amber/60 bg-amber/15 text-amber"
+                                : "border-border-strong bg-ink text-bone-muted hover:border-border-strong"
                             }`}
                           >
                             <span className="sr-only">Claude</span>
@@ -687,7 +696,7 @@ export function FunctionEditor({
                             id="aiGeneratorModel"
                             value={aiModel}
                             onChange={(event) => setAiModel(event.target.value)}
-                            className="h-10 w-full appearance-none rounded-md border border-white/15 bg-[#0b0f15] px-3 pr-10 text-sm text-slate-200 outline-none ring-violet-400/50 focus:ring-2"
+                            className="h-10 w-full appearance-none rounded-md border border-border-strong bg-ink px-3 pr-10 text-sm text-bone outline-none ring-violet-400/50 focus:ring-2"
                           >
                             {modelsForProvider(aiProvider).map((model) => (
                               <option key={model} value={model}>
@@ -695,7 +704,7 @@ export function FunctionEditor({
                               </option>
                             ))}
                           </select>
-                          <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-slate-400">
+                          <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-bone-muted">
                             <ChevronDown className="size-3.5" />
                           </div>
                         </div>
@@ -708,8 +717,8 @@ export function FunctionEditor({
                         onClick={() => setUseLiveLookup((prev) => !prev)}
                         className={`inline-flex h-9 items-center gap-2 rounded-md border px-3 text-xs font-medium transition ${
                           useLiveLookup
-                            ? "border-cyan-400/50 bg-cyan-500/10 text-cyan-100"
-                            : "border-white/15 bg-[#0b0f15] text-slate-300 hover:border-white/30"
+                            ? "border-cyan/50 bg-cyan/10 text-cyan"
+                            : "border-border-strong bg-ink text-bone-muted hover:border-border-strong"
                         }`}
                       >
                         <SearchCheck className="size-3.5" />
@@ -719,9 +728,9 @@ export function FunctionEditor({
                         id="aiLookupHints"
                         value={lookupHints}
                         onChange={(event) => setLookupHints(event.target.value)}
-                        className="h-9 w-full rounded-md border border-white/15 bg-[#0b0f15] px-3 text-xs text-slate-200 outline-none ring-cyan-400/50 focus:ring-2"
+                        className="h-9 w-full rounded-md border border-border-strong bg-ink px-3 text-xs text-bone outline-none ring-cyan/50 focus:ring-2"
                       />
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-[11px] text-bone-faint">
                         Tip: add only trusted docs domains for faster, cleaner context.
                       </p>
                     </div>
@@ -745,8 +754,8 @@ export function FunctionEditor({
                             isUser
                               ? "rounded-br-md bg-violet-500 text-white"
                               : msg.kind === "error"
-                                ? "rounded-bl-md border border-red-500/35 bg-red-500/10 text-red-200"
-                                : "rounded-bl-md border border-white/10 bg-white/5 text-slate-200"
+                                ? "rounded-bl-md border border-rose/35 bg-rose/10 text-rose"
+                                : "rounded-bl-md border border-border bg-white/5 text-bone"
                           }`}
                         >
                           {msg.content}
@@ -756,7 +765,7 @@ export function FunctionEditor({
                   })}
                   {isGenerating ? (
                     <div className="flex justify-start">
-                      <div className="inline-flex items-center gap-2 rounded-2xl rounded-bl-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-300">
+                      <div className="inline-flex items-center gap-2 rounded-2xl rounded-bl-md border border-border bg-white/5 px-3 py-2 text-xs text-bone-muted">
                         <Loader2 className="size-3.5 animate-spin" />
                         Thinking...
                       </div>
@@ -764,8 +773,8 @@ export function FunctionEditor({
                   ) : null}
                 </div>
 
-                <div className="border-t border-white/10 bg-black/10 p-4">
-                  <div className="rounded-2xl border border-white/10 bg-[#0b0f15] p-2">
+                <div className="border-t border-border bg-ink-overlay p-4">
+                  <div className="rounded-2xl border border-border bg-ink p-2">
                     <textarea
                       id="aiPromptInput"
                       value={aiPrompt}
@@ -777,10 +786,10 @@ export function FunctionEditor({
                         }
                       }}
                       placeholder="Message AI assistant with function requirements, edge cases, and integrations..."
-                      className="max-h-40 min-h-20 w-full resize-y bg-transparent p-2 text-sm text-slate-200 outline-none placeholder:text-slate-500"
+                      className="max-h-40 min-h-20 w-full resize-y bg-transparent p-2 text-sm text-bone outline-none placeholder:text-bone-faint"
                     />
                     <div className="flex items-center justify-between gap-3 px-2 pb-1">
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-bone-muted">
                         Enter to send, Shift+Enter for newline.
                       </p>
                       <Button

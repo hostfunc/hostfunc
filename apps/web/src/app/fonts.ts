@@ -1,4 +1,4 @@
-import { Geist, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Geist, JetBrains_Mono, Pixelify_Sans, Plus_Jakarta_Sans } from "next/font/google";
 
 export const geist = Geist({
   subsets: ["latin"],
@@ -16,5 +16,12 @@ export const plusJakartaSans = Plus_Jakarta_Sans({
 export const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
+  display: "swap",
+});
+
+export const pixelifySans = Pixelify_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-pixel",
   display: "swap",
 });

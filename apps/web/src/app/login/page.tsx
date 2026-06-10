@@ -1,5 +1,6 @@
 "use client";
 
+import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { trackClientEvent } from "@/lib/analytics-client";
@@ -7,15 +8,7 @@ import { signIn } from "@/lib/auth-client";
 import { formatAuthError } from "@/lib/format-auth-error";
 import { safeCallbackUrl } from "@/lib/safe-callback-url";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  AlertCircle,
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
-  Hexagon,
-  Loader2,
-  Mail,
-} from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, Mail } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
@@ -107,8 +100,10 @@ function LoginPageClient() {
       <header className="relative z-20 border-b border-[var(--color-border)] bg-[var(--color-ink)]/75 backdrop-blur-xl">
         <div className="flex w-full items-center justify-between px-6 py-4">
           <Link href="/" className="group flex items-center gap-2">
-            <Hexagon className="size-5 text-[var(--color-amber)] transition-transform duration-300 group-hover:scale-105" />
-            <span className="font-display text-xl text-[var(--color-bone)]">hostfunc</span>
+            <Logo
+              iconClassName="transition-transform duration-300 group-hover:scale-105"
+              wordmarkClassName="text-xl"
+            />
           </Link>
           <Link
             href="/"
@@ -417,7 +412,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <main className="relative flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--color-ink)] text-[var(--color-bone-muted)]">
-          <Hexagon className="size-10 text-[var(--color-amber)]" aria-hidden />
+          <Logo wordmark={false} iconClassName="h-10 w-10" />
           <div className="flex items-center gap-2 text-sm text-[var(--color-bone)]">
             <Loader2 className="size-4 animate-spin" aria-hidden />
             Loading sign-in…

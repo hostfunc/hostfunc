@@ -29,6 +29,7 @@ export interface FunctionExplorerItem {
   orgSlug: string;
   slug: string;
   description: string | null;
+  logo: string | null;
   visibility: "public" | "private";
   currentVersionId: string | null;
   packageCount: number;
@@ -189,6 +190,7 @@ export async function listFunctionsForOrg(orgId: string) {
       orgSlug: schema.organization.slug,
       slug: schema.fn.slug,
       description: schema.fn.description,
+      logo: schema.fn.logo,
       visibility: schema.fn.visibility,
       currentVersionId: schema.fn.currentVersionId,
       packageCount: sql<number>`coalesce(jsonb_array_length(${schema.fn.packages}), 0)`,
@@ -250,6 +252,7 @@ export async function searchFunctionsForOrg(orgId: string, query?: string, visib
       orgSlug: schema.organization.slug,
       slug: schema.fn.slug,
       description: schema.fn.description,
+      logo: schema.fn.logo,
       visibility: schema.fn.visibility,
       currentVersionId: schema.fn.currentVersionId,
       packageCount: sql<number>`coalesce(jsonb_array_length(${schema.fn.packages}), 0)`,
@@ -497,6 +500,7 @@ export async function searchFunctionsForOrgPaginated(input: {
         orgSlug: schema.organization.slug,
         slug: schema.fn.slug,
         description: schema.fn.description,
+        logo: schema.fn.logo,
         visibility: schema.fn.visibility,
         currentVersionId: schema.fn.currentVersionId,
         packageCount: sql<number>`coalesce(jsonb_array_length(${schema.fn.packages}), 0)`,
@@ -531,6 +535,7 @@ export async function searchFunctionsForOrgPaginated(input: {
     orgSlug: row.orgSlug,
     slug: row.slug,
     description: row.description,
+    logo: row.logo,
     visibility: row.visibility,
     currentVersionId: row.currentVersionId,
     packageCount: row.packageCount,
@@ -637,6 +642,8 @@ export interface MarketplaceFunctionItem {
   authorImage: string | null;
   slug: string;
   description: string;
+  logo: string | null;
+  orgLogo: string | null;
   category: MarketplaceCategory;
   useCases: string[];
   shortDescription: string;
@@ -649,6 +656,8 @@ export interface MarketplaceFunctionItem {
   updatedAt: Date;
   publishedAt: Date | null;
   codePreview: string | null;
+  /** True when the deployed version ships an `index.html` (renderable preview). */
+  hasHtmlPage: boolean;
   hasStarred: boolean;
 }
 
@@ -703,6 +712,8 @@ function marketplaceSelect(userId?: string) {
     authorImage: schema.user.image,
     slug: schema.fn.slug,
     description: schema.fn.description,
+    logo: schema.fn.logo,
+    orgLogo: schema.organization.logo,
     category: sql<MarketplaceCategory>`coalesce(${schema.fnMarketplaceProfile.category}, 'utilities')`,
     useCases: sql<string[]>`coalesce(${schema.fnMarketplaceProfile.useCases}, '[]'::jsonb)`,
     shortDescription: sql<string>`coalesce(nullif(${schema.fnMarketplaceProfile.shortDescription}, ''), ${schema.fn.description}, '')`,
@@ -716,6 +727,11 @@ function marketplaceSelect(userId?: string) {
     updatedAt: schema.fn.updatedAt,
     publishedAt: schema.fnMarketplaceProfile.publishedAt,
     code: schema.fnVersion.code,
+    hasHtmlPage: sql<boolean>`exists(
+      select 1 from ${schema.fnVersionAsset}
+      where ${schema.fnVersionAsset.versionId} = ${schema.fn.currentVersionId}
+        and ${schema.fnVersionAsset.path} = 'index.html'
+    )`,
     hasStarred: userId
       ? sql<boolean>`exists(
           select 1 from ${schema.fnStar}
@@ -736,6 +752,8 @@ function toMarketplaceItem(
         authorImage: string | null;
         slug: string;
         description: string;
+        logo: string | null;
+        orgLogo: string | null;
         category: MarketplaceCategory;
         useCases: string[];
         shortDescription: string;
@@ -748,6 +766,7 @@ function toMarketplaceItem(
         updatedAt: Date;
         publishedAt: Date | null;
         code: string | null;
+        hasHtmlPage: boolean;
         hasStarred: boolean;
       }
     : never,
@@ -760,6 +779,8 @@ function toMarketplaceItem(
     authorImage: row.authorImage,
     slug: row.slug,
     description: row.description ?? "",
+    logo: row.logo,
+    orgLogo: row.orgLogo,
     category: row.category,
     useCases: normalizeUseCases(row.useCases),
     shortDescription: row.shortDescription || row.description || "",
@@ -772,6 +793,7 @@ function toMarketplaceItem(
     updatedAt: row.updatedAt,
     publishedAt: row.publishedAt,
     codePreview: row.code ? row.code.slice(0, 1800) : null,
+    hasHtmlPage: row.hasHtmlPage,
     hasStarred: row.hasStarred,
   };
 }

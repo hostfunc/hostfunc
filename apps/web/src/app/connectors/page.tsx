@@ -1,10 +1,11 @@
 "use client";
 
+import { Logo } from "@/components/brand/logo";
 import { ConnectorsShowcase } from "@/components/marketing/connectors-showcase";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 import { assertMarketingContent, marketingContent } from "@/lib/marketing-content";
-import { ArrowRight, ArrowUpRight, Hexagon } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
 export default function ConnectorsPage() {
@@ -19,8 +20,7 @@ export default function ConnectorsPage() {
       <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
         <div className="flex w-full items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
-            <Hexagon className="size-5 text-[var(--color-amber)]" strokeWidth={1.5} />
-            <span className="font-display text-xl text-[var(--color-bone)]">hostfunc</span>
+            <Logo wordmarkClassName="text-xl" />
           </Link>
 
           <nav className="hidden items-center gap-7 md:flex">
@@ -140,8 +140,7 @@ export default function ConnectorsPage() {
         <div className="w-full px-6">
           <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
             <div className="flex items-center gap-2">
-              <Hexagon className="size-5 text-[var(--color-bone-faint)]" strokeWidth={1.5} />
-              <span className="font-display text-lg text-[var(--color-bone-muted)]">hostfunc</span>
+              <Logo tone="muted" wordmarkClassName="text-lg text-[var(--color-bone-muted)]" />
               <span className="ml-3 text-xs text-[var(--color-bone-faint)]">
                 © {new Date().getFullYear()}
               </span>

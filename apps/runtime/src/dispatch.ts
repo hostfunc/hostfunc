@@ -1,14 +1,25 @@
 /// <reference types="@cloudflare/workers-types" />
 
+import { readBodyWithLimit, resolveMaxBodyBytes } from "./body-limit";
+import { isAuthorizedBearer } from "./timing-safe";
+
 interface Env {
   ENV: string;
   LOOKUP_API_URL?: string;
   LOOKUP_API_TOKEN?: string;
   RUNTIME_INVOKE_TOKEN?: string;
+  MAX_BODY_BYTES?: string;
   WORKERS_SUBDOMAIN?: string;
   RUNTIME_PUBLIC_URL?: string;
   FN_INDEX?: KVNamespace;
+  /** Maps a custom hostname -> { orgSlug, fnSlug }. Populated when a domain goes active. */
+  DOMAIN_INDEX?: KVNamespace;
   DISPATCHER?: DispatchNamespace;
+}
+
+interface DomainIndexEntry {
+  orgSlug: string;
+  fnSlug: string;
 }
 
 interface FnLookup {
@@ -77,10 +88,8 @@ function stripHostfuncKeys(obj: Record<string, unknown> | null): Record<string, 
   return out;
 }
 
-function isInternalInvoke(authHeader: string | null, env: Env): boolean {
-  const token = env.RUNTIME_INVOKE_TOKEN;
-  if (!token || !authHeader) return false;
-  return authHeader === `Bearer ${token}`;
+export function isInternalInvoke(authHeader: string | null, env: Env): Promise<boolean> {
+  return isAuthorizedBearer(authHeader, env.RUNTIME_INVOKE_TOKEN);
 }
 
 export function normalizeLookup(lookup: FnLookup | FnLookupError): FnLookup | FnLookupError {
@@ -89,6 +98,62 @@ export function normalizeLookup(lookup: FnLookup | FnLookupError): FnLookup | Fn
     return { ...lookup, httpRequireAuth: false };
   }
   return lookup;
+}
+
+export interface RunPathMatch {
+  orgSlug: string;
+  fnSlug: string;
+  /** Trailing path that addresses a static asset of the function ("" when none). */
+  assetSubPath: string;
+}
+
+/**
+ * Parses `/run/:orgSlug/:fnSlug` and an optional trailing asset path
+ * (`/run/org/slug/style.css`). Returns `null` for any non-run path.
+ */
+export function matchRunPath(pathname: string): RunPathMatch | null {
+  const match = pathname.match(/^\/run\/([^/]+)\/([^/]+)(\/.*)?$/);
+  if (!match) return null;
+  const orgSlug = match[1];
+  const fnSlug = match[2];
+  if (!orgSlug || !fnSlug) return null;
+  return { orgSlug, fnSlug, assetSubPath: match[3]?.replace(/^\/+/, "") ?? "" };
+}
+
+/**
+ * True for hosts the platform itself serves (the `/run/...` router and
+ * workers.dev origins). Everything else is treated as a user's custom domain.
+ */
+export function isPlatformRunHost(host: string): boolean {
+  const h = host.toLowerCase();
+  if (h === "localhost" || h === "127.0.0.1") return true;
+  return (
+    h === "hostfunc.io" ||
+    h.endsWith(".hostfunc.io") ||
+    h === "hostfunc.dev" ||
+    h.endsWith(".hostfunc.dev") ||
+    h.endsWith(".workers.dev")
+  );
+}
+
+/**
+ * Resolve a custom hostname to its target function via the DOMAIN_INDEX KV.
+ * The whole request path becomes the asset sub-path, so `https://site.com/app.js`
+ * addresses the function's `app.js` exactly like `/run/org/slug/app.js` does.
+ */
+export async function resolveCustomHostTarget(
+  env: Env,
+  host: string,
+  pathname: string,
+): Promise<RunPathMatch | null> {
+  if (!env.DOMAIN_INDEX) return null;
+  const entry = (await env.DOMAIN_INDEX.get(host.toLowerCase(), "json")) as DomainIndexEntry | null;
+  if (!entry || !entry.orgSlug || !entry.fnSlug) return null;
+  return {
+    orgSlug: entry.orgSlug,
+    fnSlug: entry.fnSlug,
+    assetSubPath: pathname.replace(/^\/+/, ""),
+  };
 }
 
 async function enforcePublicHttpAuth(
@@ -146,10 +211,21 @@ async function enforcePublicHttpAuth(
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
-    const match = url.pathname.match(/^\/run\/([^/]+)\/([^/]+)$/);
-    if (!match) return json({ error: "not_found" }, 404);
-    const [, orgSlug, fnSlug] = match;
-    if (!orgSlug || !fnSlug) return json({ error: "not_found" }, 404);
+    const host = url.hostname.toLowerCase();
+
+    // Platform hosts route by `/run/:org/:slug`; any other host is a user's
+    // custom domain, resolved to its function via the DOMAIN_INDEX KV.
+    let runMatch: RunPathMatch | null;
+    let customHost = false;
+    if (isPlatformRunHost(host)) {
+      runMatch = matchRunPath(url.pathname);
+      if (!runMatch) return json({ error: "not_found" }, 404);
+    } else {
+      runMatch = await resolveCustomHostTarget(env, host, url.pathname);
+      if (!runMatch) return json({ error: "domain_not_configured" }, 404);
+      customHost = true;
+    }
+    const { orgSlug, fnSlug, assetSubPath } = runMatch;
     if (orgSlug.startsWith("usr_")) {
       return json(
         {
@@ -179,7 +255,18 @@ export default {
 
     let rawBody = "";
     if (METHODS_WITH_BODY.has(req.method)) {
-      rawBody = await req.text();
+      const maxBodyBytes = resolveMaxBodyBytes(env.MAX_BODY_BYTES);
+      const read = await readBodyWithLimit(req, maxBodyBytes);
+      if (!read.ok) {
+        return json(
+          {
+            error: "payload_too_large",
+            message: `Request body exceeds the ${maxBodyBytes}-byte limit.`,
+          },
+          413,
+        );
+      }
+      rawBody = read.text;
     }
     const parsedBody = parseJsonBody(rawBody);
     const authHeader = req.headers.get("authorization");
@@ -188,7 +275,7 @@ export default {
     let upstreamBody: unknown = stripHostfuncKeys(parsedBody);
     let invocationKind: "http" | "email" = "http";
 
-    if (isInternalInvoke(authHeader, env)) {
+    if (await isInternalInvoke(authHeader, env)) {
       const kindRaw = parsedBody?.hostfuncTriggerKind;
       if (typeof kindRaw !== "string" || !INTERNAL_TRIGGER_KINDS.has(kindRaw)) {
         return json(
@@ -295,6 +382,14 @@ export default {
       maxCallDepth: registration.maxCallDepth ?? DEFAULT_MAX_CALL_DEPTH,
       invocationKind,
     });
+
+    // Tell the worker its public base path (for <base> injection) and, when the
+    // URL targets a static asset, which asset to serve. Custom domains serve from
+    // the domain root, so their base is "/" rather than "/run/:org/:slug".
+    upstreamHeaders.set("x-hostfunc-run-path", customHost ? "/" : `/run/${orgSlug}/${fnSlug}`);
+    if (assetSubPath) {
+      upstreamHeaders.set("x-hostfunc-asset-path", assetSubPath);
+    }
 
     const upstreamInit: RequestInit = {
       method: req.method,
@@ -426,6 +521,9 @@ function withHostfuncHeaders(
   const headers = new Headers(inbound);
   headers.delete("x-hostfunc-trigger-kind");
   headers.delete("x-hostfunc-invocation-kind");
+  // These are derived from the request path by the runtime; never trust a client value.
+  headers.delete("x-hostfunc-asset-path");
+  headers.delete("x-hostfunc-run-path");
   headers.set("x-hostfunc-exec-id", input.execId);
   headers.set("x-hostfunc-fn-id", lookup.fnId);
   headers.set("x-hostfunc-version-id", lookup.versionId);

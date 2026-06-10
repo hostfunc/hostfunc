@@ -2,7 +2,7 @@ import { sendTransactionalEmail } from "@/server/email";
 import { db, genId, schema, sql } from "@hostfunc/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { magicLink, organization } from "better-auth/plugins";
+import { bearer, deviceAuthorization, magicLink, organization } from "better-auth/plugins";
 import { env } from "./env";
 
 function compatWhere<T>(value: T): T {
@@ -20,6 +20,7 @@ export const auth = betterAuth({
       organization: schema.organization,
       member: schema.member,
       invitation: schema.invitation,
+      deviceCode: schema.deviceCode,
     },
   }),
   secret: env.BETTER_AUTH_SECRET,
@@ -73,6 +74,18 @@ export const auth = betterAuth({
         });
       },
     }),
+    // RFC 8628 device flow — powers `hostfunc.signIn` in the VS Code extension and the CLI.
+    // Approval happens at `/device`; the extension then exchanges the session for an org-scoped
+    // `hfn_live_` PAT via `/api/cli/device/exchange`.
+    deviceAuthorization({
+      expiresIn: "10m",
+      interval: "5s",
+      verificationUri: `${env.BETTER_AUTH_URL}/device`,
+      validateClient: (clientId) => clientId === "hostfunc-vscode" || clientId === "hostfunc-cli",
+    }),
+    // Lets the extension present the device-approved session as `Authorization: Bearer <session>`
+    // to `/api/cli/device/exchange` without cookies.
+    bearer(),
   ],
   databaseHooks: {
     user: {

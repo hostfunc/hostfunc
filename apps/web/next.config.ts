@@ -19,9 +19,9 @@ const config: NextConfig = {
     "@hostfunc/executor-core",
     "@hostfunc/executor-cloudflare",
   ],
-  experimental: {
-    typedRoutes: true,
-  },
+
+  typedRoutes: true,
+
   // Better Auth needs to know about server-only modules
   serverExternalPackages: ["postgres", "drizzle-orm", "esbuild"],
   async headers() {

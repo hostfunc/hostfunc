@@ -1,8 +1,11 @@
 import { CommentsThread } from "@/app/marketplace/[fn]/comments-thread";
+import { FunctionLogo } from "@/components/function/function-logo";
 import { CodePreview } from "@/components/marketing/code-preview";
 import { FunctionActions } from "@/components/marketplace/function-actions";
+import { HtmlPreviewFrame } from "@/components/marketplace/html-preview-frame";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { WorkspaceLogo } from "@/components/workspace/workspace-logo";
 import { renderMarketplaceReadme } from "@/lib/marketplace-readme";
 import { requireSession } from "@/lib/session";
 import { getMarketplaceFunction, listFunctionComments } from "@/server/functions";
@@ -60,14 +63,18 @@ export default async function DashboardMarketplaceFunctionPage({
                 </Badge>
               ))}
             </div>
-            <h1 className="mt-5 text-balance font-display text-4xl leading-tight text-[var(--color-bone)] md:text-5xl">
-              {fn.slug}
-            </h1>
+            <div className="mt-5 flex items-center gap-4">
+              <FunctionLogo logo={fn.logo} name={fn.slug} size="lg" />
+              <h1 className="text-balance font-display text-4xl leading-tight text-[var(--color-bone)] md:text-5xl">
+                {fn.slug}
+              </h1>
+            </div>
             <p className="mt-4 max-w-3xl text-base leading-relaxed text-[var(--color-bone-muted)] md:text-lg">
               {fn.shortDescription || fn.description || "A public TypeScript function."}
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-5 text-sm text-[var(--color-bone-faint)]">
-              <span>
+              <span className="inline-flex items-center gap-1.5">
+                <WorkspaceLogo logo={fn.orgLogo} name={fn.orgName} size="md" />
                 by {fn.orgName} / {fn.authorName}
               </span>
               <span className="inline-flex items-center gap-1">
@@ -91,6 +98,13 @@ export default async function DashboardMarketplaceFunctionPage({
               </a>
             </div>
           </div>
+
+          {fn.hasHtmlPage ? (
+            <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-6">
+              <h2 className="font-display text-2xl text-[var(--color-bone)]">Live Preview</h2>
+              <HtmlPreviewFrame fnId={fn.id} />
+            </div>
+          ) : null}
 
           <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-6">
             <h2 className="font-display text-2xl text-[var(--color-bone)]">Source Preview</h2>

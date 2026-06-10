@@ -17,6 +17,11 @@ id = "local-fn-index"
 binding = "EGRESS_COUNTERS"
 id = "local-egress-counters"
 
+# Custom-domain hostname -> { orgSlug, fnSlug } index (Cloudflare for SaaS).
+[[kv_namespaces]]
+binding = "DOMAIN_INDEX"
+id = "local-domain-index"
+
 [[dispatch_namespaces]]
 binding = "DISPATCHER"
 namespace = "hostfunc-dev"
@@ -31,6 +36,9 @@ namespace = "hostfunc-dev"
 name = "hostfunc-runtime-staging"
 routes = [
   { pattern = "staging-run.hostfunc.io/*", zone_name = "hostfunc.io" },
+  # Custom domains (Cloudflare for SaaS). Onboarded custom hostnames in the SaaS
+  # zone hit this `*/*` route. Uncomment once a staging SaaS zone is entitled.
+  # { pattern = "*/*", zone_name = "staging.hostfunc.app" },
 ]
 
 [env.staging.observability.logs]
@@ -54,6 +62,10 @@ id = "5c711a85eb2744c6b0712693151485e5"
 binding = "EGRESS_COUNTERS"
 id = "d31c8394b3fe477f910b3782f5d8f5f0"
 
+[[env.staging.kv_namespaces]]
+binding = "DOMAIN_INDEX"
+id = "REPLACE_WITH_STAGING_DOMAIN_INDEX_KV_ID"
+
 [[env.staging.dispatch_namespaces]]
 binding = "DISPATCHER"
 namespace = "hostfunc-staging"
@@ -68,6 +80,9 @@ namespace = "hostfunc-staging"
 name = "hostfunc-runtime"
 routes = [
   { pattern = "run.hostfunc.io/*", zone_name = "hostfunc.io" },
+  # Custom domains (Cloudflare for SaaS): onboarded custom hostnames in the
+  # hostfunc.app SaaS zone are served by this worker via the wildcard route.
+  { pattern = "*/*", zone_name = "hostfunc.app" },
 ]
 
 [env.production.observability.logs]
@@ -87,6 +102,10 @@ id = "REPLACE_WITH_PROD_FN_INDEX_KV_ID"
 [[env.production.kv_namespaces]]
 binding = "EGRESS_COUNTERS"
 id = "REPLACE_WITH_PROD_EGRESS_COUNTERS_KV_ID"
+
+[[env.production.kv_namespaces]]
+binding = "DOMAIN_INDEX"
+id = "REPLACE_WITH_PROD_DOMAIN_INDEX_KV_ID"
 
 [[env.production.dispatch_namespaces]]
 binding = "DISPATCHER"

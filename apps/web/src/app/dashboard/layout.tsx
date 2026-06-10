@@ -31,6 +31,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         id: schema.organization.id,
         name: schema.organization.name,
         slug: schema.organization.slug,
+        logo: schema.organization.logo,
       },
     })
     .from(schema.member)
@@ -58,6 +59,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     id: membership.organization.id,
     name: membership.organization.name,
     slug: membership.organization.slug,
+    logo: membership.organization.logo,
     role: membership.role,
     ownerName: ownerByOrgId.get(membership.organizationId) ?? membership.organization.name,
     isShared: membership.role !== "owner",

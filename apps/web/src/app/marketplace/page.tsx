@@ -1,8 +1,8 @@
-import { CodePreview } from "@/components/marketing/code-preview";
+import { Logo } from "@/components/brand/logo";
 import { CommunityFunctionCard } from "@/components/marketplace/community-function-card";
+import { FeaturedTemplates } from "@/components/marketplace/featured-templates";
 import { MarketplaceFilters } from "@/components/marketplace/marketplace-filters";
 import type { MarketplaceView } from "@/components/marketplace/search-params";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { assertMarketingContent, marketingContent } from "@/lib/marketing-content";
 import { getOptionalSession } from "@/lib/session";
@@ -11,7 +11,7 @@ import {
   type MarketplaceSort,
   searchMarketplaceFunctions,
 } from "@/server/functions";
-import { ArrowRight, ArrowUpRight, Boxes, Hexagon, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Boxes } from "lucide-react";
 import Link from "next/link";
 
 const MARKETPLACE_SORTS: MarketplaceSort[] = ["featured", "trending", "recent", "stars", "forks"];
@@ -44,7 +44,6 @@ export default async function MarketplacePage({
     limit: 12,
     ...(session?.user.id ? { userId: session.user.id } : {}),
   });
-  const featuredTemplates = marketingContent.templates.slice(0, 4);
 
   return (
     <main className="relative min-h-screen bg-[var(--color-ink)] text-[var(--color-bone)]">
@@ -53,8 +52,7 @@ export default async function MarketplacePage({
       <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
         <div className="flex w-full items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
-            <Hexagon className="size-5 text-[var(--color-amber)]" strokeWidth={1.5} />
-            <span className="font-display text-xl text-[var(--color-bone)]">hostfunc</span>
+            <Logo wordmarkClassName="text-xl" />
           </Link>
 
           <nav className="hidden items-center gap-7 md:flex">
@@ -217,66 +215,7 @@ export default async function MarketplacePage({
             )}
           </section>
 
-          <section className="space-y-8">
-            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-              <div>
-                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-[var(--color-amber)]">
-                  <Sparkles className="size-3.5" />
-                  Official Templates
-                </div>
-                <h2 className="mt-3 font-display text-4xl tracking-tight text-[var(--color-bone)]">
-                  Curated starting points
-                </h2>
-              </div>
-              <Button
-                asChild
-                variant="ghost"
-                className="rounded-full text-[var(--color-bone-muted)] hover:bg-white/[0.04] hover:text-[var(--color-bone)]"
-              >
-                <Link href={primaryHref}>
-                  Open guided creator
-                  <ArrowRight className="size-4" />
-                </Link>
-              </Button>
-            </div>
-            <div className="grid gap-6 lg:grid-cols-4">
-              {featuredTemplates.map((template) => (
-                <article
-                  key={template.templateId}
-                  className="flex h-full flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-ink-elevated)]/70 p-5 transition-all hover:border-[var(--color-amber)]/35 hover:bg-white/[0.04]"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-2xl">{template.icon}</span>
-                    <Badge className="border-[var(--color-border)] bg-white/[0.04] text-[var(--color-bone-faint)]">
-                      Official
-                    </Badge>
-                  </div>
-                  <h3 className="mt-4 font-display text-2xl text-[var(--color-bone)]">
-                    {template.name}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[var(--color-bone-muted)]">
-                    {template.description}
-                  </p>
-                  <CodePreview
-                    code={template.snippet}
-                    compact
-                    className="mb-4 mt-4 min-h-[220px]"
-                  />
-                  <Button
-                    asChild
-                    size="sm"
-                    className="mt-auto w-full rounded-full bg-[var(--color-amber)] text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
-                  >
-                    <Link
-                      href={session ? `/dashboard/new?template=${template.templateId}` : "/login"}
-                    >
-                      Use template
-                    </Link>
-                  </Button>
-                </article>
-              ))}
-            </div>
-          </section>
+          <FeaturedTemplates signedIn={Boolean(session)} />
         </div>
       </section>
 
@@ -307,8 +246,7 @@ export default async function MarketplacePage({
         <div className="w-full px-6">
           <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
             <div className="flex items-center gap-2">
-              <Hexagon className="size-5 text-[var(--color-bone-faint)]" strokeWidth={1.5} />
-              <span className="font-display text-lg text-[var(--color-bone-muted)]">hostfunc</span>
+              <Logo tone="muted" wordmarkClassName="text-lg text-[var(--color-bone-muted)]" />
               <span className="ml-3 text-xs text-[var(--color-bone-faint)]">
                 © {new Date().getFullYear()}
               </span>

@@ -8,10 +8,10 @@ import { Toaster } from "sonner"; // Or whatever toaster you are using
 // React 19 warns about script tags inside components.
 // This intercepts the false-positive warning in development.
 if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
-  const orig = console.error;
+  const origError = console.error;
   console.error = (...args: unknown[]) => {
     if (typeof args[0] === "string" && args[0].includes("Encountered a script tag")) return;
-    orig.apply(console, args);
+    origError.apply(console, args);
   };
 }
 

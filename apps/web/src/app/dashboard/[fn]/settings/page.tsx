@@ -17,7 +17,6 @@ import {
   getFunctionMarketplaceProfileForOrg,
 } from "@/server/functions";
 import { getEffectivePlan } from "@/server/plans";
-import { FileCode2, Globe, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -26,6 +25,8 @@ import {
   updateFunctionSlugStateAction,
   updateFunctionVisibilityStateAction,
 } from "../actions";
+import { DeleteFunctionCard } from "./delete-function-card";
+import { FunctionLogoCard } from "./function-logo-card";
 import { MarketplaceReadmeEditor } from "./marketplace-readme-editor";
 
 export default async function GeneralFunctionSettingsPage({
@@ -49,7 +50,7 @@ export default async function GeneralFunctionSettingsPage({
       <div className="flex flex-col justify-between gap-6 border-b border-[var(--color-border)] pb-6 md:flex-row md:items-center">
         <div>
           <h3 className="flex items-center gap-2 font-display text-4xl tracking-tight text-[var(--color-bone)]">
-            Function Settings <ShieldCheck className="h-6 w-6 text-[var(--color-amber)]" />
+            Function Settings
           </h3>
           <p className="mt-2 max-w-xl leading-relaxed text-[var(--color-bone-muted)]">
             Manage name, description, and safety controls for this function.
@@ -61,7 +62,7 @@ export default async function GeneralFunctionSettingsPage({
         <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/70 shadow-xl">
           <SettingsCardHeader>
             <SettingsCardTitle className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-[var(--color-amber)]" />
+              {/* <Globe className="h-4 w-4 text-[var(--color-amber)]" /> */}
               Function Visibility
             </SettingsCardTitle>
             <SettingsCardDescription>
@@ -121,7 +122,7 @@ export default async function GeneralFunctionSettingsPage({
         <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/70 shadow-xl">
           <SettingsCardHeader>
             <SettingsCardTitle className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-[var(--color-amber)]" />
+              {/* <Sparkles className="h-4 w-4 text-[var(--color-amber)]" /> */}
               Marketplace Profile
             </SettingsCardTitle>
             <SettingsCardDescription>
@@ -185,7 +186,7 @@ export default async function GeneralFunctionSettingsPage({
         <SettingsCard className="rounded-2xl bg-[var(--color-ink-elevated)]/70 shadow-xl">
           <SettingsCardHeader>
             <SettingsCardTitle className="flex items-center gap-2">
-              <FileCode2 className="h-4 w-4 text-[var(--color-amber)]" />
+              {/* <FileCode2 className="h-4 w-4 text-[var(--color-amber)]" /> */}
               Function Name
             </SettingsCardTitle>
             <SettingsCardDescription>
@@ -243,17 +244,9 @@ export default async function GeneralFunctionSettingsPage({
           </SettingsForm>
         </SettingsCard>
 
-        <SettingsCard className="rounded-2xl border-red-500/25 bg-red-500/10 shadow-xl">
-          <SettingsCardHeader>
-            <SettingsCardTitle className="text-red-300">Danger Zone</SettingsCardTitle>
-            <SettingsCardDescription className="text-red-300/85">
-              Permanently delete this function and all its executions. This cannot be undone.
-            </SettingsCardDescription>
-          </SettingsCardHeader>
-          <SettingsCardFooter className="justify-end border-red-500/30 bg-red-500/15">
-            <Button variant="destructive">Delete Function</Button>
-          </SettingsCardFooter>
-        </SettingsCard>
+        <FunctionLogoCard fnId={fn.id} fnName={fn.slug} initialLogo={fn.logo} />
+
+        <DeleteFunctionCard fnId={fn.id} fnName={fn.slug} />
       </section>
     </div>
   );
