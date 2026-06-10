@@ -56,7 +56,9 @@ export const docsSections: DocsSection[] = [
       { name: "Triggers", href: "/docs/triggers" },
       { name: "Websites", href: "/docs/websites" },
       { name: "Custom Domains", href: "/docs/custom-domains" },
+      { name: "Marketplace", href: "/docs/marketplace" },
       { name: "Executions", href: "/docs/executions" },
+      { name: "Limits and Plans", href: "/docs/limits" },
     ],
   },
   {
@@ -287,14 +289,114 @@ curl https://run.hostfunc.io/run/acme/site`,
         ],
       },
       {
-        title: "5. Remove a domain",
+        title: "5. Receive email on your domain",
         description:
-          "Removing a domain stops routing it, deletes the hostname from Cloudflare, and frees it so it can be claimed again. Your website keeps serving on its `run.hostfunc.io` URL.",
+          "Once a domain is live, the function's email trigger can use it: regenerate the inbound address on the function's Triggers page and it is issued on your domain (e.g. `site-acme-x7q2w3e4@www.example.com`). An Inbound email panel then appears on the Domains screen with the MX and TXT records to add.",
+        bullets: [
+          "Add the MX/TXT rows exactly as shown (in Namecheap: Domain List → Manage → Advanced DNS). The MX record must have the lowest priority value on that name.",
+          "The panel polls verification automatically; once it shows “Receiving”, mail to the generated address triggers your function.",
+          "Inbound email DNS is separate from the website CNAME — removing one doesn't affect the other until the domain itself is removed.",
+        ],
+      },
+      {
+        title: "6. Remove a domain",
+        description:
+          "Removing a domain stops routing it, deletes the hostname from Cloudflare (and its inbound-email registration), and frees it so it can be claimed again. Your website keeps serving on its `run.hostfunc.io` URL.",
+      },
+      {
+        title: "Limits and validation",
+        description: "Guardrails that apply when adding domains.",
+        bullets: [
+          "Up to 20 custom domains per workspace.",
+          "Hostnames must be ASCII (`a-z`, digits, hyphens); internationalized/punycode (`xn--`) names aren't supported yet.",
+          "`hostfunc.io`, `hostfunc.app`, and `hostfunc.dev` names are reserved.",
+        ],
       },
     ],
     related: [
       { label: "Websites", href: "/docs/websites" },
+      { label: "Triggers", href: "/docs/triggers" },
       { label: "Functions", href: "/docs/functions" },
+      { label: "Security", href: "/docs/security" },
+    ],
+  },
+  "/docs/marketplace": {
+    title: "Marketplace",
+    summary:
+      "Publish a function to the public marketplace so anyone can discover, star, discuss, and fork it. Forks copy the code into the forker's workspace with lineage back to the original.",
+    highlights: [
+      "Publishing needs a public function plus a marketplace profile (category, description, readme).",
+      "Categories: utilities, ai, data, integrations, notifications, webhooks, automation.",
+      "Stars, threaded comments, and fork counts appear on every listing.",
+      "Forking copies the latest deployed code into your workspace — secrets are never copied.",
+    ],
+    guideSections: [
+      {
+        title: "Publish a function",
+        description:
+          "Set the function's visibility to public, then complete the marketplace profile from its settings: pick a category, write a short description, and edit the readme (Markdown with a live preview).",
+        bullets: [
+          "The listing shows a code preview of the deployed version, your workspace name, and the function logo.",
+          "Unpublishing (or making the function private) removes the listing; existing forks keep working.",
+        ],
+      },
+      {
+        title: "Stars, comments, and forks",
+        description:
+          "Signed-in users can star a listing, leave threaded comments, and fork the function into their own workspace.",
+        bullets: [
+          "Forks record their source, and the original listing shows its fork count.",
+          "A fork copies code only — you configure your own secrets, triggers, and domains.",
+        ],
+      },
+    ],
+    related: [
+      { label: "Functions", href: "/docs/functions" },
+      { label: "Getting Started", href: "/docs/getting-started" },
+      { label: "Security", href: "/docs/security" },
+    ],
+  },
+  "/docs/limits": {
+    title: "Limits and Plans",
+    summary:
+      "Per-plan execution limits and platform-wide request guardrails. Limits are enforced at registration time by the control plane and at the edge by the runtime.",
+    highlights: [
+      "Request bodies are capped at 1 MiB — larger requests get `413 payload_too_large`.",
+      "Run endpoints accept JSON object bodies (or empty); arrays and primitives are ignored.",
+      "Daily execution and monthly wall-time quotas return `429` with a specific error code when exceeded.",
+      "Nested `executeFunction` calls are bounded by per-plan call depth to stop runaway recursion.",
+    ],
+    guideSections: [
+      {
+        title: "Plan limits",
+        description: "Current per-plan limits (Free / Pro / Team).",
+        bullets: [
+          "Functions per workspace: 3 / 2,000 / 20,000",
+          "Executions per day: 100 / 2M / 20M",
+          "Wall time per month: 5 min / 500 h / 2,000 h",
+          "Wall time per execution: 10 s / 120 s / 600 s",
+          "CPU time per execution: 1 s / 20 s / 120 s",
+          "Memory: 128 MB / 512 MB / 2 GB",
+          "Egress per execution: 1 MB / 20 MB / 200 MB",
+          "Subrequests per execution: 20 / 200 / 2,000",
+          "Nested call depth: 3 / 20 / 40",
+          "Secrets per function: 5 / 100 / 400",
+          "Team members: 1 / 6 / 50",
+        ],
+      },
+      {
+        title: "Request guardrails",
+        description: "Applied to every `/run/:orgSlug/:fnSlug` request regardless of plan.",
+        bullets: [
+          "Inbound body limit: 1 MiB → `413 payload_too_large` when exceeded.",
+          "HTTP triggers with `requireAuth` enabled need `Authorization: Bearer <workspace API token>` (paid plans).",
+          "Responses include `x-hostfunc-exec-id` and `x-hostfunc-wall-ms` headers for tracing.",
+        ],
+      },
+    ],
+    related: [
+      { label: "Functions", href: "/docs/functions" },
+      { label: "Executions", href: "/docs/executions" },
       { label: "Security", href: "/docs/security" },
     ],
   },
@@ -307,6 +409,26 @@ curl https://run.hostfunc.io/run/acme/site`,
       "SDK composition calls (`fn.executeFunction`) preserve execution lineage.",
       "Secret access is runtime-mediated, never hardcoded in function source.",
       "Call depth is enforced to prevent recursive loops.",
+    ],
+    guideSections: [
+      {
+        title: "Logos",
+        description:
+          "Give a function (or your workspace) a logo from its settings page. Logos show up in the dashboard and on marketplace listings.",
+        bullets: [
+          "Formats: PNG, JPEG, WebP, or SVG — validated by content, not just file extension.",
+          "Up to 2 MB. SVGs are checked for active content (scripts, event handlers, external references) and rejected if unsafe.",
+        ],
+      },
+      {
+        title: "Deleting a function",
+        description:
+          "Delete from Settings after typing the function name to confirm. Deletion is permanent — there is no undo.",
+        bullets: [
+          "Removes all versions, drafts, triggers, secrets, execution history, assets, and marketplace data (stars, comments, forks keep their lineage records on the source side).",
+          "Deployed workers and cached routes are cleaned up best-effort in the background.",
+        ],
+      },
     ],
     sdkGuide: {
       quickstart:
@@ -429,7 +551,7 @@ export async function main(input: { customerId: string }) {
         bullets: [
           "http: `{ requireAuth: boolean }` (defaults to false for new functions)",
           "cron: `{ schedule: string, timezone?: string }`",
-          "email: `{ address: string, allowlist?: string[] }` — `address` is generated by the platform",
+          "email: `{ address: string, allowlist?: string[] }` — `address` is platform-generated as `{fn}-{workspace}-{random}@…` and can be regenerated at any time",
           "mcp: `{ toolName: string, description: string }`",
         ],
       },
@@ -454,11 +576,27 @@ export async function main(input: { customerId: string }) {
       {
         title: "Email trigger",
         description:
-          "Inbound adapters POST to the control plane; matching triggers invoke the user worker with `email(data)` and the payload shape below.",
+          "Every function can have one generated inbound address. Mail sent to it invokes your exported `email(data)` handler with the payload shape below.",
         bullets: [
-          "Dashboard saves allocate `fn-*@<HOSTFUNC_MAIL_DOMAIN>`; optional allowlist restricts senders.",
-          "User code exports `export async function email(data)`; `data.email` includes `to`, `from`, `rawSize`, `timestamp`, and optional `subject` / `body`.",
+          "Address format: `{function-slug}-{workspace-slug}-{random}@hostfunc.io` (slugs truncated to 20 chars, 8-char random suffix).",
+          "If the function has an active custom domain with verified inbound email, new addresses are generated on that domain instead — see Custom Domains → Receive email on your domain.",
+          "Regenerating replaces the address in place: the old address stops matching immediately.",
+          "Optional sender allowlist — empty accepts mail from anyone; otherwise only listed senders trigger the function (case-insensitive).",
+          "User code exports `export async function email(data)`; `data.email` includes `to`, `from`, `rawSize`, `timestamp` (ISO 8601), and optional `subject` / `body`.",
+          'Local development is fully mocked: the dispatch payload is logged to the dev server console, and a dev-only "Send test email" button on the triggers page exercises the whole path without DNS or a mail provider.',
         ],
+        code: `export async function email(data: {
+  email: {
+    from: string;
+    to: string;
+    rawSize: number;
+    timestamp: string;
+    subject?: string;
+    body?: string;
+  };
+}) {
+  return { received: data.email.subject ?? "(no subject)" };
+}`,
       },
       {
         title: "MCP-related triggering",
@@ -534,8 +672,9 @@ export async function main(input: { customerId: string }) {
     highlights: [
       "Dashboard actions require an active session and organization context.",
       "CLI/MCP automation uses bearer API tokens validated against hashed token records.",
-      "Internal runtime/control routes use shared bearer env tokens and execution callback verification.",
+      "Internal runtime/control routes use shared bearer env tokens (constant-time compared) and execution callback verification.",
       "MCP supports optional origin allowlisting and per-token rate limiting.",
+      "Run requests are capped at 1 MiB bodies; secret values are never returned by any API — list endpoints expose key names only.",
     ],
     guideSections: [
       {
@@ -622,6 +761,21 @@ code --install-extension hostfunc.hostfunc-vscode
           "Open in Dashboard jumps to the function's editor on the web.",
           "Refresh re-loads the function list for the active workspace.",
         ],
+      },
+      {
+        title: "4. Inspect a function",
+        description: "Expand a function node to drill into its state without leaving the editor.",
+        bullets: [
+          "Triggers — each configured trigger with its kind and status.",
+          "Versions — recent deploys with size and status.",
+          "Executions — recent runs with status and timing; copy an execution id for `hostfunc logs`.",
+          "Secrets — configured key names (values are never shown or transferred).",
+        ],
+      },
+      {
+        title: "5. Local file sync",
+        description:
+          "Pull a function's draft into a local folder and push edits back. Saving the project's entry file pushes the draft automatically (quiet no-op for unrelated saves or signed-out sessions).",
       },
       {
         title: "Configuration",

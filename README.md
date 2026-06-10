@@ -64,7 +64,11 @@ We've designed **hostfunc** to give you exactly what you need to build powerful,
 | :--- | :--- |
 | ⚡️ **Instant Deployments** | Push TypeScript files and watch them go globally live in milliseconds. |
 | 🪝 **Multiple Triggers** | Execute your code via HTTP endpoints, recurring `cron` schedules, inbound emails, and AI (MCP) tool bindings. |
+| 📬 **Email Trigger Addresses** | Every function gets a generated inbound address (`my-fn-my-team-x7q2w3e4@hostfunc.io`) with a sender allowlist and one-click regeneration — email it and your function runs. |
 | 🌐 **Host Websites** | Attach an `index.html` (plus CSS, JS, and images) and hostfunc serves it as a live web page at your function's URL — static sites and dynamic pages, not just JSON APIs. |
+| 🔗 **Custom Domains** | Point your own domain at any deployed website — SSL provisioned and renewed automatically, and inbound trigger email can ride the same domain. |
+| 🛍️ **Marketplace** | Publish functions publicly with categories, readmes, stars, threaded comments, and one-click forking into your own workspace. |
+| 🧰 **CLI & VS Code Extension** | Browser-based device-flow sign-in, deploy/run/logs from the terminal, and an editor sidebar with triggers, versions, executions, and secret keys per function. |
 | 🔐 **Encrypted Secret Vault** | Envelope-encrypted environment variables injected safely at runtime — never exposed in your logs or storage. |
 | 🧩 **Composable Invocation** | Functions can easily call other functions via the type-safe `fn.executeFunction()` API with full loop detection built-in. |
 | 🔬 **Deep Observability** | Native per-execution metrics: wall time, CPU time, memory peak, egress bytes, and structured log streaming. |
