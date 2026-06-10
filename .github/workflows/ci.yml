@@ -110,7 +110,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @hostfunc/cli build
+      # `cli...` builds workspace deps (api-client) first; the CLI bundles them into dist/bin.js.
+      - run: pnpm --filter @hostfunc/cli... build
       - run: pnpm --dir ./packages/cli pack --pack-destination ../../tmp-pack
       - run: npm install -g ./tmp-pack/*.tgz
       - run: hostfunc help

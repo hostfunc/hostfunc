@@ -287,16 +287,19 @@ importers:
 
   packages/cli:
     dependencies:
-      '@hostfunc/api-client':
-        specifier: workspace:*
-        version: link:../api-client
       zod:
         specifier: ^3.24.1
         version: 3.25.76
     devDependencies:
+      '@hostfunc/api-client':
+        specifier: workspace:*
+        version: link:../api-client
       '@types/node':
         specifier: ^22.10.5
         version: 22.19.17
+      esbuild:
+        specifier: ^0.28.0
+        version: 0.28.0
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
