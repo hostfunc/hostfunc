@@ -79,7 +79,20 @@ test("classifyAsset accepts known font mimes", () => {
 
 test("classifyAsset rejects unsupported mimes", () => {
   assert.throws(() => classifyAsset("danger.exe", "application/x-msdownload"), AssetError);
-  assert.throws(() => classifyAsset("script.js", "application/javascript"), AssetError);
+  assert.throws(() => classifyAsset("archive.zip", "application/zip"), AssetError);
+  assert.throws(() => classifyAsset("clip.mp4", "video/mp4"), AssetError);
+});
+
+test("classifyAsset accepts html, style, and script assets", () => {
+  assert.deepEqual(classifyAsset("index.html", ""), { kind: "html", mime: "text/html" });
+  assert.deepEqual(classifyAsset("styles/site.css", "text/css"), {
+    kind: "style",
+    mime: "text/css",
+  });
+  assert.deepEqual(classifyAsset("scripts/app.js", "application/javascript"), {
+    kind: "script",
+    mime: "text/javascript",
+  });
 });
 
 test("classifyAsset accepts text/markdown and text/plain via extension", () => {
