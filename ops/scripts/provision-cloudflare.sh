@@ -133,6 +133,7 @@ ensure_kv() {
 FN_INDEX_ID=$(ensure_kv "fn-index-$SUFFIX")
 EGRESS_COUNTERS_ID=$(ensure_kv "egress-counters-$SUFFIX")
 FN_ASSETS_ID=$(ensure_kv "fn-assets-$SUFFIX")
+DOMAIN_INDEX_ID=$(ensure_kv "domain-index-$SUFFIX")
 
 cat <<SUMMARY
 
@@ -146,12 +147,14 @@ KV namespace IDs:
   fn-index-$SUFFIX          : $FN_INDEX_ID
   egress-counters-$SUFFIX   : $EGRESS_COUNTERS_ID
   fn-assets-$SUFFIX         : $FN_ASSETS_ID
+  domain-index-$SUFFIX      : $DOMAIN_INDEX_ID
 
 Next steps:
 
 1. Replace the placeholders in apps/runtime/wrangler.toml under [env.$ENV_NAME]:
      FN_INDEX             id = "$FN_INDEX_ID"
      EGRESS_COUNTERS      id = "$EGRESS_COUNTERS_ID"
+     DOMAIN_INDEX         id = "$DOMAIN_INDEX_ID"
 
 2. Replace the placeholder in apps/outbound/wrangler.toml under [env.$ENV_NAME]:
      EGRESS_COUNTERS      id = "$EGRESS_COUNTERS_ID"
@@ -161,6 +164,7 @@ Next steps:
      CF_FN_INDEX_KV_ID         = $FN_INDEX_ID
      CF_EGRESS_COUNTERS_KV_ID  = $EGRESS_COUNTERS_ID
      CF_FN_ASSETS_KV_ID        = $FN_ASSETS_ID
+     CF_DOMAIN_INDEX_KV_ID     = $DOMAIN_INDEX_ID
 
 4. Generate a scoped API token at https://dash.cloudflare.com/profile/api-tokens with:
      - Account / Workers Scripts          : Edit

@@ -1,0 +1,39 @@
+name: Provision Cloudflare
+
+# Manually-triggered, idempotent provisioning of per-environment Cloudflare
+# resources (dispatch namespace + KV namespaces) via
+# ops/scripts/provision-cloudflare.sh. Prints the namespace IDs to paste into
+# the wrangler configs in place of REPLACE_WITH_*_KV_ID.
+#
+# Uses the same GitHub Environment secrets as deploy-workers.yml:
+#   <env>.CF_API_TOKEN, <env>.CF_ACCOUNT_ID
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to provision
+        type: choice
+        required: true
+        default: staging
+        options:
+          - staging
+          - production
+
+jobs:
+  provision:
+    name: Provision ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: bash ops/scripts/provision-cloudflare.sh ${{ inputs.environment }}
