@@ -1,5 +1,6 @@
 import { env } from "@/lib/env";
 import { redis } from "@/lib/redis";
+import { isAuthorizedBearer } from "@/lib/timing-safe";
 import { db, genId, schema } from "@hostfunc/db";
 import { eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
@@ -8,9 +9,7 @@ export const runtime = "nodejs";
 
 function isAuthorized(req: NextRequest): boolean {
   const auth = req.headers.get("authorization");
-  return (
-    auth === `Bearer ${env.RUNTIME_LOOKUP_TOKEN}` || auth === `Bearer ${env.RUNTIME_INGEST_TOKEN}`
-  );
+  return isAuthorizedBearer(auth, [env.RUNTIME_LOOKUP_TOKEN, env.RUNTIME_INGEST_TOKEN]);
 }
 
 export async function GET(req: NextRequest) {

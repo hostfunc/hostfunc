@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { isAuthorizedBearer } from "@/lib/timing-safe";
 import { authenticateApiToken } from "@/server/api-tokens";
 import { db, schema } from "@hostfunc/db";
 import { and, eq } from "drizzle-orm";
@@ -11,7 +12,7 @@ export const runtime = "nodejs";
  */
 export async function POST(req: NextRequest) {
   const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${env.RUNTIME_LOOKUP_TOKEN}`) {
+  if (!isAuthorizedBearer(auth, [env.RUNTIME_LOOKUP_TOKEN])) {
     return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 

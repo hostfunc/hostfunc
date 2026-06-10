@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { isAuthorizedBearer } from "@/lib/timing-safe";
 import { db, schema } from "@hostfunc/db";
 import { and, eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
@@ -18,7 +19,7 @@ interface CronCandidate {
 }
 
 export async function GET(req: NextRequest) {
-  if (req.headers.get("authorization") !== `Bearer ${env.TRIGGER_CONTROL_TOKEN}`) {
+  if (!isAuthorizedBearer(req.headers.get("authorization"), [env.TRIGGER_CONTROL_TOKEN])) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
   const minuteIso = new Date().toISOString().slice(0, 16);

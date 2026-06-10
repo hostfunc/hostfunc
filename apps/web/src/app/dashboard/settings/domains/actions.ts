@@ -1,5 +1,6 @@
 "use server";
 
+import { MAX_CUSTOM_DOMAINS_PER_ORG, domainInputSchema } from "@/lib/custom-domain-hostname";
 import { requireOrgPermission } from "@/lib/session";
 import {
   CustomDomainNotConfiguredError,
@@ -11,7 +12,7 @@ import {
 } from "@/server/custom-domains";
 import type { DcvRecord } from "@hostfunc/db";
 import { db, genId, schema } from "@hostfunc/db";
-import { and, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -29,27 +30,6 @@ export type DomainActionResult = { ok: true } | { ok: false; error: string };
 export type AddDomainResult =
   | { ok: true; domain: ProvisionedDomain }
   | { ok: false; error: string };
-
-/** Hostnames hostfunc itself owns — never allow a user to claim one. */
-const RESERVED_SUFFIXES = ["hostfunc.app", "hostfunc.io", "hostfunc.dev"];
-
-const hostnameSchema = z.object({
-  hostname: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .min(4, "Enter a valid domain")
-    .max(253, "Domain is too long")
-    .regex(
-      /^(?!-)[a-z0-9-]{1,63}(?<!-)(\.(?!-)[a-z0-9-]{1,63}(?<!-))+$/,
-      "Enter a bare domain like www.example.com — no http:// or paths",
-    )
-    .refine(
-      (h) => !RESERVED_SUFFIXES.some((s) => h === s || h.endsWith(`.${s}`)),
-      "That domain is reserved by hostfunc",
-    ),
-  fnId: z.string().min(1),
-});
 
 const idSchema = z.object({ domainId: z.string().min(1) });
 
@@ -72,7 +52,7 @@ function asErrorMessage(error: unknown): string {
 }
 
 export async function addDomainAction(input: unknown): Promise<AddDomainResult> {
-  const parsed = hostnameSchema.safeParse(input);
+  const parsed = domainInputSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid domain" };
   }
@@ -80,6 +60,17 @@ export async function addDomainAction(input: unknown): Promise<AddDomainResult> 
 
   try {
     const { orgId, session } = await requireOrgPermission("manage_workspace_settings");
+
+    const [domainCount] = await db
+      .select({ value: count() })
+      .from(schema.customDomain)
+      .where(eq(schema.customDomain.orgId, orgId));
+    if ((domainCount?.value ?? 0) >= MAX_CUSTOM_DOMAINS_PER_ORG) {
+      return {
+        ok: false,
+        error: `This workspace has reached its limit of ${MAX_CUSTOM_DOMAINS_PER_ORG} custom domains.`,
+      };
+    }
 
     // The target must be a deployed function in this workspace.
     const target = await db.query.fn.findFirst({

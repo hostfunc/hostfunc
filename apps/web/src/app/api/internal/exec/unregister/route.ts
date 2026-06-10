@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { isAuthorizedBearer } from "@/lib/timing-safe";
 import { unregisterExecution } from "@/server/exec-registry";
 import type { NextRequest } from "next/server";
 
@@ -6,7 +7,7 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${env.RUNTIME_LOOKUP_TOKEN}`) {
+  if (!isAuthorizedBearer(auth, [env.RUNTIME_LOOKUP_TOKEN])) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 

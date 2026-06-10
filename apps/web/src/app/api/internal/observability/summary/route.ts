@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { isAuthorizedBearer } from "@/lib/timing-safe";
 import { db, schema, sql } from "@hostfunc/db";
 import { and, eq, gte, isNotNull } from "drizzle-orm";
 import type { NextRequest } from "next/server";
@@ -7,7 +8,7 @@ export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${env.TRIGGER_CONTROL_TOKEN}`) {
+  if (!isAuthorizedBearer(auth, [env.TRIGGER_CONTROL_TOKEN])) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 

@@ -1,11 +1,12 @@
 import { env } from "@/lib/env";
+import { isAuthorizedBearer } from "@/lib/timing-safe";
 import { db, genId, schema } from "@hostfunc/db";
 import type { NextRequest } from "next/server";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
-  if (req.headers.get("authorization") !== `Bearer ${env.TRIGGER_CONTROL_TOKEN}`) {
+  if (!isAuthorizedBearer(req.headers.get("authorization"), [env.TRIGGER_CONTROL_TOKEN])) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 

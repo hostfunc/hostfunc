@@ -8,6 +8,7 @@ import {
   isAcceptedLogoMime,
   isHttpLogo,
 } from "@/lib/logo";
+import { findUnsafeSvgPattern, isSvgDocument } from "@/lib/safe-svg";
 import { type SupabaseClient, createClient } from "@supabase/supabase-js";
 import { ulid } from "ulid";
 
@@ -105,30 +106,14 @@ function sniffRasterMime(bytes: Uint8Array): "image/png" | "image/jpeg" | "image
   return null;
 }
 
-/**
- * Validates that `text` is a real SVG and contains no active content. A logo
- * SVG never legitimately carries scripts, so unsafe markup is rejected outright
- * rather than sanitized (no heavyweight sanitizer dependency required).
- */
+/** Validates that `text` is a real SVG and contains no active content. */
 function assertSafeSvg(text: string): void {
-  const lower = text.toLowerCase();
-  if (!lower.includes("<svg")) {
+  if (!isSvgDocument(text)) {
     throw new LogoStorageError("invalid_type", "File is not a valid SVG image.");
   }
-  const unsafe: Array<{ test: () => boolean; label: string }> = [
-    { test: () => lower.includes("<script"), label: "embedded scripts" },
-    { test: () => lower.includes("<foreignobject"), label: "foreign objects" },
-    { test: () => lower.includes("javascript:"), label: "javascript: URIs" },
-    { test: () => lower.includes("<!entity"), label: "XML entities" },
-    { test: () => /\son[a-z]+\s*=/i.test(text), label: "event handlers" },
-  ];
-  for (const { test, label } of unsafe) {
-    if (test()) {
-      throw new LogoStorageError(
-        "unsafe_svg",
-        `SVG contains ${label} and cannot be used as a logo.`,
-      );
-    }
+  const label = findUnsafeSvgPattern(text);
+  if (label) {
+    throw new LogoStorageError("unsafe_svg", `SVG contains ${label} and cannot be used as a logo.`);
   }
 }
 
