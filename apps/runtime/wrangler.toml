@@ -64,7 +64,7 @@ id = "d31c8394b3fe477f910b3782f5d8f5f0"
 
 [[env.staging.kv_namespaces]]
 binding = "DOMAIN_INDEX"
-id = "REPLACE_WITH_STAGING_DOMAIN_INDEX_KV_ID"
+id = "1f4883ca6f8a4dfbbd2cd916677dee5e"
 
 [[env.staging.dispatch_namespaces]]
 binding = "DISPATCHER"
