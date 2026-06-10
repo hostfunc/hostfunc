@@ -23,7 +23,6 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -37,12 +36,6 @@ import { LineageBuilder } from "@/components/marketing/lineage-builder";
 import { TemplateMarquee } from "@/components/marketing/template-marquee";
 import { TerminalDemo } from "@/components/marketing/terminal-demo";
 import { TriggerShowcase } from "@/components/marketing/trigger-showcase";
-
-// Three.js needs SSR off
-const HeroScene = dynamic(
-  () => import("@/components/marketing/hero-scene").then((m) => m.HeroScene),
-  { ssr: false, loading: () => null },
-);
 
 const ICON_MAP: Record<string, typeof Code> = {
   code: Code,
@@ -148,12 +141,11 @@ export default function HomePage() {
       </header>
 
       {/* ─────────────────────────────────── HERO ─────────────────────────────────── */}
-      <section className="relative isolate overflow-hidden">
+      <section className="relative overflow-hidden">
         <div className="gradient-radial-amber absolute inset-x-0 top-0 -z-10 h-[600px]" />
 
-        <div className="mx-auto grid max-w-[1800px] grid-cols-1 items-center gap-12 px-6 py-20 lg:grid-cols-[2fr_3fr] lg:gap-12 lg:py-28">
-          {/* LEFT — copy + CTAs */}
-          <div className="flex flex-col items-start text-left">
+        <div className="mx-auto max-w-7xl px-6 py-32 lg:py-40">
+          <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-ink-overlay)] px-3 py-1 text-xs text-[var(--color-bone-muted)] backdrop-blur-md">
               <span className="relative flex size-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--color-amber)] opacity-60" />
@@ -162,7 +154,7 @@ export default function HomePage() {
               {marketingContent.badge}
             </div>
 
-            <h1 className="mt-8 text-balance font-display text-5xl leading-[1.05] tracking-tight text-[var(--color-bone)] md:text-6xl">
+            <h1 className="mt-10 text-balance font-display text-5xl leading-[1.02] tracking-tight text-[var(--color-bone)] md:text-7xl lg:text-[88px]">
               {marketingContent.headlineLead}{" "}
               <em className="not-italic text-[var(--color-amber)]">
                 {marketingContent.headlineEmphasis}
@@ -172,11 +164,11 @@ export default function HomePage() {
               </span>
             </h1>
 
-            <p className="mt-6 max-w-xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
+            <p className="mt-8 max-w-2xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
               {marketingContent.subheadline}
             </p>
 
-            <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+            <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
               <Button
                 asChild
                 size="lg"
@@ -200,7 +192,7 @@ export default function HomePage() {
             </div>
 
             {/* Trust line */}
-            <div className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs uppercase tracking-widest text-[var(--color-bone-faint)]">
+            <div className="mt-16 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs uppercase tracking-widest text-[var(--color-bone-faint)]">
               {marketingContent.trustItems.map((item, i) => (
                 <span key={item.label} className="flex items-center gap-3">
                   {i > 0 && <span className="text-[var(--color-border-strong)]">·</span>}
@@ -212,16 +204,18 @@ export default function HomePage() {
               ))}
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* RIGHT — 3D scene */}
-          <div
-            aria-hidden="true"
-            className="relative h-[420px] w-full sm:h-[560px] lg:h-[720px] lg:-my-12"
-          >
-            <div className="absolute inset-0">
-              <HeroScene />
-            </div>
-          </div>
+      {/* ────────────────────────────── HERO EDITOR ───────────────────────────── */}
+      <section className="relative px-6 pb-24">
+        <div className="mx-auto max-w-5xl">
+          <AnimatedEditor
+            filename={marketingContent.heroEditor.filename}
+            code={marketingContent.heroEditor.code}
+            speed={14}
+            autoStart
+          />
         </div>
       </section>
 
@@ -624,14 +618,6 @@ export default function HomePage() {
           <p className="mx-auto mt-6 max-w-xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
             {marketingContent.closer.body}
           </p>
-          <div className="mx-auto mt-12 max-w-2xl text-left">
-            <AnimatedEditor
-              filename={marketingContent.heroEditor.filename}
-              code={marketingContent.heroEditor.code}
-              speed={14}
-              autoStart
-            />
-          </div>
           <div className="mt-10 flex justify-center">
             <Button
               asChild

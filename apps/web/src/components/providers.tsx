@@ -13,15 +13,6 @@ if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
     if (typeof args[0] === "string" && args[0].includes("Encountered a script tag")) return;
     origError.apply(console, args);
   };
-
-  // @react-three/fiber 9.6.1 still uses `new THREE.Clock()` internally; three
-  // r183+ deprecates Clock in favor of Timer. Suppress the noise until fiber
-  // migrates upstream: https://github.com/pmndrs/react-three-fiber/issues
-  const origWarn = console.warn;
-  console.warn = (...args: unknown[]) => {
-    if (typeof args[0] === "string" && args[0].includes("THREE.Clock")) return;
-    origWarn.apply(console, args);
-  };
 }
 
 export function Providers({ children }: { children: ReactNode }) {

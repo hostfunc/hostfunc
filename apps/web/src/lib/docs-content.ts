@@ -627,7 +627,7 @@ code --install-extension hostfunc.hostfunc-vscode
         title: "Configuration",
         description: "Settings live under the `hostfunc` namespace.",
         bullets: [
-          "`hostfunc.baseUrl` — control-plane URL. Defaults to `https://hostfunc.dev`; set it to `http://localhost:3000` for local development.",
+          "`hostfunc.baseUrl` — control-plane URL. Defaults to `https://hostfunc.io`; set it to `http://localhost:3000` for local development.",
         ],
       },
     ],
@@ -655,10 +655,10 @@ code --install-extension hostfunc.hostfunc-vscode
         code: `npm install -g @hostfunc/cli
 
 # Browser sign-in (recommended) — prints a code, opens your browser
-hostfunc login --url https://hostfunc.dev
+hostfunc login --url https://hostfunc.io
 
 # CI / headless — use a workspace API token instead
-hostfunc login --token <api-token> --url https://hostfunc.dev`,
+hostfunc login --token <api-token> --url https://hostfunc.io`,
       },
       {
         title: "Project configuration",
