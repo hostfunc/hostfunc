@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
 import {
+  isInternalInvoke,
   isPlatformRunHost,
   matchRunPath,
   normalizeLookup,
@@ -119,4 +120,17 @@ test("resolveCustomHostTarget returns null for an unknown host or missing bindin
 
   const noBinding = {} as unknown as Parameters<typeof resolveCustomHostTarget>[0];
   await expect(resolveCustomHostTarget(noBinding, "www.example.com", "/")).resolves.toBeNull();
+});
+
+test("isInternalInvoke matches only the configured invoke token", async () => {
+  const env = {
+    RUNTIME_INVOKE_TOKEN: "invoke-tok",
+  } as unknown as Parameters<typeof isInternalInvoke>[1];
+
+  await expect(isInternalInvoke("Bearer invoke-tok", env)).resolves.toBe(true);
+  await expect(isInternalInvoke("Bearer wrong-tok", env)).resolves.toBe(false);
+  await expect(isInternalInvoke(null, env)).resolves.toBe(false);
+
+  const noToken = {} as unknown as Parameters<typeof isInternalInvoke>[1];
+  await expect(isInternalInvoke("Bearer invoke-tok", noToken)).resolves.toBe(false);
 });

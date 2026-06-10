@@ -1,10 +1,14 @@
 /// <reference types="@cloudflare/workers-types" />
 
+import { readBodyWithLimit, resolveMaxBodyBytes } from "./body-limit";
+import { isAuthorizedBearer } from "./timing-safe";
+
 interface Env {
   ENV: string;
   LOOKUP_API_URL?: string;
   LOOKUP_API_TOKEN?: string;
   RUNTIME_INVOKE_TOKEN?: string;
+  MAX_BODY_BYTES?: string;
   WORKERS_SUBDOMAIN?: string;
   RUNTIME_PUBLIC_URL?: string;
   FN_INDEX?: KVNamespace;
@@ -84,10 +88,8 @@ function stripHostfuncKeys(obj: Record<string, unknown> | null): Record<string, 
   return out;
 }
 
-function isInternalInvoke(authHeader: string | null, env: Env): boolean {
-  const token = env.RUNTIME_INVOKE_TOKEN;
-  if (!token || !authHeader) return false;
-  return authHeader === `Bearer ${token}`;
+export function isInternalInvoke(authHeader: string | null, env: Env): Promise<boolean> {
+  return isAuthorizedBearer(authHeader, env.RUNTIME_INVOKE_TOKEN);
 }
 
 export function normalizeLookup(lookup: FnLookup | FnLookupError): FnLookup | FnLookupError {
@@ -253,7 +255,18 @@ export default {
 
     let rawBody = "";
     if (METHODS_WITH_BODY.has(req.method)) {
-      rawBody = await req.text();
+      const maxBodyBytes = resolveMaxBodyBytes(env.MAX_BODY_BYTES);
+      const read = await readBodyWithLimit(req, maxBodyBytes);
+      if (!read.ok) {
+        return json(
+          {
+            error: "payload_too_large",
+            message: `Request body exceeds the ${maxBodyBytes}-byte limit.`,
+          },
+          413,
+        );
+      }
+      rawBody = read.text;
     }
     const parsedBody = parseJsonBody(rawBody);
     const authHeader = req.headers.get("authorization");
@@ -262,7 +275,7 @@ export default {
     let upstreamBody: unknown = stripHostfuncKeys(parsedBody);
     let invocationKind: "http" | "email" = "http";
 
-    if (isInternalInvoke(authHeader, env)) {
+    if (await isInternalInvoke(authHeader, env)) {
       const kindRaw = parsedBody?.hostfuncTriggerKind;
       if (typeof kindRaw !== "string" || !INTERNAL_TRIGGER_KINDS.has(kindRaw)) {
         return json(
