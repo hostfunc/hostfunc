@@ -144,6 +144,27 @@ describe("HostfuncApiClient", () => {
     expect(JSON.parse(calls[0]?.init?.body as string)).toEqual({ slug: "hello" });
   });
 
+  it("builds the read-only function detail URLs with encoded ids and limits", async () => {
+    const { fetchImpl, calls } = mockFetch([{ body: { ok: true, items: [] } }]);
+    const client = new HostfuncApiClient({
+      baseUrl: "https://hostfunc.io",
+      getToken: () => TOKEN,
+      fetch: fetchImpl,
+    });
+    await client.listTriggers("fn 1");
+    await client.listExecutionsForFunction("fn_1", 5);
+    await client.listSecrets("fn_1");
+    await client.listVersions("fn_1", 3);
+    expect(calls[0]?.url).toBe("https://hostfunc.io/api/cli/functions/triggers?fnId=fn%201");
+    expect(calls[1]?.url).toBe(
+      "https://hostfunc.io/api/cli/functions/executions?fnId=fn_1&limit=5",
+    );
+    expect(calls[2]?.url).toBe("https://hostfunc.io/api/cli/secrets?fnId=fn_1");
+    expect(calls[3]?.url).toBe("https://hostfunc.io/api/cli/functions/versions?fnId=fn_1&limit=3");
+    // All four are GETs (no method/body).
+    for (const c of calls) expect(c.init?.method).toBeUndefined();
+  });
+
   it("exchanges a device session using the session token, not the PAT", async () => {
     const { fetchImpl, calls } = mockFetch([
       {
