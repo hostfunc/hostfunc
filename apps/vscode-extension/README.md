@@ -2,20 +2,25 @@
 
 Build, deploy, and run [hostfunc](https://hostfunc.io) functions without leaving your editor.
 
-> **Status: M1** — sign-in, function browsing, deploy, and run-with-payload. Local-first file sync,
-> secrets/triggers, marketplace, and MCP wiring land in later milestones.
+> **Status: M2** — sign-in, function browsing with detail views, deploy, run-with-payload, and
+> local file sync with push-on-save. Marketplace and MCP wiring land in later milestones.
 
 ---
 
-## Features (M1)
+## Features
 
 - **Browser sign-in** via the OAuth device flow (RFC 8628). No token to copy — click **Sign in**,
   approve in the browser, done. Your access token is stored in VS Code **SecretStorage**, scoped per
   workspace/organization.
 - **Functions explorer** — browse the functions in your active workspace with deploy/run status.
+- **Function detail views** — expand a function to inspect its **triggers**, **recent versions**,
+  **recent executions** (with copyable execution ids), and **secret key names** (values are never
+  shown or transferred).
 - **Deploy** the current draft to a live version, with progress + a copyable run URL.
 - **Run with payload** — invoke a function with a JSON payload; the result and execution logs stream
   into the **hostfunc** Output channel.
+- **Local file sync** — pull a function's draft into a folder and push edits back; saving the
+  project's entry file pushes the draft automatically.
 - **Switch workspace** — multiple organizations are supported; switch from the status bar. Each org
   gets its own token, minted on demand.
 
