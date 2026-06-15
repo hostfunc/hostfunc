@@ -1,6 +1,7 @@
 "use server";
 
 import { requireSession } from "@/lib/session";
+import { workspaceSlugSchema } from "@/lib/workspace-slug";
 import { trackServerEvent } from "@/server/analytics";
 import { db, genId, schema, sql } from "@hostfunc/db";
 import { and, eq } from "drizzle-orm";
@@ -9,11 +10,7 @@ import { z } from "zod";
 
 const createWorkspaceSchema = z.object({
   name: z.string().min(2, "Workspace name must be at least 2 characters").max(64),
-  slug: z
-    .string()
-    .min(2, "Slug must be at least 2 characters")
-    .max(64)
-    .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
+  slug: workspaceSlugSchema,
   logo: z.string().optional(),
 });
 

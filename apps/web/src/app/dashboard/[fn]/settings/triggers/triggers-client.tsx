@@ -14,6 +14,7 @@ import {
   saveEmailTrigger,
   saveHttpTrigger,
   saveMcpTrigger,
+  sendTestInboundEmail,
   setTriggerEnabled,
 } from "./actions";
 
@@ -99,6 +100,9 @@ export function TriggersClient({
   fnSlug,
   hasApiTokens,
   canUseHttpAuth,
+  isDev,
+  activeCustomDomainHostname,
+  platformMailDomain,
 }: {
   fnId: string;
   triggers: TriggerRow[];
@@ -106,6 +110,9 @@ export function TriggersClient({
   fnSlug: string;
   hasApiTokens: boolean;
   canUseHttpAuth: boolean;
+  isDev: boolean;
+  activeCustomDomainHostname: string | null;
+  platformMailDomain: string;
 }) {
   const byKind = useMemo(
     () => ({
@@ -138,6 +145,9 @@ export function TriggersClient({
   const [mcpToolName, setMcpToolName] = useState(byKind.mcp?.config.mcp?.toolName ?? "");
   const [mcpDescription, setMcpDescription] = useState(byKind.mcp?.config.mcp?.description ?? "");
   const canEnableRequireAuth = canUseHttpAuth || requireAuth === "true";
+
+  const emailAddress = byKind.email?.config.email?.address ?? null;
+  const emailDomain = emailAddress?.split("@")[1]?.toLowerCase() ?? null;
 
   const cronIsValid = isValidCronSchedule(cronSchedule);
   const allowlistValues = emailAllowlist
@@ -411,9 +421,28 @@ export function TriggersClient({
           <span className="text-xs font-medium text-[var(--color-bone-muted)]">
             Inbound address
           </span>
-          <div className="min-h-11 rounded-md border border-[var(--color-border)] bg-[var(--color-ink)]/70 px-3 py-2 font-mono text-sm text-[var(--color-bone)]">
-            {byKind.email?.config.email?.address ?? "Not generated yet — save to create one."}
+          <div className="flex min-h-11 items-center justify-between gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-ink)]/70 px-3 py-2 font-mono text-sm text-[var(--color-bone)]">
+            <span className="truncate">
+              {emailAddress ?? "Not generated yet — save to create one."}
+            </span>
+            {emailAddress ? <CopyButton value={emailAddress} /> : null}
           </div>
+          {emailAddress &&
+          activeCustomDomainHostname &&
+          emailDomain !== activeCustomDomainHostname ? (
+            <p className="text-xs text-[var(--color-amber,#f59e0b)]">
+              This website has an active custom domain — regenerate to receive mail at @
+              {activeCustomDomainHostname}.
+            </p>
+          ) : null}
+          {emailAddress &&
+          !activeCustomDomainHostname &&
+          emailDomain !== platformMailDomain.toLowerCase() ? (
+            <p className="text-xs text-red-300">
+              This address uses a domain that is no longer active — regenerate to get a working
+              address.
+            </p>
+          ) : null}
         </div>
         <Input
           value={emailAllowlist}
@@ -472,6 +501,25 @@ export function TriggersClient({
               }
             >
               Regenerate address
+            </Button>
+          ) : null}
+          {isDev && byKind.email?.config.email?.address ? (
+            <Button
+              variant="outline"
+              disabled={savingKind === "email"}
+              className="h-11 rounded-full border-dashed border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
+              onClick={() =>
+                void runAction(
+                  "email",
+                  async () => {
+                    const result = await sendTestInboundEmail(fnId);
+                    if (!result.matched) throw new Error("Test email did not match the trigger.");
+                  },
+                  "Test email dispatched — check the dev server console and executions.",
+                )
+              }
+            >
+              Send test email (dev)
             </Button>
           ) : null}
           {byKind.email ? (

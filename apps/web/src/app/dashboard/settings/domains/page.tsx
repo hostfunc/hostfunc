@@ -20,6 +20,9 @@ export default async function DomainsSettingsPage() {
         ownershipVerification: true,
         lastError: true,
         fnId: true,
+        resendDomainId: true,
+        emailStatus: true,
+        emailRecords: true,
       },
       with: { fn: { columns: { slug: true } } },
     }),
@@ -56,6 +59,9 @@ export default async function DomainsSettingsPage() {
           ownershipVerification: d.ownershipVerification ?? null,
           lastError: d.lastError,
           fnSlug: d.fn.slug,
+          resendDomainId: d.resendDomainId,
+          emailStatus: d.emailStatus,
+          emailRecords: d.emailRecords ?? [],
         }))}
         websites={websites.map((w) => ({ id: w.id, slug: w.slug }))}
       />
