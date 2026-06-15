@@ -110,7 +110,14 @@ The workflow passes `CHANGESETS_GITHUB_TOKEN` to Changesets before falling back 
 
 - App: `app.hostfunc.io` -> Vercel
 - Runtime: `run.hostfunc.io` -> Cloudflare Worker route
-- Optional API alias: `api.hostfunc.io` -> Vercel (`apps/web`)
+- API edge: `api.hostfunc.io` -> Vercel (`apps/web`); fronts the `apps/web` API
+  routes. Supabase Postgres stays private behind it (reached only via
+  `DATABASE_URL`). Setup: `ops/runbooks/api-and-workspace-subdomains.md`.
+- Team-tier workspace subdomains: `*.hostfunc.io` -> workspace homepage, gated to
+  the Team plan, label = workspace slug. Slug validation is enforced in
+  `apps/web/src/lib/workspace-slug.ts` (reserved-name blocklist keeps workspaces
+  off `api`/`app`/`run`/etc.). Wildcard DNS + routing are an operator step — see
+  `ops/runbooks/api-and-workspace-subdomains.md`.
 - Custom domains (Cloudflare for SaaS): dedicated zone `hostfunc.app` with
   `cname.hostfunc.app` (CNAME target), `fallback.hostfunc.app` (fallback origin),
   and a `*/*` worker route to the runtime worker. See `docs/custom-domains-setup.md`.

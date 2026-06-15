@@ -313,6 +313,7 @@ Please browse through our [CONTRIBUTING.md](./CONTRIBUTING.md) meticulously for 
 * `ops/security-reliability-baseline.md`
 * `ops/go-live-checklist.md`
 * `ops/runbooks/launch-hostfunc-io.md`
+* `ops/runbooks/api-and-workspace-subdomains.md`
 
 ---
 
@@ -326,6 +327,8 @@ This repository is the source for both the **open-source hostfunc platform** and
 - **Cloudflare Worker secrets** (`wrangler secret put`) — `LOOKUP_API_TOKEN`, `INGEST_TOKEN`, `RUNTIME_INVOKE_TOKEN`, `CONTROL_PLANE_TOKEN`.
 
 What is in the repo: route patterns (`run.hostfunc.io`), namespace names (`hostfunc-prod`), KV namespace IDs once provisioned. None of these are secrets — they're useless without the API tokens above. Cal.com, Plausible, and PostHog publish equivalent values.
+
+**Subdomains.** `app.hostfunc.io` serves the dashboard, `run.hostfunc.io` the runtime worker, and `api.hostfunc.io` fronts the `apps/web` API routes (the Supabase Postgres backend stays private behind it). Team-tier workspaces can additionally claim `<workspace>.hostfunc.io` — the slug is validated as a DNS-safe label with a reserved-name blocklist ([`apps/web/src/lib/workspace-slug.ts`](./apps/web/src/lib/workspace-slug.ts)). Setup lives in [`ops/runbooks/api-and-workspace-subdomains.md`](./ops/runbooks/api-and-workspace-subdomains.md).
 
 A [`gitleaks`](https://github.com/gitleaks/gitleaks) pre-commit hook plus a [`secret-scan`](.github/workflows/secret-scan.yml) PR gate enforce the policy.
 

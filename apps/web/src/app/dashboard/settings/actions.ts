@@ -1,6 +1,7 @@
 "use server";
 
 import { requireOrgPermission } from "@/lib/session";
+import { workspaceSlugSchema } from "@/lib/workspace-slug";
 import {
   type AiProvider,
   type VectorBackend,
@@ -26,13 +27,7 @@ const nameSchema = z.object({
 });
 
 const slugSchema = z.object({
-  slug: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .min(3, "Slug must be at least 3 characters")
-    .max(64, "Slug must be 64 characters or fewer")
-    .regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers, and hyphens only"),
+  slug: workspaceSlugSchema,
 });
 
 const integrationsSchema = z.object({
