@@ -40,7 +40,7 @@
     "viewsWelcome": [
       {
         "view": "hostfunc.functions",
-        "contents": "Sign in to your hostfunc workspace to browse, deploy, and run functions.\n[Sign in to hostfunc](command:hostfunc.signIn)",
+        "contents": "Welcome to hostfunc — browse your workspaces, deploy and run functions, and inspect triggers, runs, and secrets without leaving the editor.\n[Sign in to hostfunc](command:hostfunc.signIn)\n\nNew here? [Read the docs](https://hostfunc.io/docs).",
         "when": "!hostfunc.signedIn"
       }
     ],
@@ -56,7 +56,13 @@
       { "command": "hostfunc.init", "title": "New Function Project…", "category": "hostfunc", "icon": "$(new-folder)" },
       { "command": "hostfunc.pull", "title": "Pull to Workspace", "category": "hostfunc", "icon": "$(cloud-download)" },
       { "command": "hostfunc.push", "title": "Push Local Changes", "category": "hostfunc", "icon": "$(cloud-upload)" },
-      { "command": "hostfunc.deployLocal", "title": "Deploy Local Project", "category": "hostfunc", "icon": "$(rocket)" }
+      { "command": "hostfunc.deployLocal", "title": "Deploy Local Project", "category": "hostfunc", "icon": "$(rocket)" },
+      { "command": "hostfunc.setActiveWorkspace", "title": "Set as Active Workspace", "category": "hostfunc", "icon": "$(check)" },
+      { "command": "hostfunc.openWorkspaceDashboard", "title": "Open Workspace Dashboard", "category": "hostfunc", "icon": "$(dashboard)" },
+      { "command": "hostfunc.viewLogs", "title": "View Logs", "category": "hostfunc", "icon": "$(output)" },
+      { "command": "hostfunc.copyExecutionId", "title": "Copy Execution ID", "category": "hostfunc" },
+      { "command": "hostfunc.addSecret", "title": "Add Secret…", "category": "hostfunc", "icon": "$(add)" },
+      { "command": "hostfunc.openFunction", "title": "Open Function", "category": "hostfunc", "icon": "$(go-to-file)" }
     ],
     "menus": {
       "view/title": [
@@ -66,17 +72,28 @@
         { "command": "hostfunc.signOut", "when": "view == hostfunc.functions && hostfunc.signedIn", "group": "1_account@1" }
       ],
       "view/item/context": [
+        { "command": "hostfunc.setActiveWorkspace", "when": "view == hostfunc.functions && viewItem == hostfunc.workspace", "group": "inline@0" },
+        { "command": "hostfunc.openWorkspaceDashboard", "when": "view == hostfunc.functions && (viewItem == hostfunc.workspace || viewItem == hostfunc.workspace.active)", "group": "1_open@0" },
         { "command": "hostfunc.pull", "when": "view == hostfunc.functions && viewItem == hostfunc.function", "group": "inline@0" },
         { "command": "hostfunc.deploy", "when": "view == hostfunc.functions && viewItem == hostfunc.function", "group": "inline@1" },
         { "command": "hostfunc.run", "when": "view == hostfunc.functions && viewItem == hostfunc.function", "group": "inline@2" },
         { "command": "hostfunc.openInDashboard", "when": "view == hostfunc.functions && viewItem == hostfunc.function", "group": "1_run@1" },
-        { "command": "hostfunc.copyFnId", "when": "view == hostfunc.functions && viewItem == hostfunc.function", "group": "9_meta@1" }
+        { "command": "hostfunc.addSecret", "when": "view == hostfunc.functions && (viewItem == hostfunc.function || viewItem == hostfunc.group.secrets)", "group": "2_edit@1" },
+        { "command": "hostfunc.copyFnId", "when": "view == hostfunc.functions && viewItem == hostfunc.function", "group": "9_meta@1" },
+        { "command": "hostfunc.viewLogs", "when": "view == hostfunc.functions && viewItem == hostfunc.execution", "group": "inline@0" },
+        { "command": "hostfunc.copyExecutionId", "when": "view == hostfunc.functions && viewItem == hostfunc.execution", "group": "9_meta@1" }
       ],
       "commandPalette": [
         { "command": "hostfunc.deploy", "when": "false" },
         { "command": "hostfunc.run", "when": "false" },
         { "command": "hostfunc.openInDashboard", "when": "false" },
         { "command": "hostfunc.copyFnId", "when": "false" },
+        { "command": "hostfunc.setActiveWorkspace", "when": "false" },
+        { "command": "hostfunc.openWorkspaceDashboard", "when": "false" },
+        { "command": "hostfunc.viewLogs", "when": "false" },
+        { "command": "hostfunc.copyExecutionId", "when": "false" },
+        { "command": "hostfunc.addSecret", "when": "false" },
+        { "command": "hostfunc.openFunction", "when": "false" },
         { "command": "hostfunc.pull", "when": "hostfunc.signedIn" },
         { "command": "hostfunc.push", "when": "hostfunc.signedIn" },
         { "command": "hostfunc.init", "when": "hostfunc.signedIn" },

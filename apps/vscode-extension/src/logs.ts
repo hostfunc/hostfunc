@@ -26,6 +26,15 @@ export class RunLogChannel {
     }
   }
 
+  /** Show the logs for a past execution (from the tree's Recent runs). */
+  async showLogs(client: HostfuncApiClient, executionId: string, label: string): Promise<void> {
+    this.channel.show(true);
+    this.channel.info(`▶ logs for ${label} — execution ${executionId}`);
+    const lines = await this.fetchLogs(client, executionId);
+    for (const line of lines) this.print(line);
+    if (lines.length === 0) this.channel.info("  (no logs emitted)");
+  }
+
   private async fetchLogs(client: HostfuncApiClient, executionId: string): Promise<LogLine[]> {
     // The function runs synchronously, but ingest is async — retry briefly for late log lines.
     for (let attempt = 0; attempt < 3; attempt += 1) {

@@ -29,9 +29,10 @@ export function activate(context: vscode.ExtensionContext): void {
       status.tooltip = busyLabel;
     } else if (auth.isSignedIn()) {
       const org = auth.getActiveOrg();
-      status.text = `$(globe) hostfunc: ${org?.orgName ?? "workspace"}`;
+      const env = auth.environment();
+      status.text = `$(${env.icon}) hostfunc: ${org?.orgName ?? "workspace"}`;
       status.command = "hostfunc.switchOrg";
-      status.tooltip = "Switch hostfunc workspace";
+      status.tooltip = `${env.label} (${env.host}) — ${org?.orgName ?? "workspace"}\nClick to switch workspace`;
     } else {
       status.text = "$(sign-in) hostfunc: Sign in";
       status.command = "hostfunc.signIn";

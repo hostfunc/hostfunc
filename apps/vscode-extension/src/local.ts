@@ -69,14 +69,20 @@ export class LocalSync {
     }
   }
 
-  /** `hostfunc pull` — fetch a function's code into a local checkout. */
-  async pull(fn?: { id: string; slug: string }): Promise<void> {
+  /**
+   * `hostfunc pull` — fetch a function's code into a local checkout. When `orgId`/`orgSlug` are
+   * passed (from the tree) the pull is scoped to that workspace's token; otherwise it uses the
+   * active org. Called with no argument it refreshes the project in the current workspace.
+   */
+  async pull(fn?: { id: string; slug: string; orgId?: string; orgSlug?: string }): Promise<void> {
     if (!this.auth.isSignedIn()) {
       vscode.window.showWarningMessage("Sign in to hostfunc first.");
       return;
     }
     let fnId = fn?.id;
     let slug = fn?.slug;
+    const orgId = fn?.orgId;
+    let orgSlug = fn?.orgSlug;
     let root: vscode.Uri | undefined;
 
     if (!fnId) {
@@ -91,13 +97,15 @@ export class LocalSync {
       root = found.root;
       fnId = found.config.fnId;
       slug = found.config.slug;
+      orgSlug = found.config.orgSlug;
     } else {
       root = await this.pickTargetFolder(slug ?? fnId);
       if (!root) return;
     }
 
-    const client = this.auth.client();
-    const org = this.auth.getActiveOrg();
+    // Use the function's own workspace token when known, else the active org.
+    const client = orgId ? await this.auth.clientForOrg(orgId) : this.auth.client();
+    const resolvedSlug = orgSlug ?? this.auth.getActiveOrg()?.orgSlug ?? "";
     try {
       const draft = await client.getDraft(fnId);
       await this.writeProject(
@@ -105,7 +113,7 @@ export class LocalSync {
         {
           baseUrl: this.auth.baseUrl,
           fnId,
-          orgSlug: org?.orgSlug ?? "",
+          orgSlug: resolvedSlug,
           slug: slug ?? fnId,
           sha256: draft.sha256,
         },
@@ -118,6 +126,47 @@ export class LocalSync {
         `hostfunc: pull failed — ${error instanceof Error ? error.message : String(error)}`,
       );
     }
+  }
+
+  /**
+   * Open a function's code in the editor (the tree's click action). Opens an existing local
+   * checkout if one is present (so edits aren't clobbered); otherwise pulls it first.
+   */
+  async openFunction(fn: {
+    id: string;
+    slug: string;
+    orgId: string;
+    orgSlug: string;
+  }): Promise<void> {
+    const existing = await this.findCheckoutForFn(fn.id, fn.slug);
+    if (existing) {
+      await this.openEntry(existing);
+      return;
+    }
+    await this.pull(fn);
+  }
+
+  /**
+   * Find an existing local checkout for a function id: checks each workspace-folder root and its
+   * deterministic `<slug>` subfolder (where {@link pickTargetFolder} writes) for a matching
+   * `hostfunc.json`.
+   */
+  private async findCheckoutForFn(fnId: string, slug: string): Promise<vscode.Uri | undefined> {
+    const candidates: vscode.Uri[] = [];
+    for (const folder of vscode.workspace.workspaceFolders ?? []) {
+      candidates.push(folder.uri, vscode.Uri.joinPath(folder.uri, slug));
+    }
+    for (const root of candidates) {
+      try {
+        const text = dec.decode(
+          await vscode.workspace.fs.readFile(vscode.Uri.joinPath(root, PROJECT_CONFIG_FILE)),
+        );
+        if (parseProjectConfig(text).fnId === fnId) return root;
+      } catch {
+        // not a checkout for this fn — keep looking
+      }
+    }
+    return undefined;
   }
 
   /** `hostfunc push` — write local index.ts to the server draft, handling conflicts. */

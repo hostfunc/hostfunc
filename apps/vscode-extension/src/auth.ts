@@ -60,6 +60,46 @@ export class AuthManager {
     return new HostfuncApiClient({ baseUrl: this.baseUrl, getToken: () => this.getToken() });
   }
 
+  /**
+   * A client bound to an arbitrary org's PAT — reusing the cached token, or minting one on first
+   * use (and persisting it). Powers per-workspace lazy loading in the tree.
+   */
+  async clientForOrg(orgId: string): Promise<HostfuncApiClient> {
+    const token = await this.tokenForOrg(orgId);
+    return new HostfuncApiClient({ baseUrl: this.baseUrl, getToken: () => token });
+  }
+
+  /** Reuse the cached PAT for an org, or mint + persist one (mirrors `switchOrg`). */
+  private async tokenForOrg(orgId: string): Promise<string> {
+    const existing = await this.context.secrets.get(tokenSecretKey(orgId));
+    if (existing) return existing;
+    const minted = await this.client().createOrgToken(orgId, hostname());
+    await this.persistOrgToken(minted.orgId, minted.token);
+    return minted.token;
+  }
+
+  /** The workspaces the user belongs to (refreshed from the server, cached on failure). */
+  listOrgs(): Promise<OrgMembership[]> {
+    return this.refreshOrgs();
+  }
+
+  /** Classifies the configured control plane into a label + codicon for the environment indicator. */
+  environment(): { label: string; icon: string; host: string } {
+    let host: string;
+    try {
+      host = new URL(this.baseUrl).host;
+    } catch {
+      host = this.baseUrl;
+    }
+    if (/^(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/.test(host)) {
+      return { label: "Local", icon: "vm", host };
+    }
+    if (/(^|\.)hostfunc\.io$/.test(host)) {
+      return { label: "Production", icon: "cloud", host };
+    }
+    return { label: "Custom", icon: "server", host };
+  }
+
   async signIn(): Promise<void> {
     const baseUrl = this.baseUrl;
     const code = await requestDeviceCode({ baseUrl, clientId: VSCODE_CLIENT_ID });
@@ -126,13 +166,14 @@ export class AuthManager {
     if (!picked || picked.org.orgId === active?.orgId) return;
 
     const org = picked.org;
-    // Reuse an existing PAT for this org if we have one; otherwise mint a fresh one.
-    const existing = await this.context.secrets.get(tokenSecretKey(org.orgId));
-    if (!existing) {
-      const minted = await this.client().createOrgToken(org.orgId, hostname());
-      await this.persistOrgToken(minted.orgId, minted.token);
-    }
-    await this.setActiveOrg({ orgId: org.orgId, orgSlug: org.orgSlug, orgName: org.orgName });
+    await this.setActiveOrgById(org.orgId, org.orgSlug, org.orgName);
+  }
+
+  /** Make an org active by id — reuses/mints its PAT, persists it, and notifies views. */
+  async setActiveOrgById(orgId: string, orgSlug: string, orgName: string): Promise<void> {
+    if (this.getActiveOrg()?.orgId === orgId) return;
+    await this.tokenForOrg(orgId);
+    await this.setActiveOrg({ orgId, orgSlug, orgName });
     this.didChange.fire();
   }
 

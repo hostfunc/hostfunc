@@ -4,8 +4,12 @@ import type {
   DeployResult,
   DeviceExchangeResult,
   DraftResult,
+  ListExecutionsResult,
   ListFunctionsResult,
   ListOrgsResult,
+  ListSecretsResult,
+  ListTriggersResult,
+  ListVersionsResult,
   LoginCheckResult,
   LogsResult,
   PushDraftResult,
@@ -133,6 +137,32 @@ export class HostfuncApiClient {
       method: "POST",
       body: JSON.stringify({ fnId, key, value }),
     });
+  }
+
+  /** Lists a function's triggers (http/cron/email/mcp). */
+  listTriggers(fnId: string): Promise<ListTriggersResult> {
+    return this.call<ListTriggersResult>(
+      `/api/cli/functions/triggers?fnId=${encodeURIComponent(fnId)}`,
+    );
+  }
+
+  /** Lists a function's recent executions, newest first. */
+  listExecutionsForFunction(fnId: string, limit = 20): Promise<ListExecutionsResult> {
+    return this.call<ListExecutionsResult>(
+      `/api/cli/functions/executions?fnId=${encodeURIComponent(fnId)}&limit=${limit}`,
+    );
+  }
+
+  /** Lists a function's secret KEYS (never values). */
+  listSecrets(fnId: string): Promise<ListSecretsResult> {
+    return this.call<ListSecretsResult>(`/api/cli/secrets?fnId=${encodeURIComponent(fnId)}`);
+  }
+
+  /** Lists a function's deployed/draft versions (no code), newest first. */
+  listVersions(fnId: string, limit = 10): Promise<ListVersionsResult> {
+    return this.call<ListVersionsResult>(
+      `/api/cli/functions/versions?fnId=${encodeURIComponent(fnId)}&limit=${limit}`,
+    );
   }
 
   /** Creates a function in the active org (local-first `init`). */
