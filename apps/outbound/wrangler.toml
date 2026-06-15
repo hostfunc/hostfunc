@@ -43,4 +43,4 @@ ALLOW_HOSTS = "api.resend.com,api.stripe.com,discord.com,discordapp.com,api.open
 
 [[env.production.kv_namespaces]]
 binding = "EGRESS_COUNTERS"
-id = "REPLACE_WITH_PROD_EGRESS_COUNTERS_KV_ID"
+id = "6d03603b852f44cb98cf905893efb489"

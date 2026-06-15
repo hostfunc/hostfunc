@@ -97,15 +97,15 @@ RUNTIME_PUBLIC_URL = "https://run.hostfunc.io"
 
 [[env.production.kv_namespaces]]
 binding = "FN_INDEX"
-id = "REPLACE_WITH_PROD_FN_INDEX_KV_ID"
+id = "1485d5a4c83f4285a729ade689fe9644"
 
 [[env.production.kv_namespaces]]
 binding = "EGRESS_COUNTERS"
-id = "REPLACE_WITH_PROD_EGRESS_COUNTERS_KV_ID"
+id = "6d03603b852f44cb98cf905893efb489"
 
 [[env.production.kv_namespaces]]
 binding = "DOMAIN_INDEX"
-id = "REPLACE_WITH_PROD_DOMAIN_INDEX_KV_ID"
+id = "bed702dfef904483b461addf02b6cba3"
 
 [[env.production.dispatch_namespaces]]
 binding = "DISPATCHER"
