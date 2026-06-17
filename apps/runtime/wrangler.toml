@@ -80,9 +80,9 @@ namespace = "hostfunc-staging"
 name = "hostfunc-runtime"
 routes = [
   { pattern = "run.hostfunc.io/*", zone_name = "hostfunc.io" },
-  # Custom domains (Cloudflare for SaaS): onboarded custom hostnames in the
-  # hostfunc.app SaaS zone are served by this worker via the wildcard route.
-  { pattern = "*/*", zone_name = "hostfunc.app" },
+  # Custom domains (Cloudflare for SaaS) deferred: the hostfunc.app SaaS zone is
+  # not registered. Re-add `{ pattern = "*/*", zone_name = "hostfunc.app" }` here
+  # (and set the CF_SAAS_* web env vars) once that zone exists in Cloudflare.
 ]
 
 [env.production.observability.logs]
