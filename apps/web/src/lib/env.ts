@@ -6,6 +6,8 @@ const schema = z
     DATABASE_URL: z.string().url(),
     BETTER_AUTH_SECRET: z.string().min(32),
     BETTER_AUTH_URL: z.string().url(),
+    /** Canonical public site origin — used as the metadataBase for social share tags. */
+    NEXT_PUBLIC_SITE_URL: z.string().url().default("https://hostfunc.io"),
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
     GITHUB_CLIENT_ID: z.string().optional(),
