@@ -3,7 +3,9 @@
   "ui": "tui",
   "globalEnv": [
     "NODE_ENV",
+    "VERCEL_ENV",
     "NEXT_PUBLIC_BETTER_AUTH_URL",
+    "NEXT_PUBLIC_SITE_URL",
     "DATABASE_URL",
     "BETTER_AUTH_SECRET",
     "BETTER_AUTH_URL",
