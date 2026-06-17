@@ -10,7 +10,13 @@ declare global {
   var __hostfunc_db__: ReturnType<typeof postgres> | undefined;
 }
 
-const client = globalThis.__hostfunc_db__ ?? postgres(connectionString, { max: 10 });
+// `prepare: false` is required to run through a transaction-mode connection
+// pooler (e.g. Supabase's pooler on :6543), which doesn't support prepared
+// statements. It's the correct config for serverless (Vercel) — the session
+// pooler (:5432) supports prepared statements but caps client connections and
+// exhausts under concurrency.
+const client =
+  globalThis.__hostfunc_db__ ?? postgres(connectionString, { max: 10, prepare: false });
 if (process.env.NODE_ENV !== "production") {
   globalThis.__hostfunc_db__ = client;
 }
