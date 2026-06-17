@@ -3,11 +3,26 @@ import { db, genId, schema, sql } from "@hostfunc/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer, deviceAuthorization, magicLink, organization } from "better-auth/plugins";
+import { parentCookieDomain } from "./cookie-domain";
 import { env } from "./env";
 
 function compatWhere<T>(value: T): T {
   return value;
 }
+
+// Origins allowed to call the auth endpoints (app + marketing apex/www). Driven
+// by ALLOWED_ORIGINS so the canonical app and brand domains all authenticate.
+const trustedOrigins = Array.from(
+  new Set(
+    [env.BETTER_AUTH_URL, ...(env.ALLOWED_ORIGINS?.split(",") ?? [])]
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  ),
+);
+
+// Share the session cookie across subdomains (e.g. ".hostfunc.io") so a login on
+// any host works on the others. Undefined on localhost — keep host-only there.
+const sessionCookieDomain = parentCookieDomain(env.BETTER_AUTH_URL);
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -25,6 +40,10 @@ export const auth = betterAuth({
   }),
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
+  trustedOrigins,
+  ...(sessionCookieDomain
+    ? { advanced: { crossSubDomainCookies: { enabled: true, domain: sessionCookieDomain } } }
+    : {}),
   emailAndPassword: { enabled: false },
   socialProviders: {
     github: {
