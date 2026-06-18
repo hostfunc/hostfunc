@@ -26,7 +26,11 @@ const FONT_SANS =
   "'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hostfunc.io";
-const LOGO_URL = `${SITE_URL}/logo-email.png`;
+// Serve the logo from the app host (e.g. app.hostfunc.io), which returns the
+// asset directly. The apex (hostfunc.io) 307-redirects to www, and email
+// clients don't follow redirects for images — so referencing it would break.
+const ASSET_BASE = process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? SITE_URL;
+const LOGO_URL = `${ASSET_BASE}/logo-email.png`;
 
 /** Escape text for safe interpolation into HTML element content / attributes. */
 function escapeHtml(value: string): string {
