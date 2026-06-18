@@ -55,3 +55,7 @@ jobs:
           # PAT bypasses org rules that block GITHUB_TOKEN from opening PRs; falls back to default token.
           GITHUB_TOKEN: ${{ secrets.CHANGESETS_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # setup-node wrote an .npmrc that reads the auth token from NODE_AUTH_TOKEN;
+          # without this, `changeset publish` runs unauthenticated and npm returns
+          # E404 on scoped packages. Mirror the same token here.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
