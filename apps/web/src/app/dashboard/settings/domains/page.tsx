@@ -1,11 +1,15 @@
 import { requireActiveOrg } from "@/lib/session";
 import { cnameTarget, isCustomDomainsConfigured } from "@/server/custom-domains";
+import { getEffectivePlan } from "@/server/plans";
 import { db, schema } from "@hostfunc/db";
 import { and, desc, eq, isNotNull } from "drizzle-orm";
 import { DomainsClient } from "./domains-client";
 
 export default async function DomainsSettingsPage() {
   const { orgId } = await requireActiveOrg();
+
+  const plan = await getEffectivePlan(orgId);
+  const planAllowed = plan.planSlug === "team";
 
   const [domains, websites] = await Promise.all([
     db.query.customDomain.findMany({
@@ -49,6 +53,7 @@ export default async function DomainsSettingsPage() {
 
       <DomainsClient
         configured={isCustomDomainsConfigured()}
+        planAllowed={planAllowed}
         cnameTarget={cnameTarget()}
         initialDomains={domains.map((d) => ({
           id: d.id,

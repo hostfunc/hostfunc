@@ -359,13 +359,15 @@ function LoginPageClient() {
                       the link to securely sign in.
                     </p>
                     <div className="mt-7 w-full border-t border-[var(--color-border)] pt-5">
-                      <p className="text-[11px] text-[var(--color-bone-faint)]">
-                        In development mode, check your local{" "}
-                        <code className="rounded bg-white/[0.06] px-1 py-0.5 font-mono text-[var(--color-bone)]">
-                          pnpm dev
-                        </code>{" "}
-                        terminal for the login link.
-                      </p>
+                      {process.env.NODE_ENV !== "production" && (
+                        <p className="text-[11px] text-[var(--color-bone-faint)]">
+                          In development mode, check your local{" "}
+                          <code className="rounded bg-white/[0.06] px-1 py-0.5 font-mono text-[var(--color-bone)]">
+                            pnpm dev
+                          </code>{" "}
+                          terminal for the login link.
+                        </p>
+                      )}
                       <Button
                         variant="ghost"
                         type="button"

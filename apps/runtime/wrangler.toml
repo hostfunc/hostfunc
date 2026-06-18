@@ -80,9 +80,11 @@ namespace = "hostfunc-staging"
 name = "hostfunc-runtime"
 routes = [
   { pattern = "run.hostfunc.io/*", zone_name = "hostfunc.io" },
-  # Custom domains (Cloudflare for SaaS) deferred: the hostfunc.app SaaS zone is
-  # not registered. Re-add `{ pattern = "*/*", zone_name = "hostfunc.app" }` here
-  # (and set the CF_SAAS_* web env vars) once that zone exists in Cloudflare.
+  # Custom domains (Cloudflare for SaaS): customer hostnames CNAME to
+  # cname.hostfunc.io in this zone; this catch-all routes them to the runtime,
+  # which resolves Host -> function via the DOMAIN_INDEX KV. Only fires for
+  # proxied hosts (app/www/apex are DNS-only Vercel; run has its own route).
+  { pattern = "*/*", zone_name = "hostfunc.io" },
 ]
 
 [env.production.observability.logs]

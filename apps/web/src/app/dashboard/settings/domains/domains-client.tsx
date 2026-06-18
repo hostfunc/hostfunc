@@ -60,6 +60,7 @@ interface Website {
 
 interface DomainsClientProps {
   configured: boolean;
+  planAllowed: boolean;
   cnameTarget: string;
   initialDomains: DomainRow[];
   websites: Website[];
@@ -437,6 +438,7 @@ function DnsInstructions({
 
 export function DomainsClient({
   configured,
+  planAllowed,
   cnameTarget,
   initialDomains,
   websites,
@@ -515,6 +517,35 @@ export function DomainsClient({
             SaaS zone is configured, you'll be able to attach your own domains here.
           </SettingsCardDescription>
         </SettingsCardHeader>
+      </SettingsCard>
+    );
+  }
+
+  if (!planAllowed) {
+    return (
+      <SettingsCard>
+        <SettingsCardHeader>
+          <SettingsCardTitle className="flex items-center gap-2">
+            <Globe className="h-4 w-4 text-[var(--color-bone-muted)]" />
+            Custom domains
+          </SettingsCardTitle>
+          <SettingsCardDescription>
+            Serving functions from your own domain is a Team-plan feature. Upgrade your workspace to
+            attach custom domains with automatic SSL.
+          </SettingsCardDescription>
+        </SettingsCardHeader>
+        <SettingsCardContent>
+          <Button
+            variant="glass"
+            className="rounded-full px-4"
+            onClick={() => {
+              window.location.href = "/dashboard/settings/billing";
+            }}
+          >
+            Upgrade to Team
+            <ArrowUpRight className="ml-1 h-4 w-4" />
+          </Button>
+        </SettingsCardContent>
       </SettingsCard>
     );
   }
