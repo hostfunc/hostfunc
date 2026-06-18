@@ -10,6 +10,7 @@ import {
   mapCfStatus,
   provisionDomain,
 } from "@/server/custom-domains";
+import { getEffectivePlan } from "@/server/plans";
 import { deleteResendDomain } from "@/server/resend-inbound";
 import type { DcvRecord } from "@hostfunc/db";
 import { db, genId, schema } from "@hostfunc/db";
@@ -61,6 +62,16 @@ export async function addDomainAction(input: unknown): Promise<AddDomainResult> 
 
   try {
     const { orgId, session } = await requireOrgPermission("manage_workspace_settings");
+
+    // Custom domains are a Team-plan feature.
+    const plan = await getEffectivePlan(orgId);
+    if (plan.planSlug !== "team") {
+      return {
+        ok: false,
+        error:
+          "Custom domains are available on the Team plan. Upgrade in Billing to attach your own domain.",
+      };
+    }
 
     const [domainCount] = await db
       .select({ value: count() })
