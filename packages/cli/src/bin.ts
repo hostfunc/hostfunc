@@ -13,6 +13,7 @@ import {
 } from "./config.js";
 
 const CLI_CLIENT_ID = "hostfunc-cli";
+const DEFAULT_BASE_URL = "https://app.hostfunc.io";
 
 const HELP_TEXT = `hostfunc - CLI for Hostfunc
 
@@ -28,8 +29,9 @@ Usage:
   hostfunc help
 
 Examples:
-  hostfunc login --url https://hostfunc.io
-  hostfunc login --token hfn_live_xxx --url https://hostfunc.io
+  hostfunc login                                  (defaults to https://app.hostfunc.io)
+  hostfunc login --token hfn_live_xxx             (CI / headless)
+  hostfunc login --url http://localhost:3000      (local dev)
   hostfunc init --fnId fn_123
   hostfunc run --payload ./payload.json
 `;
@@ -98,7 +100,7 @@ export async function runCli(argv: string[], deps?: Partial<CliDeps>): Promise<v
 
   if (command === "login") {
     const token = getFlag(args, "--token");
-    const baseUrl = getFlag(args, "--url") ?? "http://localhost:3000";
+    const baseUrl = getFlag(args, "--url") ?? DEFAULT_BASE_URL;
 
     // Headless / CI path: an explicit API token.
     if (token) {
@@ -145,7 +147,7 @@ export async function runCli(argv: string[], deps?: Partial<CliDeps>): Promise<v
   }
 
   if (command === "init") {
-    const baseUrl = getFlag(args, "--url") ?? "http://localhost:3000";
+    const baseUrl = getFlag(args, "--url") ?? DEFAULT_BASE_URL;
     const fnId = getFlag(args, "--fnId");
     await writeProjectConfig(cwd, { baseUrl, ...(fnId ? { fnId } : {}) });
     stdout("Initialized hostfunc.json");
