@@ -3,6 +3,7 @@
 import { env } from "@/lib/env";
 import { requireOrgPermission } from "@/lib/session";
 import { sendTransactionalEmail } from "@/server/email";
+import { orgInviteResendEmail } from "@/server/email-templates";
 import { db, schema } from "@hostfunc/db";
 import { and, eq } from "drizzle-orm";
 
@@ -32,17 +33,12 @@ export async function resendInvitationEmail(invitationId: string) {
   const acceptUrl = `${env.BETTER_AUTH_URL}/join?invitationId=${encodeURIComponent(invitation.id)}`;
   await sendTransactionalEmail({
     to: invitation.email,
-    subject: `Invitation to join ${invitation.orgName} on hostfunc`,
-    html: `
-      <p>You have been invited to join <strong>${invitation.orgName}</strong> as <strong>${invitation.role}</strong>.</p>
-      <p><a href="${acceptUrl}">Accept invitation</a></p>
-      <p>This invitation expires on ${invitation.expiresAt.toUTCString()}.</p>
-    `,
-    text: [
-      `You have been invited to join ${invitation.orgName} as ${invitation.role}.`,
-      `Accept invitation: ${acceptUrl}`,
-      `Invitation expires: ${invitation.expiresAt.toUTCString()}`,
-    ].join("\n"),
+    ...orgInviteResendEmail({
+      orgName: invitation.orgName,
+      role: invitation.role,
+      acceptUrl,
+      expiresAt: invitation.expiresAt,
+    }),
   });
 
   return { ok: true };
