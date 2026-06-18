@@ -540,6 +540,7 @@ export async function main(input: { customerId: string }) {
       "Trigger config is persisted per function/kind and controls how runtime invocation is initiated.",
     highlights: [
       "Kinds: `http`, `cron`, `email`, `mcp`.",
+      "Your function exports `main` (handles HTTP **and** cron) and/or `email` (email triggers) — every handler receives `(payload, request)` and may return a value (JSON) or a `Response`.",
       "Cron/email invokes runtime through authenticated internal paths.",
       "HTTP can be public or token-protected via `requireAuth`.",
       "MCP trigger metadata is stored and available for tooling.",
@@ -557,21 +558,37 @@ export async function main(input: { customerId: string }) {
       },
       {
         title: "HTTP trigger",
-        description: "HTTP entrypoint is runtime route `/run/:orgSlug/:fnSlug`.",
+        description:
+          "HTTP entrypoint is runtime route `/run/:orgSlug/:fnSlug`. HTTP requests invoke your exported `main` handler.",
         bullets: [
           "HTTP is created automatically for new functions.",
+          "`main(payload, request)` — `payload` is the parsed JSON body (POST/PUT) or the query params (GET). Return a plain value (JSON-serialized) or a web `Response`.",
           "When `requireAuth` is true, send `Authorization: Bearer <workspace API token>` (see Settings → Tokens).",
           "Nested calls from `executeFunction` send `x-hostfunc-parent-exec` and skip the API token when the parent execution is valid.",
         ],
+        code: `export async function main(payload, request) {
+  // payload = JSON body (POST/PUT) or query params (GET)
+  return { hello: payload.name ?? "world" };
+  // …or return a Response directly:
+  // return new Response("hi", { status: 200 });
+}`,
       },
       {
         title: "Cron trigger",
         description:
-          "Cron worker fetches due jobs from control plane and invokes runtime with cron trigger metadata.",
+          "Cron worker fetches due jobs from control plane and invokes runtime with cron trigger metadata. Cron runs invoke your exported `main` — there is no separate cron handler.",
         bullets: [
           "Due/ack flow is handled by internal cron endpoints.",
-          'Runtime receives `hostfuncTriggerKind: "cron"` over an authenticated internal invoke.',
+          'Runtime invokes `main(payload)` with `payload.hostfuncTriggerKind === "cron"` — branch on it to tell a scheduled run apart from an HTTP request.',
         ],
+        code: `export async function main(payload) {
+  if (payload.hostfuncTriggerKind === "cron") {
+    // scheduled run — do the periodic work
+    return { ranAt: new Date().toISOString() };
+  }
+  // normal HTTP request
+  return { ok: true };
+}`,
       },
       {
         title: "Email trigger",
@@ -582,7 +599,8 @@ export async function main(input: { customerId: string }) {
           "If the function has an active custom domain with verified inbound email, new addresses are generated on that domain instead — see Custom Domains → Receive email on your domain.",
           "Regenerating replaces the address in place: the old address stops matching immediately.",
           "Optional sender allowlist — empty accepts mail from anyone; otherwise only listed senders trigger the function (case-insensitive).",
-          "User code exports `export async function email(data)`; `data.email` includes `to`, `from`, `rawSize`, `timestamp` (ISO 8601), and optional `subject` / `body`.",
+          "Your function **must export** `email` — it's a separate handler from `main`. An email trigger that hits a function without it fails with `function must export 'email' for email triggers`.",
+          "`email(data, request)`; `data.email` includes `to`, `from`, `rawSize`, `timestamp` (ISO 8601), and optional `subject` / `body`. A function can export both `main` (HTTP/cron) and `email`.",
           'Local development is fully mocked: the dispatch payload is logged to the dev server console, and a dev-only "Send test email" button on the triggers page exercises the whole path without DNS or a mail provider.',
         ],
         code: `export async function email(data: {
