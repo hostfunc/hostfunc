@@ -1,5 +1,11 @@
 # @hostfunc/cli
 
+## 0.3.1
+
+### Patch Changes
+
+- 40a74f8: Default `hostfunc init` and `hostfunc login` to the production API (`https://app.hostfunc.io`) when no `--url` is given, instead of `http://localhost:3000`. Local development can still target a local control plane with `--url http://localhost:3000`.
+
 ## 0.3.0
 
 ### Minor Changes
