@@ -33,6 +33,7 @@ import { AnimatedEditor } from "@/components/marketing/animated-editor";
 import { ArchitectureFlow } from "@/components/marketing/architecture-flow";
 import { ConnectorStrip } from "@/components/marketing/connector-strip";
 import { LineageBuilder } from "@/components/marketing/lineage-builder";
+import { MobileNav } from "@/components/marketing/mobile-nav";
 import { TemplateMarquee } from "@/components/marketing/template-marquee";
 import { TerminalDemo } from "@/components/marketing/terminal-demo";
 import { TriggerShowcase } from "@/components/marketing/trigger-showcase";
@@ -136,6 +137,11 @@ export default function HomePage() {
                 </svg>
               </Link>
             </Button>
+            <MobileNav
+              navLinks={marketingContent.navLinks}
+              isLoggedIn={Boolean(session)}
+              primaryHref={primaryHref}
+            />
           </div>
         </div>
       </header>
@@ -144,7 +150,7 @@ export default function HomePage() {
       <section className="relative overflow-hidden">
         <div className="gradient-radial-amber absolute inset-x-0 top-0 -z-10 h-[600px]" />
 
-        <div className="mx-auto max-w-7xl px-6 py-32 lg:py-40">
+        <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:py-40">
           <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-ink-overlay)] px-3 py-1 text-xs text-[var(--color-bone-muted)] backdrop-blur-md">
               <span className="relative flex size-1.5">
@@ -220,7 +226,7 @@ export default function HomePage() {
       </section>
 
       {/* ─────────────────────────── AGENT-NATIVE PITCH ──────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] bg-gradient-to-b from-[var(--color-ink)] via-[#0d0c0a] to-[var(--color-ink)] py-32">
+      <section className="relative border-t border-[var(--color-border)] bg-gradient-to-b from-[var(--color-ink)] via-[#0d0c0a] to-[var(--color-ink)] py-20 sm:py-28 lg:py-32">
         <div className="mx-auto max-w-[1600px] px-6">
           <div className="mx-auto max-w-3xl text-center">
             <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-amber)]">
@@ -235,7 +241,7 @@ export default function HomePage() {
           </div>
 
           {/* Side-by-side: agent conversation + lineage filling in */}
-          <div className="mt-16 grid gap-6 lg:grid-cols-2">
+          <div className="mt-16 grid gap-6 md:grid-cols-2">
             <AgentConversation messages={marketingContent.agentPitch.conversation} />
             <LineageBuilder
               nodes={marketingContent.agentPitch.lineage.nodes}
@@ -262,7 +268,7 @@ export default function HomePage() {
       </section>
 
       {/* ─────────────────────────────── TRIGGERS ─────────────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] py-32">
+      <section className="relative border-t border-[var(--color-border)] py-20 sm:py-28 lg:py-32">
         <div className="mx-auto max-w-[1600px] px-6">
           <SectionHeader
             eyebrow="Triggers"
@@ -280,14 +286,14 @@ export default function HomePage() {
       </section>
 
       {/* ─────────────────────────── COMPOSITION ──────────────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
+      <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-20 sm:py-28 lg:py-32">
         <div className="mx-auto max-w-[1600px] px-6">
           <SectionHeader
             eyebrow={marketingContent.composition.eyebrow}
             title={marketingContent.composition.headline}
             body={marketingContent.composition.body}
           />
-          <div className="mt-16 grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-center">
+          <div className="mt-16 grid gap-6 md:grid-cols-2 md:items-center">
             <AnimatedEditor
               filename="share-link.ts"
               code={marketingContent.composition.snippet}
@@ -303,9 +309,9 @@ export default function HomePage() {
       </section>
 
       {/* ─────────────────────────────── CLI ──────────────────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] py-32">
+      <section className="relative border-t border-[var(--color-border)] py-20 sm:py-28 lg:py-32">
         <div className="mx-auto max-w-[1600px] px-6">
-          <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:items-center">
+          <div className="grid gap-8 md:gap-12 md:grid-cols-[1fr_1.2fr] md:items-center">
             <div>
               <div className="text-xs uppercase tracking-[0.25em] text-[var(--color-amber)]">
                 {marketingContent.cli.eyebrow}
@@ -327,7 +333,7 @@ export default function HomePage() {
       </section>
 
       {/* ────────────────────────── ARCHITECTURE ──────────────────────────────── */}
-      <section className="relative overflow-hidden border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
+      <section className="relative overflow-hidden border-t border-[var(--color-border)] bg-[#0c0b0a] py-20 sm:py-28 lg:py-32">
         <div className="mx-auto max-w-[1600px] px-6">
           <SectionHeader
             eyebrow={marketingContent.architecture.eyebrow}
@@ -341,7 +347,7 @@ export default function HomePage() {
       </section>
 
       {/* ───────────────────────────── CONNECTORS ─────────────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] py-32">
+      <section className="relative border-t border-[var(--color-border)] py-20 sm:py-28 lg:py-32">
         <div className="mx-auto max-w-[1600px] px-6">
           <SectionHeader
             eyebrow="Connectors"
@@ -362,7 +368,7 @@ export default function HomePage() {
       </section>
 
       {/* ───────────────────────────── TEMPLATES ──────────────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
+      <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-20 sm:py-28 lg:py-32">
         <div className="mx-auto max-w-[1600px] px-6 text-center">
           <SectionHeader
             eyebrow="Templates"
@@ -377,7 +383,7 @@ export default function HomePage() {
       </section>
 
       {/* ────────────────────────── FEATURE GRID ──────────────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] py-32">
+      <section className="relative border-t border-[var(--color-border)] py-20 sm:py-28 lg:py-32">
         <div className="mx-auto max-w-[1600px] px-6">
           <SectionHeader
             eyebrow="Capabilities"
@@ -412,7 +418,7 @@ export default function HomePage() {
       </section>
 
       {/* ────────────────────────────── PRICING ───────────────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
+      <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-20 sm:py-28 lg:py-32">
         <div className="mx-auto max-w-[1600px] px-6">
           <SectionHeader
             eyebrow={marketingContent.pricing.eyebrow}
@@ -498,7 +504,7 @@ export default function HomePage() {
       </section>
 
       {/* ───────────────────────────── COMMUNITY ──────────────────────────────── */}
-      <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-32">
+      <section className="relative border-t border-[var(--color-border)] bg-[#0c0b0a] py-20 sm:py-28 lg:py-32">
         <div className="mx-auto max-w-[1600px] px-6">
           <div className="grid gap-16 md:grid-cols-2 md:items-center">
             <div>
@@ -609,7 +615,7 @@ export default function HomePage() {
       </section>
 
       {/* ──────────────────────────────── CLOSER ──────────────────────────────── */}
-      <section className="relative overflow-hidden border-t border-[var(--color-border)] py-32">
+      <section className="relative overflow-hidden border-t border-[var(--color-border)] py-20 sm:py-28 lg:py-32">
         <div className="gradient-radial-amber pointer-events-none absolute inset-x-0 bottom-0 top-0" />
         <div className="relative mx-auto max-w-4xl px-6 text-center">
           <h2 className="text-balance font-display text-5xl leading-[1.02] text-[var(--color-bone)] md:text-7xl">

@@ -24,7 +24,7 @@ export function TriggerShowcase({ triggers }: Props) {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
+    <div className="grid gap-4 md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr]">
       {/* Tabs */}
       <div className="flex flex-col gap-2">
         {triggers.map((t) => {
@@ -74,13 +74,13 @@ export function TriggerShowcase({ triggers }: Props) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className="grid h-full min-h-[300px] gap-0 lg:grid-cols-2"
+                className="grid h-full min-h-[240px] gap-0 md:min-h-[300px] md:grid-cols-2"
               >
                 <div className="space-y-3 p-6 lg:p-8">
                   <h3 className="font-display text-3xl text-[var(--color-bone)]">{t.title}</h3>
                   <p className="text-sm leading-relaxed text-[var(--color-bone-muted)]">{t.body}</p>
                 </div>
-                <div className="flex border-t border-[var(--color-border)] bg-[var(--color-ink)] p-5 lg:border-l lg:border-t-0">
+                <div className="flex border-t border-[var(--color-border)] bg-[var(--color-ink)] p-4 sm:p-5 md:border-l md:border-t-0">
                   <pre className="flex-1 overflow-auto font-mono text-[12px] leading-[1.7] text-[var(--color-bone)]">
                     <code>
                       {t.snippet.split("\n").map((line, lineIdx, allLines) => (

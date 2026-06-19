@@ -96,7 +96,7 @@ export function TerminalDemo({ sequence }: Props) {
       </div>
       <div
         ref={outputRef}
-        className="h-[360px] space-y-3 overflow-auto p-5 font-mono text-[13px] leading-relaxed"
+        className="h-[260px] space-y-3 overflow-auto p-5 font-mono text-[12px] leading-relaxed sm:h-[320px] sm:text-[13px] md:h-[360px]"
       >
         {sequence.slice(0, step + 1).map((frame, i) => (
           <div key={`${frame.command}-${frame.output.join("|")}`}>

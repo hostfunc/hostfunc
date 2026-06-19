@@ -68,7 +68,7 @@ export function AnimatedEditor({ filename, code, speed = 18, autoStart = false }
           {filename}
         </span>
       </div>
-      <div className="relative flex h-[360px] font-mono text-[13px] leading-[1.7]">
+      <div className="relative flex h-[260px] font-mono text-[12px] leading-[1.7] sm:h-[320px] sm:text-[13px] md:h-[360px]">
         <LineNumbers code={typed} />
         <pre
           ref={contentRef}
