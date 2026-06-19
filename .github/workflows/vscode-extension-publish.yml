@@ -15,6 +15,9 @@ jobs:
   publish:
     name: Package & publish
     runs-on: ubuntu-latest
+    env:
+      VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      OVSX_PAT: ${{ secrets.OVSX_PAT }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -47,17 +50,18 @@ jobs:
         working-directory: apps/vscode-extension
         run: pnpm package
 
+      # Each marketplace publishes only when its token is configured, so the
+      # extension can ship to Open VSX alone while the VS Marketplace publisher
+      # is still being set up.
       - name: Publish to Visual Studio Marketplace
+        if: ${{ env.VSCE_PAT != '' }}
         working-directory: apps/vscode-extension
         run: npx @vscode/vsce publish --no-dependencies --packagePath hostfunc.vsix -p "$VSCE_PAT"
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       - name: Publish to Open VSX
+        if: ${{ env.OVSX_PAT != '' }}
         working-directory: apps/vscode-extension
         run: npx ovsx publish hostfunc.vsix -p "$OVSX_PAT"
-        env:
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
       - name: Upload .vsix artifact
         uses: actions/upload-artifact@v4
