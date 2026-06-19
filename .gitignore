@@ -48,3 +48,6 @@ apps/*/.wrangler/
 dev/
 .vercel
 .env*.local
+
+# Packaged extension (build artifact)
+apps/vscode-extension/*.vsix

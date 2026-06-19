@@ -1,7 +1,7 @@
 {
   "name": "hostfunc-vscode",
   "displayName": "hostfunc",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "description": "Build, deploy, and run hostfunc functions without leaving your editor.",
   "license": "AGPL-3.0-only",
@@ -105,7 +105,7 @@
       "properties": {
         "hostfunc.baseUrl": {
           "type": "string",
-          "default": "https://hostfunc.io",
+          "default": "https://app.hostfunc.io",
           "description": "Base URL of the hostfunc control plane to connect to."
         },
         "hostfunc.pushOnSave": {
