@@ -1,8 +1,14 @@
 import { requireActiveOrg, requireSession } from "@/lib/session";
 import { db, schema } from "@hostfunc/db";
 import { eq } from "drizzle-orm";
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { DashboardNavbar } from "../dashboard/navbar";
+
+/** Private, authenticated flow — keep out of search indexes. */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function NewWorkspaceLayout({ children }: { children: ReactNode }) {
   const [{ orgId }, session] = await Promise.all([requireActiveOrg(), requireSession()]);

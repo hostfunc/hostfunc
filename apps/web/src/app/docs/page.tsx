@@ -1,12 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { docsSections, getDocsPage } from "@/lib/docs-content";
+import { pageMetadata } from "@/lib/seo";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 
-export const metadata = {
-  title: "Documentation | hostfunc",
-  description: "Learn how to build, deploy, and manage serverless functions.",
-};
+export const metadata = pageMetadata({
+  title: "Documentation",
+  description:
+    "Learn how to build, deploy, and operate serverless TypeScript functions on hostfunc — guides, CLI, SDK reference, MCP, and security.",
+  path: "/docs",
+  image: "/og/docs",
+});
 
 function renderInlineCode(text: string) {
   const parts = text.split(/(`[^`]+`)/g);

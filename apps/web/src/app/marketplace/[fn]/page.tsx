@@ -3,13 +3,16 @@ import { FunctionLogo } from "@/components/function/function-logo";
 import { CodePreview } from "@/components/marketing/code-preview";
 import { FunctionActions } from "@/components/marketplace/function-actions";
 import { HtmlPreviewFrame } from "@/components/marketplace/html-preview-frame";
+import { JsonLd } from "@/components/seo/json-ld";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WorkspaceLogo } from "@/components/workspace/workspace-logo";
 import { renderMarketplaceReadme } from "@/lib/marketplace-readme";
+import { breadcrumbJsonLd, pageMetadata, softwareSourceCodeJsonLd } from "@/lib/seo";
 import { getOptionalSession } from "@/lib/session";
 import { getMarketplaceFunction, listFunctionComments } from "@/server/functions";
 import { ArrowLeft, GitFork, MessageSquare, Package, Star } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CommentsThread } from "./comments-thread";
@@ -19,6 +22,34 @@ function titleCase(value: string): string {
     .split("-")
     .map((segment) => segment.slice(0, 1).toUpperCase() + segment.slice(1))
     .join(" ");
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ fn: string }>;
+}): Promise<Metadata> {
+  const { fn: fnId } = await params;
+  const fn = await getMarketplaceFunction(fnId).catch(() => null);
+  if (!fn) {
+    return pageMetadata({
+      title: "Function not found",
+      description: "This marketplace function could not be found.",
+      path: `/marketplace/${fnId}`,
+      noindex: true,
+    });
+  }
+  const description =
+    fn.shortDescription ||
+    fn.description ||
+    `${fn.slug} — a public TypeScript function by ${fn.orgName} on the hostfunc marketplace.`;
+  // `image: false` — this route colocates its own dynamic opengraph-image.
+  return pageMetadata({
+    title: `${fn.slug} by ${fn.orgName}`,
+    description,
+    path: `/marketplace/${fn.id}`,
+    image: false,
+  });
 }
 
 export default async function MarketplaceFunctionPage({
@@ -33,8 +64,26 @@ export default async function MarketplaceFunctionPage({
   const comments = await listFunctionComments(fn.id);
   const readmeHtml = fn.readme ? renderMarketplaceReadme(fn.readme, fn.id) : "";
 
+  const fnDescription =
+    fn.shortDescription || fn.description || `${fn.slug} — a public TypeScript function.`;
+
   return (
     <main className="relative min-h-screen bg-[var(--color-ink)] text-[var(--color-bone)]">
+      <JsonLd
+        data={softwareSourceCodeJsonLd({
+          name: fn.slug,
+          description: fnDescription,
+          path: `/marketplace/${fn.id}`,
+          author: fn.orgName,
+        })}
+      />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Marketplace", path: "/marketplace" },
+          { name: fn.slug, path: `/marketplace/${fn.id}` },
+        ])}
+      />
       <div className="gradient-radial-amber pointer-events-none absolute inset-x-0 top-0 h-[520px]" />
       <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
         <div className="flex w-full items-center justify-between px-6 py-4">

@@ -5,6 +5,7 @@ import { MarketplaceFilters } from "@/components/marketplace/marketplace-filters
 import type { MarketplaceView } from "@/components/marketplace/search-params";
 import { Button } from "@/components/ui/button";
 import { assertMarketingContent, marketingContent } from "@/lib/marketing-content";
+import { pageMetadata } from "@/lib/seo";
 import { getOptionalSession } from "@/lib/session";
 import {
   MARKETPLACE_CATEGORIES,
@@ -13,6 +14,13 @@ import {
 } from "@/server/functions";
 import { ArrowRight, ArrowUpRight, Boxes } from "lucide-react";
 import Link from "next/link";
+
+export const metadata = pageMetadata({
+  title: "Marketplace",
+  description:
+    "Browse and fork open-source TypeScript functions — HTTP, cron, email, and MCP triggers, ready to deploy on hostfunc in seconds.",
+  path: "/marketplace",
+});
 
 const MARKETPLACE_SORTS: MarketplaceSort[] = ["featured", "trending", "recent", "stars", "forks"];
 

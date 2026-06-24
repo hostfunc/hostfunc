@@ -2,12 +2,18 @@ import { getGithubConsentState, requireActiveOrg, requireSession } from "@/lib/s
 import { getSetupState } from "@/server/setup-state";
 import { db, schema } from "@hostfunc/db";
 import { eq } from "drizzle-orm";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { DashboardNavbar } from "./navbar";
 
 /** Session and org context must never be served from a static shell (avoids stale RSC on reload). */
 export const dynamic = "force-dynamic";
+
+/** The authenticated app is private; keep it out of search indexes. */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const setup = getSetupState();

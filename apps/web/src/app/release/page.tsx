@@ -1,4 +1,12 @@
 import { PolicyPageShell } from "@/components/marketing/policy-page-shell";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Release Workflow",
+  description:
+    "How hostfunc versions and publishes its public npm packages, and the safeguards run before every release.",
+  path: "/release",
+});
 
 export default function ReleasePage() {
   return (

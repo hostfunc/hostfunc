@@ -1,4 +1,12 @@
 import { PolicyPageShell } from "@/components/marketing/policy-page-shell";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Security",
+  description:
+    "How hostfunc secures auth, function execution boundaries, and encrypted secret handling — the controls in place today.",
+  path: "/security",
+});
 
 export default function SecurityPage() {
   return (

@@ -1,6 +1,13 @@
 import Link from "next/link";
 
 import { PolicyPageShell } from "@/components/marketing/policy-page-shell";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Changelog",
+  description: "Everything that shipped in hostfunc across the platform, runtime, SDK, and CLI.",
+  path: "/changelog",
+});
 
 export default function ChangelogPage() {
   return (

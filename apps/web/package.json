@@ -26,6 +26,7 @@
     "@hostfunc/sdk": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.13.1",
     "@monaco-editor/react": "^4.7.0",
+    "@next/third-parties": "^16.2.9",
     "@supabase/supabase-js": "^2.106.0",
     "argon2": "^0.44.0",
     "better-auth": "^1.6.2",

@@ -1,6 +1,13 @@
 import Link from "next/link";
 
 import { PolicyPageShell } from "@/components/marketing/policy-page-shell";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Privacy Policy",
+  description: "What data hostfunc processes, why, and how to request access or deletion.",
+  path: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (

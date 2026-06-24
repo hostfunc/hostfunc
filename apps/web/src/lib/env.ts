@@ -8,6 +8,13 @@ const schema = z
     BETTER_AUTH_URL: z.string().url(),
     /** Canonical public site origin — used as the metadataBase for social share tags. */
     NEXT_PUBLIC_SITE_URL: z.string().url().default("https://hostfunc.io"),
+    /** GA4 measurement ID (e.g. "G-XXXXXXXXXX"). Public by design; analytics is off when unset. */
+    NEXT_PUBLIC_GA_ID: z
+      .string()
+      .regex(/^G-[A-Z0-9]+$/, "must look like G-XXXXXXXXXX")
+      .optional(),
+    /** Google Search Console verification token (the `content` of the meta tag). */
+    GOOGLE_SITE_VERIFICATION: z.string().min(1).optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
     GITHUB_CLIENT_ID: z.string().optional(),

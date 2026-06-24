@@ -1,4 +1,6 @@
+import { JsonLd } from "@/components/seo/json-ld";
 import { getDocsPage } from "@/lib/docs-content";
+import { breadcrumbJsonLd, docsBreadcrumbs, techArticleJsonLd } from "@/lib/seo";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { DocsCodeBlock } from "./docs-code-block";
@@ -25,6 +27,8 @@ export function DocsArticle({ path }: { path: string }) {
 
   return (
     <article className="docs-prose animate-in space-y-12 pb-20 fade-in duration-500">
+      <JsonLd data={techArticleJsonLd({ title: page.title, description: page.summary, path })} />
+      <JsonLd data={breadcrumbJsonLd(docsBreadcrumbs(path))} />
       {/* Header */}
       <header className="space-y-5">
         <h1 className="font-display text-4xl leading-[1.08] tracking-tight text-[var(--color-bone)] md:text-5xl">

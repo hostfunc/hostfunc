@@ -1,6 +1,9 @@
 import { Providers } from "@/components/providers";
+import { JsonLd } from "@/components/seo/json-ld";
 import { BRAND } from "@/lib/brand";
 import { env } from "@/lib/env";
+import { organizationJsonLd, softwareApplicationJsonLd, websiteJsonLd } from "@/lib/seo";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
@@ -42,6 +45,9 @@ export const metadata: Metadata = {
     description: BRAND.description,
   },
   robots: { index: true, follow: true },
+  ...(env.GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: env.GOOGLE_SITE_VERIFICATION } }
+    : {}),
 };
 
 export const viewport: Viewport = {
@@ -57,8 +63,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={`${geist.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable} ${pixelifySans.variable}`}
     >
       <body>
+        <JsonLd data={organizationJsonLd()} />
+        <JsonLd data={websiteJsonLd()} />
+        <JsonLd data={softwareApplicationJsonLd()} />
         <Providers>{children}</Providers>
       </body>
+      {env.NEXT_PUBLIC_GA_ID ? <GoogleAnalytics gaId={env.NEXT_PUBLIC_GA_ID} /> : null}
     </html>
   );
 }
