@@ -1,3 +1,4 @@
+import createMDX from "@next/mdx";
 import type { NextConfig } from "next";
 
 const securityHeaders = [
@@ -22,6 +23,11 @@ const config: NextConfig = {
 
   typedRoutes: true,
 
+  // Allow `.md`/`.mdx` files to be imported (used for blog posts). The blog
+  // renders MDX content from `src/content/blog/*.mdx`; post metadata lives in the
+  // typed registry in `src/lib/blog.ts`, not in frontmatter.
+  pageExtensions: ["ts", "tsx", "js", "jsx", "md", "mdx"],
+
   // Better Auth needs to know about server-only modules
   serverExternalPackages: ["postgres", "drizzle-orm", "esbuild"],
   async headers() {
@@ -29,4 +35,8 @@ const config: NextConfig = {
   },
 };
 
-export default config;
+// No remark/rehype plugins → safe under Turbopack (functions can't cross the
+// JS↔Rust boundary, but we pass none).
+const withMDX = createMDX({});
+
+export default withMDX(config);

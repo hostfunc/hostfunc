@@ -1,4 +1,7 @@
+import { blogPosts } from "@/lib/blog";
+import { comparisons } from "@/lib/comparisons";
 import { env } from "@/lib/env";
+import { useCases } from "@/lib/use-cases";
 import { searchMarketplaceFunctions } from "@/server/functions";
 import type { MetadataRoute } from "next";
 
@@ -15,7 +18,11 @@ export const revalidate = 3600;
  */
 const staticRoutes: Array<{ path: string; changeFrequency: ChangeFrequency; priority: number }> = [
   { path: "/", changeFrequency: "weekly", priority: 1 },
+  { path: "/pricing", changeFrequency: "monthly", priority: 0.9 },
   { path: "/marketplace", changeFrequency: "daily", priority: 0.9 },
+  { path: "/compare", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/use-cases", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/blog", changeFrequency: "weekly", priority: 0.6 },
   { path: "/connectors", changeFrequency: "weekly", priority: 0.7 },
   { path: "/changelog", changeFrequency: "weekly", priority: 0.6 },
   { path: "/security", changeFrequency: "monthly", priority: 0.5 },
@@ -66,6 +73,34 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "weekly",
       priority: path === "/docs" ? 0.8 : 0.7,
+    });
+  }
+
+  // Comparison and use-case landing pages — static, content-driven routes.
+  for (const comparison of comparisons) {
+    entries.push({
+      url: `${siteUrl}/compare/${comparison.slug}`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    });
+  }
+  for (const useCase of useCases) {
+    entries.push({
+      url: `${siteUrl}/use-cases/${useCase.slug}`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    });
+  }
+
+  // Blog posts — `lastModified` from each post's publish date.
+  for (const post of blogPosts) {
+    entries.push({
+      url: `${siteUrl}/blog/${post.slug}`,
+      lastModified: new Date(`${post.date}T00:00:00Z`),
+      changeFrequency: "monthly",
+      priority: 0.6,
     });
   }
 

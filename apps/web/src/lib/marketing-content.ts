@@ -173,8 +173,9 @@ export const marketingContent: MarketingContent = {
   secondaryCta: { label: "Read docs", href: "/docs" },
 
   navLinks: [
+    { label: "Pricing", href: "/pricing" },
+    { label: "Use cases", href: "/use-cases" },
     { label: "Marketplace", href: "/marketplace" },
-    { label: "Connectors", href: "/connectors" },
     { label: "Docs", href: "/docs" },
   ],
 
@@ -554,15 +555,18 @@ export async function main(input: { url: string }) {
   },
 
   footerLinks: [
+    { label: "Pricing", href: "/pricing" },
+    { label: "Compare", href: "/compare" },
+    { label: "Use cases", href: "/use-cases" },
+    { label: "Blog", href: "/blog" },
     { label: "Docs", href: "/docs" },
-    { label: "Release", href: "/release" },
+    { label: "Marketplace", href: "/marketplace" },
     { label: "Security", href: "/security" },
+    { label: "Changelog", href: "/changelog" },
     { label: "Terms", href: "/terms" },
     { label: "Privacy", href: "/privacy" },
-    { label: "Marketplace", href: "/marketplace" },
     { label: "GitHub", href: "https://github.com/hostfunc/hostfunc" },
     { label: "Discord", href: "https://discord.gg/hostfunc" },
-    { label: "Changelog", href: "/changelog" },
   ],
 
   footerNote:
