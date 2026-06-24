@@ -8,12 +8,30 @@ export const OG_SIZE = { width: 1200, height: 630 } as const;
 export const OG_CONTENT_TYPE = "image/png";
 export const OG_ALT = BRAND.title;
 
+export interface OgImageOptions {
+  /** Small uppercase label above the headline, e.g. "Documentation". */
+  eyebrow?: string;
+  /** Large headline. Defaults to the brand tagline. */
+  title?: string;
+  /** Supporting line under the headline. Defaults to the brand one-liner. */
+  subtitle?: string;
+}
+
+const DEFAULT_SUBTITLE =
+  "Write a single main() and deploy in seconds. Bundling, secrets, scheduling, and observability handled.";
+
 /**
  * Render the hostfunc social share card (Open Graph + Twitter). A dark, brand-lit
  * panel with the logo mark, wordmark, tagline, and a terminal-style footer — the
  * image that previews in Slack, WhatsApp, iMessage, X, LinkedIn, etc.
+ *
+ * Called with no args it renders the generic brand card; pass `title`/`subtitle`/
+ * `eyebrow` for a per-page card (docs sections, marketplace functions, …).
  */
-export async function renderOgImage(): Promise<ImageResponse> {
+export async function renderOgImage(options: OgImageOptions = {}): Promise<ImageResponse> {
+  const eyebrow = options.eyebrow;
+  const title = options.title ?? BRAND.tagline;
+  const subtitle = options.subtitle ?? DEFAULT_SUBTITLE;
   const mono = await readFile(join(process.cwd(), "public/fonts/JetBrainsMono-Medium.ttf"));
 
   return new ImageResponse(
@@ -40,6 +58,19 @@ export async function renderOgImage(): Promise<ImageResponse> {
 
       {/* Middle: headline + tagline */}
       <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        {eyebrow ? (
+          <div
+            style={{
+              fontSize: 24,
+              fontWeight: 500,
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              color: BRAND.amber,
+            }}
+          >
+            {eyebrow}
+          </div>
+        ) : null}
         <div
           style={{
             fontSize: 70,
@@ -49,11 +80,10 @@ export async function renderOgImage(): Promise<ImageResponse> {
             maxWidth: "920px",
           }}
         >
-          {BRAND.tagline}
+          {title}
         </div>
         <div style={{ fontSize: 30, color: BRAND.stone, maxWidth: "880px", lineHeight: 1.35 }}>
-          Write a single main() and deploy in seconds. Bundling, secrets, scheduling, and
-          observability handled.
+          {subtitle}
         </div>
       </div>
 

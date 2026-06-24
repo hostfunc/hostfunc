@@ -1,6 +1,14 @@
 import Link from "next/link";
 
 import { PolicyPageShell } from "@/components/marketing/policy-page-shell";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Terms of Service",
+  description:
+    "The terms governing use of hostfunc — dashboard, runtime APIs, CLI, and related hosted features.",
+  path: "/terms",
+});
 
 export default function TermsPage() {
   return (

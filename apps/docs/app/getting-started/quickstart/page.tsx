@@ -1,3 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Quickstart",
+  description: "Create a function, deploy it, and invoke /run/:owner/:slug on hostfunc.",
+};
+
 export default function QuickstartPage() {
   return (
     <article>

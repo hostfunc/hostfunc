@@ -1,3 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Install",
+  description: "Install hostfunc: Node 22+, pnpm 9+, then pnpm install and pnpm setup.",
+};
+
 export default function InstallPage() {
   return (
     <article>
