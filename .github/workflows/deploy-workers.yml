@@ -25,7 +25,10 @@ on:
     branches:
       - main
     tags:
-      - "v*"
+      # Only release tags (v1.2.3) deploy workers to production. Guarded against
+      # other "v…"-prefixed tags like `vscode-v0.0.2`, which previously matched
+      # `v*` and accidentally triggered a production worker deploy.
+      - "v[0-9]*"
 
 concurrency:
   group: deploy-workers-${{ github.ref }}
@@ -47,7 +50,7 @@ jobs:
           elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "environment=staging" >> "$GITHUB_OUTPUT"
             echo "should_deploy=true" >> "$GITHUB_OUTPUT"
-          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/v* ]]; then
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/v[0-9]* ]]; then
             echo "environment=production" >> "$GITHUB_OUTPUT"
             echo "should_deploy=true" >> "$GITHUB_OUTPUT"
           else
