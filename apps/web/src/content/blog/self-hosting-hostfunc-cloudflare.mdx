@@ -1,0 +1,46 @@
+hostfunc is open source under AGPL-3.0, and self-hosting is a first-class path — not an afterthought. If you'd rather run the whole platform on your own Cloudflare account, you can. Here's how the pieces fit together.
+
+## What "self-hosting" actually means here
+
+hostfunc has two halves:
+
+- A **control plane** — the Next.js app that holds your dashboard, the MCP server, auth, and all metadata in Postgres.
+- A set of **edge workers** on Cloudflare — the runtime router, cron, email, outbound (egress) proxy, and tail (logging) workers.
+
+Self-hosting means running the control plane wherever you like and pointing the workers at your own Cloudflare account and dispatch namespace.
+
+## The short version
+
+```bash
+git clone https://github.com/hostfunc/hostfunc
+cd hostfunc
+docker compose up
+```
+
+That brings up Postgres and Redis locally and gets the control plane running. From there you wire in your own secrets and Cloudflare credentials.
+
+## What you'll need to provide
+
+A few things are specific to your deployment:
+
+- **A Cloudflare account** with Workers for Platforms enabled (the dispatch namespace is a paid add-on).
+- **`SECRETS_MASTER_KEY`** — 32 bytes, base64-encoded. Generate it with `openssl rand -base64 32`. This is the root key that wraps every per-secret data encryption key.
+- **Runtime tokens** that must match across the control plane and the workers: `RUNTIME_INVOKE_TOKEN`, `RUNTIME_INGEST_TOKEN`, and `TRIGGER_CONTROL_TOKEN`.
+- **A Postgres database** — the control plane owns the schema via Drizzle migrations.
+
+## The AGPL question, answered plainly
+
+The license is the part people ask about most, so here's the honest version:
+
+- **Running it for yourself or your team?** AGPL asks nothing of you. Build and deploy whatever you want.
+- **Running a modified, hosted version that competes with hostfunc?** AGPL asks you to publish your changes.
+
+Using the platform to ship your own functions never triggers any obligation. The copyleft only bites if you're offering a modified hostfunc *as a service* to others.
+
+## Why we made it self-hostable
+
+Two reasons. First, trust: a function platform handles your secrets and runs your code, and "you can read the source and run it yourself" is a stronger guarantee than any pledge we could make. Second, longevity: open infrastructure outlives any single company's roadmap.
+
+If you want the managed experience without operating the infrastructure, the [hosted plans](/pricing) exist for exactly that. But the door to self-hosting is always open.
+
+Dig into the [docs](/docs) or grab the source on [GitHub](https://github.com/hostfunc/hostfunc).

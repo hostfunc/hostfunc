@@ -1,0 +1,62 @@
+Most "serverless" tutorials spend the first twenty minutes on setup: an account, a CLI, an IAM role, a config file, a deploy pipeline. By the time you've written any actual logic, you've forgotten what you came to build.
+
+hostfunc collapses that to a single idea: **write one exported `main()`, hit deploy, get a URL.** Here's the whole loop.
+
+## 1. Write a function
+
+Every hostfunc function is one file that exports a `main()`. Input comes in typed, output goes out as JSON.
+
+```ts
+import fn, { secret } from "@hostfunc/sdk";
+
+export async function main(input: { city: string }) {
+  const apiKey = await secret.getRequired("WEATHER_API_KEY");
+  const data = await fetch(
+    `https://api.weather.gov/points/${input.city}`,
+    { headers: { "x-api-key": apiKey } },
+  ).then((r) => r.json());
+
+  return { city: input.city, forecast: data.properties.forecast };
+}
+```
+
+No server, no router, no handler boilerplate. The platform takes care of bundling, the request lifecycle, and limits.
+
+## 2. Deploy
+
+From the web editor it's one click. From your terminal it's one command:
+
+```bash
+hostfunc deploy
+```
+
+A few seconds later your function is live at a stable URL:
+
+```
+https://hostfunc.io/run/you/weather-digest
+```
+
+That URL is yours to call with `curl`, wire to a webhook, or hand to an agent.
+
+## 3. Run it
+
+```bash
+curl -X POST https://hostfunc.io/run/you/weather-digest \
+  -H "content-type: application/json" \
+  -d '{"city":"London"}'
+```
+
+You'll see the execution in the dashboard with its CPU, wall time, memory, and egress — and the logs stream live as it runs.
+
+## What you got for free
+
+That 90 seconds also bought you a stack you didn't have to assemble:
+
+- **Encrypted secrets** fetched at run time, never baked into the bundle.
+- **Four trigger types** — HTTP, cron, email, and MCP — all on the same function.
+- **Composition**: call other functions with `fn.executeFunction` and watch the lineage graph fill in.
+- **An MCP server** so Claude (or any agent) can run this function as a tool.
+
+The point isn't that 90 seconds is a stunt. It's that the distance between "I have an idea" and "it's deployed and callable" should be measured in seconds — and everything else should already be handled.
+
+Ready to try it? [Start building](/login) or browse the [use cases](/use-cases) to see what people ship.

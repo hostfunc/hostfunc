@@ -99,6 +99,14 @@ test("sitemap lists public routes, excludes the app and redirect aliases", async
   assert.ok(urls.includes(`${siteUrl}/`));
   assert.ok(urls.includes(`${siteUrl}/marketplace`));
   assert.ok(urls.includes(`${siteUrl}/docs/cli`));
+  // Content marketing surfaces — indexes and a representative dynamic route each.
+  assert.ok(urls.includes(`${siteUrl}/pricing`));
+  assert.ok(urls.includes(`${siteUrl}/compare`));
+  assert.ok(urls.includes(`${siteUrl}/compare/val-town`));
+  assert.ok(urls.includes(`${siteUrl}/use-cases`));
+  assert.ok(urls.includes(`${siteUrl}/use-cases/webhooks`));
+  assert.ok(urls.includes(`${siteUrl}/blog`));
+  assert.ok(urls.includes(`${siteUrl}/blog/deploy-typescript-function-90-seconds`));
   // /templates is a redirect alias and the app surface is private.
   assert.ok(!urls.includes(`${siteUrl}/templates`));
   assert.ok(!urls.some((u) => u.includes("/dashboard")));

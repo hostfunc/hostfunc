@@ -1,0 +1,44 @@
+When we started hostfunc, the question wasn't "how do we host functions" — plenty of platforms do that well. It was "what does a function platform look like when half the people deploying to it are agents?"
+
+That question reshaped every decision. Here's the thinking.
+
+## Agents need tools, and tools are just functions
+
+Give a capable LLM access to a few well-defined functions and it stops being a chatbot and starts being a system that can act. The hard part was never the model — it's the plumbing: hosting the tool, exposing it over the [Model Context Protocol](/docs/mcp), handling auth, rate limits, and an audit trail.
+
+That plumbing is the same every single time. So we built it in.
+
+## MCP as a first-class surface, not a bolt-on
+
+hostfunc ships an MCP server that exposes your functions to any MCP client. Crucially, it uses **the same handlers the dashboard uses** — there's no separate "agent API" that drifts out of sync with the real one.
+
+```json
+{
+  "mcpServers": {
+    "hostfunc": {
+      "url": "https://hostfunc.io/api/mcp",
+      "headers": { "Authorization": "Bearer hf_live_…" }
+    }
+  }
+}
+```
+
+Paste that into Claude Desktop and the model can list, read, write, run, and debug your functions — all rate-limited and audited the same way a human's actions are.
+
+## Scratch functions: the feature we didn't expect to love
+
+The behavior that surprised us most is the **scratch function**. An agent calls `create_scratch_function`, the function runs, returns a result, and then self-destructs on a TTL.
+
+It turns out a huge fraction of what you want an agent to do is one-off computation: "fetch these three pages and tell me which mentions X most." You don't want that polluting your namespace forever. A scratch function is the right primitive — ephemeral by default, gone in five minutes.
+
+## Lineage: watching systems compose themselves
+
+Because every `fn.executeFunction` call is recorded with its parent, we can render a live lineage graph. When an agent composes your functions into a workflow, you can *watch it happen* — edges weighted by call volume, colored by error rate.
+
+That visibility changes how you trust an agent with real capabilities. You're not reading a transcript and hoping; you're looking at the actual call graph.
+
+## The bet
+
+The bet behind hostfunc is simple: the next wave of software gets composed, not just written — and a lot of the composers are agents. A platform built for that world treats MCP, ephemerality, and lineage as core primitives, not integrations you add later.
+
+Want to see it? Read the [docs](/docs) or [start building](/login).

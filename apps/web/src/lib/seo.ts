@@ -140,6 +140,55 @@ export function breadcrumbJsonLd(
   };
 }
 
+/**
+ * schema.org FAQPage from `{ question, answer }` pairs. Render this ONLY on a page
+ * where the same Q&A is visible to users — Google requires the structured data to
+ * match on-page content. Used on `/pricing`.
+ */
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+export function faqPageJsonLd(items: FaqItem[]): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  };
+}
+
+/** schema.org BlogPosting — rendered on a single blog post page. */
+export function blogPostingJsonLd(input: {
+  title: string;
+  description: string;
+  path: string;
+  datePublished: string;
+  dateModified?: string;
+  author: string;
+}): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: input.title,
+    description: input.description,
+    url: `${siteUrl}${input.path}`,
+    datePublished: input.datePublished,
+    dateModified: input.dateModified ?? input.datePublished,
+    author: { "@type": "Organization", name: input.author },
+    publisher: {
+      "@type": "Organization",
+      name: BRAND.name,
+      logo: { "@type": "ImageObject", url: `${siteUrl}/logo.svg` },
+    },
+    image: `${siteUrl}${DEFAULT_OG_IMAGE}`,
+  };
+}
+
 /** Per-page `Metadata` for a docs route, sourced from its `docsPages` content. */
 export function docsMetadata(path: string): Metadata {
   const page = getDocsPage(path);
