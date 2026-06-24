@@ -1,8 +1,13 @@
 import { z } from "zod";
+import { isProductionEnv } from "./env-target";
 
 const schema = z
   .object({
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+    // Vercel sets this to "production" | "preview" | "development". Used to gate
+    // prod-only validation on the real deploy target (NODE_ENV is "production"
+    // for every Vercel build, including previews).
+    VERCEL_ENV: z.string().optional(),
     DATABASE_URL: z.string().url(),
     BETTER_AUTH_SECRET: z.string().min(32),
     BETTER_AUTH_URL: z.string().url(),
@@ -76,7 +81,10 @@ const schema = z
     SUPABASE_LOGO_BUCKET: z.string().min(1).default("workspace-logos"),
   })
   .superRefine((value, ctx) => {
-    if (value.NODE_ENV !== "production") return;
+    // Skip prod-only checks unless this is a real production target. Crucially,
+    // Vercel Preview builds run with NODE_ENV=production but VERCEL_ENV=preview,
+    // so they shouldn't be required to carry production secrets.
+    if (!isProductionEnv(value)) return;
 
     const mustBeHttps = [
       { key: "BETTER_AUTH_URL", value: value.BETTER_AUTH_URL },
