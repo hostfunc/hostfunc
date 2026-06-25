@@ -3,6 +3,7 @@
 import {
   deviceAuthorizationClient,
   magicLinkClient,
+  oneTapClient,
   organizationClient,
 } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
@@ -16,9 +17,19 @@ const authBaseURL =
     ? window.location.origin
     : (process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? "http://localhost:3000");
 
+// Public Google client id for One Tap. Inlined by Next at build time; empty in dev/CI where the
+// `<GoogleOneTap />` component gates on its presence, so the One Tap action is never invoked.
+const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
+
 export const authClient = createAuthClient({
   baseURL: authBaseURL,
-  plugins: [magicLinkClient(), organizationClient(), deviceAuthorizationClient()],
+  plugins: [
+    magicLinkClient(),
+    organizationClient(),
+    deviceAuthorizationClient(),
+    oneTapClient({ clientId: googleClientId }),
+  ],
 });
 
-export const { signIn, signOut, useSession, useActiveOrganization, organization } = authClient;
+export const { signIn, signOut, useSession, useActiveOrganization, organization, oneTap } =
+  authClient;

@@ -3,7 +3,7 @@ import { magicLinkEmail, orgInviteEmail } from "@/server/email-templates";
 import { db, genId, schema, sql } from "@hostfunc/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { bearer, deviceAuthorization, magicLink, organization } from "better-auth/plugins";
+import { bearer, deviceAuthorization, magicLink, oneTap, organization } from "better-auth/plugins";
 import { parentCookieDomain } from "./cookie-domain";
 import { env } from "./env";
 
@@ -87,6 +87,10 @@ export const auth = betterAuth({
     // Lets the extension present the device-approved session as `Authorization: Bearer <session>`
     // to `/api/cli/device/exchange` without cookies.
     bearer(),
+    // Google One Tap on the marketing site. Verifies the GSI id token against the Google client
+    // configured for social login (`socialProviders.google.clientId`), so the public
+    // `NEXT_PUBLIC_GOOGLE_CLIENT_ID` on the client must match `GOOGLE_CLIENT_ID` here.
+    oneTap(),
   ],
   databaseHooks: {
     user: {
