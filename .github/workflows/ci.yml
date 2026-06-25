@@ -97,6 +97,22 @@ jobs:
       - run: pnpm --filter @hostfunc/web build:deps
       - run: pnpm --filter @hostfunc/web build
 
+  docs-build:
+    name: Docs Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --prod=false
+      # apps/docs has no workspace deps and needs no env — a plain build is the guard.
+      - run: pnpm --filter @hostfunc/docs build
+
   cli-pack-smoke:
     name: CLI Pack Smoke
     runs-on: ubuntu-latest

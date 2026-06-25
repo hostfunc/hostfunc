@@ -1,23 +1,16 @@
+import { DocsShell } from "@/app/_components/docs-shell";
+import { JsonLd } from "@/components/seo/json-ld";
+import { BRAND } from "@/lib/brand";
+import { organizationJsonLd, websiteJsonLd } from "@/lib/docs-seo";
+import { DOCS_URL, GA_ID, GOOGLE_VERIFICATION } from "@/lib/site";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-
-/**
- * Canonical origin for the docs site. The live user docs currently render from
- * the web app at `hostfunc.io/docs`; this standalone site is a pre-launch
- * scaffold (see README). Override with `NEXT_PUBLIC_DOCS_URL` once it ships.
- */
-const docsUrl = process.env.NEXT_PUBLIC_DOCS_URL ?? "https://docs.hostfunc.io";
-
-/**
- * ⚠️ Launch toggle: while this scaffold is unfinished it is kept OUT of the
- * index so it can't compete with `hostfunc.io/docs` for the same queries.
- * When the docs migration goes live, set this to `false` (and flip the
- * `disallow` in `robots.ts`).
- */
-const SCAFFOLD_NOINDEX = true;
+import "./globals.css";
+import { geist, jetbrainsMono, pixelifySans, plusJakartaSans } from "./fonts";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(docsUrl),
+  metadataBase: new URL(DOCS_URL),
   title: {
     default: "hostfunc Docs",
     template: "%s · hostfunc Docs",
@@ -25,19 +18,28 @@ export const metadata: Metadata = {
   description: "Documentation for hostfunc — tiny, composable TypeScript functions.",
   applicationName: "hostfunc Docs",
   alternates: { canonical: "/" },
-  ...(SCAFFOLD_NOINDEX ? { robots: { index: false, follow: false } } : {}),
+  robots: { index: true, follow: true },
+  ...(GOOGLE_VERIFICATION ? { verification: { google: GOOGLE_VERIFICATION } } : {}),
 };
 
 export const viewport: Viewport = {
-  colorScheme: "dark light",
+  themeColor: BRAND.ink,
+  colorScheme: "dark",
 };
 
-export default function DocsLayout({ children }: { children: ReactNode }) {
+export default function DocsRootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body style={{ fontFamily: "ui-sans-serif, system-ui", margin: 0 }}>
-        <main style={{ maxWidth: 960, margin: "0 auto", padding: 24 }}>{children}</main>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${geist.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable} ${pixelifySans.variable}`}
+    >
+      <body>
+        <JsonLd data={organizationJsonLd()} />
+        <JsonLd data={websiteJsonLd()} />
+        <DocsShell>{children}</DocsShell>
       </body>
+      {GA_ID ? <GoogleAnalytics gaId={GA_ID} /> : null}
     </html>
   );
 }

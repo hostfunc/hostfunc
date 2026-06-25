@@ -1,0 +1,190 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+  --font-pixel: var(--font-pixel);
+
+  --color-ink: #0a0908;
+  --color-ink-elevated: #131211;
+  --color-ink-overlay: rgba(255, 255, 255, 0.04);
+  --color-bone: #fafaf6;
+  --color-bone-muted: #a8a29e;
+  --color-bone-faint: #57534e;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-amber: #e8a317;
+  --color-amber-soft: rgba(232, 163, 23, 0.12);
+  --color-amber-hover: #f4b73e;
+  --color-cyan: #22d3ee;
+  --color-cyan-soft: rgba(34, 211, 238, 0.14);
+  --color-rose: #f43f5e;
+  --color-emerald: #10b981;
+
+  --color-syntax-keyword: #d97757;
+  --color-syntax-string: #84cc16;
+  --color-syntax-number: #f59e0b;
+  --color-syntax-comment: #57534e;
+  --color-syntax-function: #fbbf24;
+  --color-syntax-type: #93c5fd;
+  --color-syntax-property: #e7e5e4;
+}
+
+@layer base {
+  body {
+    background: var(--color-ink);
+    color: var(--color-bone);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* App-wide scrollbar styling (Firefox + WebKit). */
+  html,
+  body,
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(232, 163, 23, 0.9) rgba(255, 255, 255, 0.08);
+  }
+
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  *::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  html::-webkit-scrollbar-track,
+  body::-webkit-scrollbar-track,
+  *::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 999px;
+  }
+
+  html::-webkit-scrollbar-thumb,
+  body::-webkit-scrollbar-thumb,
+  *::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(244, 183, 62, 0.96) 0%, rgba(232, 163, 23, 0.82) 100%);
+    border: 2px solid rgba(10, 9, 8, 0.65);
+    border-radius: 999px;
+  }
+
+  html::-webkit-scrollbar-thumb:hover,
+  body::-webkit-scrollbar-thumb:hover,
+  *::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(250, 210, 114, 1) 0%, rgba(244, 183, 62, 0.92) 100%);
+  }
+
+  html::-webkit-scrollbar-corner,
+  body::-webkit-scrollbar-corner,
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  ::selection {
+    background: var(--color-amber-soft);
+    color: var(--color-amber-hover);
+  }
+
+  /* Subtle film grain over the entire page */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.035;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+    font-feature-settings: "ss01", "ss02";
+  }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+  .font-pixel {
+    font-family: var(--font-pixel);
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .glow-amber {
+    box-shadow: 0 0 0 1px rgba(232, 163, 23, 0.2), 0 0 30px rgba(232, 163, 23, 0.08), 0 0 80px
+      rgba(232, 163, 23, 0.04);
+  }
+
+  .gradient-radial-amber {
+    background: radial-gradient(ellipse at 50% 0%, rgba(232, 163, 23, 0.12) 0%, transparent 60%);
+  }
+
+  .docs-code .token.comment {
+    color: var(--color-syntax-comment);
+    font-style: italic;
+  }
+
+  .docs-code .token.keyword {
+    color: var(--color-syntax-keyword);
+  }
+
+  .docs-code .token.string {
+    color: var(--color-syntax-string);
+  }
+
+  .docs-code .token.number {
+    color: var(--color-syntax-number);
+  }
+
+  .docs-code .token.function {
+    color: var(--color-syntax-function);
+  }
+
+  .docs-code .token.type {
+    color: var(--color-syntax-type);
+  }
+
+  .docs-code .token.property {
+    color: var(--color-syntax-property);
+  }
+
+  .docs-code .token.variable {
+    color: var(--color-amber-hover);
+  }
+
+  .docs-code .token.attr-name {
+    color: var(--color-cyan);
+  }
+
+  .docs-code .token.operator {
+    color: var(--color-bone-faint);
+  }
+
+  .docs-code .token.punctuation {
+    color: var(--color-bone-faint);
+  }
+
+  .docs-prose p {
+    max-width: 72ch;
+  }
+
+  .docs-prose li {
+    max-width: 72ch;
+  }
+
+  .docs-prose code {
+    font-family: var(--font-mono);
+  }
+}
