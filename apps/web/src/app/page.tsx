@@ -7,7 +7,6 @@ import { motion } from "framer-motion";
 import {
   Activity,
   ArrowRight,
-  ArrowUpRight,
   Blocks,
   Calendar,
   Check,
@@ -26,14 +25,15 @@ import {
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { Logo } from "@/components/brand/logo";
+import { BrandName } from "@/components/brand/brand-name";
 import { CloudflareMark, TypeScriptMark } from "@/components/brand/tech-icons";
 import { AgentConversation } from "@/components/marketing/agent-conversation";
 import { AnimatedEditor } from "@/components/marketing/animated-editor";
 import { ArchitectureFlow } from "@/components/marketing/architecture-flow";
 import { ConnectorStrip } from "@/components/marketing/connector-strip";
 import { LineageBuilder } from "@/components/marketing/lineage-builder";
-import { MobileNav } from "@/components/marketing/mobile-nav";
+import { SiteFooter } from "@/components/marketing/site-footer";
+import { SiteHeader } from "@/components/marketing/site-header";
 import { TemplateMarquee } from "@/components/marketing/template-marquee";
 import { TerminalDemo } from "@/components/marketing/terminal-demo";
 import { TriggerShowcase } from "@/components/marketing/trigger-showcase";
@@ -63,7 +63,7 @@ const TRUST_ICON: Record<string, ReactNode> = {
 };
 
 export default function HomePage() {
-  const { data: session, isPending } = useSession();
+  const { data: session } = useSession();
   assertMarketingContent();
   const primaryHref = session ? "/dashboard" : marketingContent.primaryCta.href;
   const pricingCtaHref = session ? "/dashboard/settings/billing" : "/login";
@@ -71,80 +71,7 @@ export default function HomePage() {
   return (
     <main className="relative min-h-screen bg-[var(--color-ink)] text-[var(--color-bone)]">
       {/* ─────────────────────────────────── NAV ─────────────────────────────────── */}
-      <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
-        <div className="flex w-full items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-2">
-            <Logo wordmarkClassName="text-xl" />
-          </Link>
-          <nav className="hidden items-center gap-7 md:flex">
-            {marketingContent.navLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                target={link.label === "Docs" ? "_blank" : undefined}
-                rel={link.label === "Docs" ? "noopener noreferrer" : undefined}
-                className="text-sm text-[var(--color-bone-muted)] transition-colors hover:text-[var(--color-bone)]"
-              >
-                <span className="inline-flex items-center gap-1">
-                  {link.label}
-                  {link.label === "Docs" ? <ArrowUpRight className="size-3.5" /> : null}
-                </span>
-              </Link>
-            ))}
-          </nav>
-          <div className="flex items-center gap-3">
-            {isPending ? (
-              <div className="h-9 w-24 animate-pulse rounded-full bg-white/5" />
-            ) : session ? (
-              <Button
-                asChild
-                size="sm"
-                className="rounded-full bg-[var(--color-bone)] px-5 font-medium text-[var(--color-ink)] hover:bg-white"
-              >
-                <Link href="/dashboard">Dashboard</Link>
-              </Button>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="hidden text-sm text-[var(--color-bone-muted)] transition-colors hover:text-[var(--color-bone)] sm:inline"
-                >
-                  Sign in
-                </Link>
-                <Button
-                  asChild
-                  size="sm"
-                  className="rounded-full bg-[var(--color-amber)] px-5 font-medium text-[var(--color-ink)] hover:bg-[var(--color-amber-hover)]"
-                >
-                  <Link href="/login">Get started</Link>
-                </Button>
-              </>
-            )}
-            <Button
-              asChild
-              size="icon"
-              variant="outline"
-              className="size-9 rounded-full border-[var(--color-border)] bg-white/[0.02] text-[var(--color-bone-muted)] hover:bg-white/[0.06] hover:text-[var(--color-bone)]"
-            >
-              <Link
-                href="https://github.com/hostfunc/hostfunc"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Open GitHub repository"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
-                  <path d="M12 .5C5.65.5.5 5.65.5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56l-.01-1.98c-3.2.7-3.88-1.37-3.88-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.15.08 1.76 1.2 1.76 1.2 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.72-1.53-2.56-.3-5.24-1.28-5.24-5.7 0-1.26.45-2.3 1.2-3.1-.12-.3-.52-1.5.11-3.12 0 0 .98-.32 3.2 1.19a10.9 10.9 0 0 1 5.82 0c2.22-1.5 3.2-1.19 3.2-1.19.63 1.62.23 2.82.11 3.12.75.8 1.2 1.84 1.2 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.08.78 2.18l-.01 3.23c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z" />
-                </svg>
-              </Link>
-            </Button>
-            <MobileNav
-              navLinks={marketingContent.navLinks}
-              isLoggedIn={Boolean(session)}
-              primaryHref={primaryHref}
-            />
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       {/* ─────────────────────────────────── HERO ─────────────────────────────────── */}
       <section className="relative overflow-hidden">
@@ -171,7 +98,7 @@ export default function HomePage() {
             </h1>
 
             <p className="mt-8 max-w-2xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
-              {marketingContent.subheadline}
+              <BrandName text={marketingContent.subheadline} />
             </p>
 
             <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
@@ -236,7 +163,7 @@ export default function HomePage() {
               {marketingContent.agentPitch.headline}
             </h2>
             <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-[var(--color-bone-muted)]">
-              {marketingContent.agentPitch.body}
+              <BrandName text={marketingContent.agentPitch.body} />
             </p>
           </div>
 
@@ -408,7 +335,7 @@ export default function HomePage() {
                     {feature.title}
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-[var(--color-bone-muted)]">
-                    {feature.body}
+                    <BrandName text={feature.body} />
                   </p>
                 </div>
               );
@@ -640,32 +567,7 @@ export default function HomePage() {
       </section>
 
       {/* ────────────────────────────── FOOTER ────────────────────────────────── */}
-      <footer className="border-t border-[var(--color-border)] bg-[#070706] py-12">
-        <div className="w-full px-6">
-          <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
-            <div className="flex items-center gap-2">
-              <Logo tone="muted" wordmarkClassName="text-lg text-[var(--color-bone-muted)]" />
-              <span className="ml-3 text-xs text-[var(--color-bone-faint)]">
-                © {new Date().getFullYear()}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-x-7 gap-y-2 text-sm">
-              {marketingContent.footerLinks.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className="text-[var(--color-bone-muted)] transition-colors hover:text-[var(--color-bone)]"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-          <p className="mt-8 max-w-md text-xs leading-relaxed text-[var(--color-bone-faint)]">
-            {marketingContent.footerNote}
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </main>
   );
 }

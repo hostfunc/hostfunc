@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { SiteFooter } from "@/components/marketing/site-footer";
+import { SiteHeader } from "@/components/marketing/site-header";
 import type { ReactNode } from "react";
 
 type PolicyPageShellProps = {
@@ -18,22 +19,7 @@ export function PolicyPageShell({
 }: PolicyPageShellProps) {
   return (
     <main className="min-h-screen bg-[var(--color-ink)] text-[var(--color-bone)]">
-      <header className="w-full border-b border-[var(--color-border)] bg-[var(--color-ink)]/85 backdrop-blur-xl">
-        <div className="flex w-full items-center justify-between px-6 py-4">
-          <Link
-            href="/"
-            className="text-sm text-[var(--color-bone-muted)] hover:text-[var(--color-bone)]"
-          >
-            Back to hostfunc
-          </Link>
-          <Link
-            href="/docs"
-            className="text-sm text-[var(--color-bone-muted)] hover:text-[var(--color-bone)]"
-          >
-            Docs
-          </Link>
-        </div>
-      </header>
+      <SiteHeader />
 
       <section className="mx-auto max-w-6xl px-6 py-14">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-amber)]">
@@ -53,6 +39,8 @@ export function PolicyPageShell({
       </section>
 
       <section className="mx-auto max-w-6xl px-6 pb-24">{children}</section>
+
+      <SiteFooter />
     </main>
   );
 }

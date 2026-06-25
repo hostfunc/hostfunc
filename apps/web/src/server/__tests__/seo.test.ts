@@ -98,7 +98,6 @@ test("sitemap lists public routes, excludes the app and redirect aliases", async
   const urls = entries.map((e) => e.url);
   assert.ok(urls.includes(`${siteUrl}/`));
   assert.ok(urls.includes(`${siteUrl}/marketplace`));
-  assert.ok(urls.includes(`${siteUrl}/docs/cli`));
   // Content marketing surfaces — indexes and a representative dynamic route each.
   assert.ok(urls.includes(`${siteUrl}/pricing`));
   assert.ok(urls.includes(`${siteUrl}/compare`));
@@ -111,6 +110,7 @@ test("sitemap lists public routes, excludes the app and redirect aliases", async
   assert.ok(!urls.includes(`${siteUrl}/templates`));
   assert.ok(!urls.some((u) => u.includes("/dashboard")));
   assert.ok(!urls.some((u) => u.includes("/login")));
-  // The two orphan docs content keys without route folders are not advertised.
-  assert.ok(!urls.includes(`${siteUrl}/docs/limits`));
+  // Docs moved to the docs.hostfunc.io subdomain; `/docs/*` only 301-redirects
+  // now, so the web sitemap advertises none of it.
+  assert.ok(!urls.some((u) => u.includes("/docs")));
 });

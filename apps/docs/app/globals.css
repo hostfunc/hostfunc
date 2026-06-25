@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/*
+ * Declare content sources explicitly. Tailwind v4 auto-detects sources, which
+ * works here, but pinning them (resolved relative to this file) keeps class
+ * detection deterministic across local and the Vercel monorepo build. Keep in
+ * sync with the source dirs in tsconfig `include`.
+ */
+@source "./";
+@source "../components";
+@source "../lib";
+
 @theme inline {
   --font-sans: var(--font-geist);
   --font-display: var(--font-display);

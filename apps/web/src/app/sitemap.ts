@@ -31,29 +31,8 @@ const staticRoutes: Array<{ path: string; changeFrequency: ChangeFrequency; prio
   { path: "/privacy", changeFrequency: "yearly", priority: 0.3 },
 ];
 
-/**
- * Docs routes that actually render (one `page.tsx` per path). Note that
- * `docsPages` in `docs-content.ts` also carries `/docs/marketplace` and
- * `/docs/limits` keys that have no route folder yet — those are deliberately
- * omitted here so the sitemap never advertises a 404.
- */
-const docsRoutes = [
-  "/docs",
-  "/docs/getting-started",
-  "/docs/functions",
-  "/docs/triggers",
-  "/docs/websites",
-  "/docs/custom-domains",
-  "/docs/executions",
-  "/docs/security",
-  "/docs/cli",
-  "/docs/vscode-extension",
-  "/docs/mcp",
-  "/docs/sdk",
-  "/docs/sdk/ai",
-  "/docs/sdk/agent",
-  "/docs/sdk/vector",
-];
+// Docs live on the docs.hostfunc.io subdomain and are listed in that site's own
+// sitemap; `/docs/*` here only 301-redirects to the subdomain, so it is omitted.
 
 type ChangeFrequency = NonNullable<MetadataRoute.Sitemap[number]["changeFrequency"]>;
 
@@ -66,15 +45,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: route.changeFrequency,
     priority: route.priority,
   }));
-
-  for (const path of docsRoutes) {
-    entries.push({
-      url: `${siteUrl}${path}`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: path === "/docs" ? 0.8 : 0.7,
-    });
-  }
 
   // Comparison and use-case landing pages — static, content-driven routes.
   for (const comparison of comparisons) {

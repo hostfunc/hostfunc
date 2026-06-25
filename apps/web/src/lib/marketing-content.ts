@@ -170,13 +170,13 @@ export const marketingContent: MarketingContent = {
     "hostfunc is a TypeScript function platform built for the post-LLM era. Deploy from your editor, your CLI, or directly from a Claude conversation. Compose functions into systems. Watch the lineage graph fill in live.",
 
   primaryCta: { label: "Start building", href: "/login" },
-  secondaryCta: { label: "Read docs", href: "/docs" },
+  secondaryCta: { label: "Read docs", href: "https://docs.hostfunc.io" },
 
   navLinks: [
     { label: "Pricing", href: "/pricing" },
     { label: "Use cases", href: "/use-cases" },
     { label: "Marketplace", href: "/marketplace" },
-    { label: "Docs", href: "/docs" },
+    { label: "Docs", href: "https://docs.hostfunc.io" },
   ],
 
   trustItems: [
@@ -559,7 +559,7 @@ export async function main(input: { url: string }) {
     { label: "Compare", href: "/compare" },
     { label: "Use cases", href: "/use-cases" },
     { label: "Blog", href: "/blog" },
-    { label: "Docs", href: "/docs" },
+    { label: "Docs", href: "https://docs.hostfunc.io" },
     { label: "Marketplace", href: "/marketplace" },
     { label: "Security", href: "/security" },
     { label: "Changelog", href: "/changelog" },
