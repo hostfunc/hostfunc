@@ -1,23 +1,16 @@
+import { docsPages } from "@/lib/docs-content";
+import { DOCS_URL } from "@/lib/site";
 import type { MetadataRoute } from "next";
 
-const docsUrl = process.env.NEXT_PUBLIC_DOCS_URL ?? "https://docs.hostfunc.io";
-
 /**
- * Routes that exist in the scaffold today. Wired up and ready for launch — it
- * has no effect while the site is `disallow`-ed in `robots.ts`. Extend this as
- * the docs migration adds pages.
+ * Every docs route, derived from the content registry so the sitemap can never
+ * drift from what actually renders. Paths are already root-relative on the docs
+ * origin (`/`, `/cli`, `/sdk/ai`, …).
  */
-const routes = [
-  "/",
-  "/getting-started/install",
-  "/getting-started/quickstart",
-  "/concepts/architecture",
-];
-
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
-  return routes.map((path) => ({
-    url: `${docsUrl}${path}`,
+  return Object.keys(docsPages).map((path) => ({
+    url: `${DOCS_URL}${path === "/" ? "" : path}`,
     lastModified: now,
     changeFrequency: "weekly",
     priority: path === "/" ? 1 : 0.7,

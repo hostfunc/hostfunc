@@ -33,6 +33,16 @@ const config: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // Docs moved to the docs.hostfunc.io subdomain. Redirects run before the
+  // filesystem, so these shadow the (retained) /docs route tree and hand link
+  // equity to the new origin. The map is 1:1 because the subdomain serves docs
+  // at its root (/docs/cli -> docs.hostfunc.io/cli).
+  async redirects() {
+    return [
+      { source: "/docs", destination: "https://docs.hostfunc.io", permanent: true },
+      { source: "/docs/:path*", destination: "https://docs.hostfunc.io/:path*", permanent: true },
+    ];
+  },
 };
 
 // No remark/rehype plugins → safe under Turbopack (functions can't cross the
