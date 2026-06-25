@@ -31,6 +31,7 @@ import { AgentConversation } from "@/components/marketing/agent-conversation";
 import { AnimatedEditor } from "@/components/marketing/animated-editor";
 import { ArchitectureFlow } from "@/components/marketing/architecture-flow";
 import { ConnectorStrip } from "@/components/marketing/connector-strip";
+import { GoogleOneTap } from "@/components/marketing/google-one-tap";
 import { LineageBuilder } from "@/components/marketing/lineage-builder";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { SiteHeader } from "@/components/marketing/site-header";
@@ -70,6 +71,8 @@ export default function HomePage() {
 
   return (
     <main className="relative min-h-screen bg-[var(--color-ink)] text-[var(--color-bone)]">
+      {/* Google One Tap auto-prompt for logged-out visitors (no-ops when signed in / unconfigured). */}
+      <GoogleOneTap />
       {/* ─────────────────────────────────── NAV ─────────────────────────────────── */}
       <SiteHeader />
 

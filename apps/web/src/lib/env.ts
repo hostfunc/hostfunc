@@ -22,6 +22,12 @@ const schema = z
     GOOGLE_SITE_VERIFICATION: z.string().min(1).optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
+    /**
+     * Public Google OAuth client id for Google One Tap on the marketing site. Must equal
+     * GOOGLE_CLIENT_ID (the One Tap plugin verifies the GSI id token audience against it).
+     * Optional so dev/CI boot without it — One Tap silently no-ops when unset.
+     */
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
     GITHUB_INTEGRATIONS_CLIENT_ID: z.string().optional(),

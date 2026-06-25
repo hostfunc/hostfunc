@@ -11,11 +11,34 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, Mail } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
 type AuthStep = "options" | "email";
+
+// Friendly copy for OAuth failures better-auth surfaces via `?error=<code>` on the error redirect.
+// `signIn.social` is given an `errorCallbackURL` of `/login`, so these land back on this screen.
+const OAUTH_ERROR_COPY: Record<string, { title: string; detail: string }> = {
+  email_not_found: {
+    title: "We couldn't get an email from that provider",
+    detail:
+      "GitHub didn't share a verified email with us. Make your GitHub email public or verified, or sign in with a magic link instead.",
+  },
+  account_already_linked_to_different_user: {
+    title: "That account is already linked elsewhere",
+    detail: "This provider account is connected to a different hostfunc user. Try another method.",
+  },
+};
+
+function oauthErrorCopy(code: string): { title: string; detail: string } {
+  return (
+    OAUTH_ERROR_COPY[code] ?? {
+      title: "Sign-in failed",
+      detail: "Something went wrong with that provider. Try again or use a magic link.",
+    }
+  );
+}
 
 const loginEmailSchema = z
   .string()
@@ -35,6 +58,12 @@ function LoginPageClient() {
   const [oauthRedirecting, setOauthRedirecting] = useState<"github" | "google" | null>(null);
 
   const callbackURL = useMemo(() => safeCallbackUrl(params.get("from")), [params]);
+
+  // Surface OAuth failures that better-auth redirects back here via `?error=<code>`.
+  const oauthError = params.get("error");
+  useEffect(() => {
+    if (oauthError) setAuthError(oauthErrorCopy(oauthError));
+  }, [oauthError]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -80,6 +109,9 @@ function LoginPageClient() {
       await signIn.social({
         provider,
         callbackURL,
+        // Route OAuth failures back to /login (with `?error=<code>`) instead of the marketing root,
+        // so users land on a screen that explains what happened.
+        errorCallbackURL: `${window.location.origin}/login`,
       });
     } catch (err) {
       const formatted = formatAuthError(err);
