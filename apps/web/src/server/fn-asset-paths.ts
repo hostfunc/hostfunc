@@ -22,6 +22,8 @@ const IMAGE_MIMES: ReadonlySet<string> = new Set([
   "image/gif",
   "image/svg+xml",
   "image/webp",
+  "image/x-icon",
+  "image/vnd.microsoft.icon",
 ]);
 const FONT_MIMES: ReadonlySet<string> = new Set([
   "font/woff",
@@ -34,6 +36,8 @@ const FONT_MIMES: ReadonlySet<string> = new Set([
   "application/x-font-otf",
 ]);
 const TEXT_MIMES: ReadonlySet<string> = new Set(["text/markdown", "text/plain"]);
+// Client-side source the deploy step precompiles (e.g. client.tsx -> client.js).
+const SOURCE_MIMES: ReadonlySet<string> = new Set(["text/typescript", "text/jsx", "text/tsx"]);
 const HTML_MIMES: ReadonlySet<string> = new Set(["text/html"]);
 const STYLE_MIMES: ReadonlySet<string> = new Set(["text/css"]);
 const SCRIPT_MIMES: ReadonlySet<string> = new Set(["text/javascript", "application/javascript"]);
@@ -45,6 +49,7 @@ const EXT_TO_MIME: Record<string, string> = {
   gif: "image/gif",
   svg: "image/svg+xml",
   webp: "image/webp",
+  ico: "image/x-icon",
   woff: "font/woff",
   woff2: "font/woff2",
   ttf: "font/ttf",
@@ -57,6 +62,9 @@ const EXT_TO_MIME: Record<string, string> = {
   css: "text/css",
   js: "text/javascript",
   mjs: "text/javascript",
+  ts: "text/typescript",
+  tsx: "text/tsx",
+  jsx: "text/jsx",
 };
 
 export class AssetError extends Error {
@@ -109,6 +117,7 @@ export function classifyAsset(path: string, mime: string): { kind: AssetKind; mi
   if (HTML_MIMES.has(finalMime)) return { kind: "html", mime: "text/html" };
   if (STYLE_MIMES.has(finalMime)) return { kind: "style", mime: "text/css" };
   if (SCRIPT_MIMES.has(finalMime)) return { kind: "script", mime: "text/javascript" };
+  if (SOURCE_MIMES.has(finalMime)) return { kind: "script", mime: finalMime };
   if (IMAGE_MIMES.has(finalMime)) return { kind: "image", mime: finalMime };
   if (FONT_MIMES.has(finalMime)) return { kind: "font", mime: finalMime };
   if (TEXT_MIMES.has(finalMime)) return { kind: "other", mime: finalMime };

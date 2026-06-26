@@ -521,6 +521,12 @@ function withHostfuncHeaders(
   const headers = new Headers(inbound);
   headers.delete("x-hostfunc-trigger-kind");
   headers.delete("x-hostfunc-invocation-kind");
+  // Never forward the visitor's platform cookies to untrusted user code. The
+  // dashboard session cookie is scoped to `.hostfunc.io` (crossSubDomainCookies),
+  // so without this a user function could read `request.headers.get("cookie")`
+  // and harvest the session of any logged-in visitor. User functions get their
+  // auth context from the x-hostfunc-* headers below, never from browser cookies.
+  headers.delete("cookie");
   // These are derived from the request path by the runtime; never trust a client value.
   headers.delete("x-hostfunc-asset-path");
   headers.delete("x-hostfunc-run-path");

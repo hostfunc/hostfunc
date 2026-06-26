@@ -106,7 +106,7 @@ const schema = z
     for (const item of mustBeHttps) {
       if (!item.value.startsWith("https://")) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: [item.key],
           message: "must use https in production",
         });
@@ -122,7 +122,7 @@ const schema = z
     for (const item of requiredSocial) {
       if (!item.value) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: [item.key],
           message: "is required in production for social login",
         });
@@ -139,7 +139,7 @@ const schema = z
     for (const item of devTokenDefaults) {
       if (value[item.key] === item.bad) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: [item.key as string],
           message: `must be rotated from the dev default in production (generate via 'openssl rand -hex 32')`,
         });

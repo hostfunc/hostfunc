@@ -1,9 +1,9 @@
 import "server-only";
 
 import { decryptSecret, encryptSecret } from "@/lib/crypto";
-import { env } from "@/lib/env";
 import { DEFAULT_FUNCTION_SDK, type FunctionPackageRecord } from "@/lib/function-packages";
 import { getLatestNpmVersion } from "@/lib/npm-registry";
+import { buildRunUrl } from "@/server/fn-run-url";
 import { getEffectivePlan } from "@/server/plans";
 import { db, genId, schema, sql } from "@hostfunc/db";
 const DEFAULT_NODE_TYPES = "@types/node";
@@ -20,7 +20,7 @@ function buildDeployedUrl(
   currentVersionId: string | null,
 ): string | null {
   if (!currentVersionId) return null;
-  return `${env.HOSTFUNC_RUNTIME_URL}/run/${orgSlug}/${slug}`;
+  return buildRunUrl(orgSlug, slug);
 }
 
 export interface FunctionExplorerItem {
@@ -37,6 +37,8 @@ export interface FunctionExplorerItem {
   executionCount: number;
   latestExecutionStatus: "ok" | "fn_error" | "limit_exceeded" | "infra_error" | null;
   hasGithubBinding: boolean;
+  /** True when the deployed version serves a root index.html (hosts a web page). */
+  servesHtml: boolean;
   updatedAt: Date;
   deployedUrl: string | null;
 }
@@ -219,6 +221,7 @@ export async function listFunctionsForOrg(orgId: string) {
           and ${schema.functionGitBinding.fnId} = ${schema.fn.id}
           and ${schema.functionGitBinding.provider} = 'github'
       )`,
+      servesHtml: SERVES_HTML_SQL,
       updatedAt: schema.fn.updatedAt,
     })
     .from(schema.fn)
@@ -328,6 +331,14 @@ const ENV_COUNT_SQL = sql<number>`(
   from ${schema.secret}
   where ${schema.secret.orgId} = ${schema.fn.orgId}
     and ${schema.secret.fnId} = ${schema.fn.id}
+)`;
+
+/** True when the deployed version ships a root index.html — i.e. it hosts a web page. */
+const SERVES_HTML_SQL = sql<boolean>`exists(
+  select 1
+  from ${schema.fnVersionAsset}
+  where ${schema.fnVersionAsset.versionId} = ${schema.fn.currentVersionId}
+    and ${schema.fnVersionAsset.path} = 'index.html'
 )`;
 
 function buildFunctionSearchConditions(
@@ -509,6 +520,7 @@ export async function searchFunctionsForOrgPaginated(input: {
         failureCount: FAILURE_COUNT_SQL,
         latestExecutionStatus: LATEST_EXEC_STATUS_SQL,
         hasGithubBinding: HAS_GITHUB_BINDING_SQL,
+        servesHtml: SERVES_HTML_SQL,
         updatedAt: schema.fn.updatedAt,
       })
       .from(schema.fn)
@@ -543,6 +555,7 @@ export async function searchFunctionsForOrgPaginated(input: {
     executionCount: row.executionCount,
     latestExecutionStatus: row.latestExecutionStatus,
     hasGithubBinding: row.hasGithubBinding,
+    servesHtml: row.servesHtml,
     updatedAt: row.updatedAt,
     deployedUrl: buildDeployedUrl(row.orgSlug, row.slug, row.currentVersionId),
   }));

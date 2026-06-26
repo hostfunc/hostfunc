@@ -290,6 +290,100 @@ export async function main(input: { format?: string }) {
     ],
   },
   {
+    id: "react-app",
+    name: "React app",
+    icon: "⚛️",
+    category: "utilities",
+    description:
+      "A React + TypeScript web app. client.tsx is precompiled at deploy into a minified, self-hosted bundle — no CDN.",
+    accentClass: "bg-cyan-500/10 text-cyan-300 border-cyan-500/30",
+    requiredSecrets: [],
+    trigger: {
+      kind: "http",
+      hint: "index.html loads the precompiled client.js. main() serves API requests to the same URL.",
+    },
+    code: `import fn from "@hostfunc/sdk";
+
+// The React app (index.html + client.tsx) is served at your public URL.
+// client.tsx is bundled into client.js at deploy time. main() handles API
+// calls — e.g. the app can fetch its own URL with { "api": true }.
+export async function main(input: { api?: boolean }) {
+  fn.log("info", "react-app.api", { api: input.api ?? false });
+  return { message: "Hello from main()", time: new Date().toISOString() };
+}
+`,
+    assets: [
+      {
+        path: "index.html",
+        mime: "text/html",
+        content: `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>hostfunc · React app</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; margin: 0; }
+      body {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: radial-gradient(circle at 50% -10%, #112027, #07090b 60%);
+        color: #e7f6fb;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="client.js"></script>
+  </body>
+</html>
+`,
+      },
+      {
+        path: "client.tsx",
+        mime: "text/tsx",
+        content: `import { useState } from "react";
+import { createRoot } from "react-dom/client";
+
+function App() {
+  const [count, setCount] = useState(0);
+  return (
+    <main style={{ textAlign: "center", padding: 40 }}>
+      <h1 style={{ fontSize: 40 }}>React on hostfunc ⚛️</h1>
+      <p style={{ color: "#8fb5c4", marginTop: 8 }}>
+        Compiled at deploy time — bundled, minified, served from your own origin.
+      </p>
+      <button
+        type="button"
+        onClick={() => setCount((c) => c + 1)}
+        style={{
+          marginTop: 22,
+          padding: "11px 22px",
+          borderRadius: 999,
+          border: 0,
+          cursor: "pointer",
+          font: "inherit",
+          fontWeight: 600,
+          color: "#07090b",
+          background: "#5fd0e6",
+        }}
+      >
+        Clicked {count} {count === 1 ? "time" : "times"}
+      </button>
+    </main>
+  );
+}
+
+const el = document.getElementById("root");
+if (el) createRoot(el).render(<App />);
+`,
+      },
+    ],
+  },
+  {
     id: "hacker-news-digest",
     name: "Hacker News digest",
     icon: "📰",

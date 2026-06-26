@@ -1,8 +1,11 @@
+import { PasskeyAutoEnroll } from "@/components/auth/passkey-auto-enroll";
+import { auth } from "@/lib/auth";
 import { getGithubConsentState, requireActiveOrg, requireSession } from "@/lib/session";
 import { getSetupState } from "@/server/setup-state";
 import { db, schema } from "@hostfunc/db";
 import { eq } from "drizzle-orm";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { DashboardNavbar } from "./navbar";
@@ -21,6 +24,16 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     redirect("/setup");
   }
   const [{ orgId }, baseSession] = await Promise.all([requireActiveOrg(), requireSession()]);
+  // Drives silent passkey auto-enrollment after first sign-in (no button — industry standard).
+  // Resilient to the `passkey` table not existing yet (migration lag during a deploy): on any
+  // failure we treat the user as already enrolled so the dashboard never breaks and we don't prompt.
+  let hasPasskey = true;
+  try {
+    const existingPasskeys = await auth.api.listPasskeys({ headers: await headers() });
+    hasPasskey = existingPasskeys.length > 0;
+  } catch (error) {
+    console.warn("Passkey lookup failed (skipping auto-enroll)", error);
+  }
   const githubConsent = await getGithubConsentState();
   if (
     githubConsent.isGithubAuthUser &&
@@ -74,6 +87,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   return (
     <div className="relative min-h-dvh overflow-hidden bg-[var(--color-ink)] text-[var(--color-bone)]">
       <div className="gradient-radial-amber pointer-events-none absolute inset-x-0 top-0 h-[420px] opacity-70" />
+      <PasskeyAutoEnroll hasPasskey={hasPasskey} />
       <DashboardNavbar
         user={baseSession.user}
         organizations={organizations}

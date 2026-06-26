@@ -42,7 +42,7 @@
     "smoke:pack": "pnpm build && pnpm pack --pack-destination .tmp"
   },
   "dependencies": {
-    "zod": "^3.24.1"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@hostfunc/api-client": "workspace:*",

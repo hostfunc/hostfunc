@@ -1,10 +1,11 @@
 import { sendTransactionalEmail } from "@/server/email";
 import { magicLinkEmail, orgInviteEmail } from "@/server/email-templates";
+import { passkey } from "@better-auth/passkey";
 import { db, genId, schema, sql } from "@hostfunc/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer, deviceAuthorization, magicLink, oneTap, organization } from "better-auth/plugins";
-import { parentCookieDomain } from "./cookie-domain";
+import { parentCookieDomain, passkeyRpId } from "./cookie-domain";
 import { env } from "./env";
 
 function compatWhere<T>(value: T): T {
@@ -25,6 +26,10 @@ const trustedOrigins = Array.from(
 // any host works on the others. Undefined on localhost — keep host-only there.
 const sessionCookieDomain = parentCookieDomain(env.BETTER_AUTH_URL);
 
+// WebAuthn Relying Party. rpID is the registrable domain (e.g. "hostfunc.io") so a passkey works
+// across app/marketing subdomains; origins are the same hosts allowed to call the auth endpoints.
+const passkeyRp = passkeyRpId(env.BETTER_AUTH_URL);
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -37,6 +42,7 @@ export const auth = betterAuth({
       member: schema.member,
       invitation: schema.invitation,
       deviceCode: schema.deviceCode,
+      passkey: schema.passkey,
     },
   }),
   secret: env.BETTER_AUTH_SECRET,
@@ -91,6 +97,13 @@ export const auth = betterAuth({
     // configured for social login (`socialProviders.google.clientId`), so the public
     // `NEXT_PUBLIC_GOOGLE_CLIENT_ID` on the client must match `GOOGLE_CLIENT_ID` here.
     oneTap(),
+    // WebAuthn passkeys (Face ID / Touch ID / security keys). rpID spans subdomains so a passkey
+    // registered on the app works on the marketing host too; origins reuse the trusted origin list.
+    passkey({
+      rpID: passkeyRp,
+      rpName: "hostfunc",
+      origin: trustedOrigins.length > 0 ? trustedOrigins : null,
+    }),
   ],
   databaseHooks: {
     user: {

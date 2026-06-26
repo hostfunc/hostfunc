@@ -32,6 +32,11 @@ export default async function FunctionSettingsLayout({
       icon: "zap",
     },
     {
+      title: "Web Hosting",
+      href: `/dashboard/${fn}/settings/hosting`,
+      icon: "globe",
+    },
+    {
       title: "Integrations",
       href: `/dashboard/${fn}/settings/integrations`,
       icon: "bot",

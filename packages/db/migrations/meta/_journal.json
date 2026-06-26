@@ -134,6 +134,13 @@
       "when": 1781093700426,
       "tag": "0018_graceful_forgotten_one",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1782478816047,
+      "tag": "0019_lovely_nightcrawler",
+      "breakpoints": true
     }
   ]
 }
