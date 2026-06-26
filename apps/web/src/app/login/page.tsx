@@ -124,6 +124,18 @@ function LoginPageClient() {
     }
   }
 
+  // Conditional UI (the industry-standard passkey sign-in): saved passkeys surface directly in the
+  // email field's autofill dropdown — no dedicated button. Picking one signs the user in and lands
+  // them where they intended. Browsers without support simply no-op; failures here are silent.
+  useEffect(() => {
+    void signIn
+      .passkey({ autoFill: true })
+      .then((result) => {
+        if (result && !result.error) window.location.href = callbackURL;
+      })
+      .catch(() => {});
+  }, [callbackURL]);
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[var(--color-ink)] text-[var(--color-bone)]">
       <div className="gradient-radial-amber pointer-events-none absolute inset-x-0 top-0 h-[520px]" />
@@ -322,6 +334,9 @@ function LoginPageClient() {
                               setAuthError(null);
                             }}
                             placeholder="name@example.com"
+                            // "webauthn" lets the browser offer saved passkeys in the autofill
+                            // dropdown (paired with signIn.passkey({ autoFill: true }) on mount).
+                            autoComplete="email webauthn"
                             className="h-12 rounded-xl border-[var(--color-border)] bg-[var(--color-ink)] pl-11 text-[var(--color-bone)] placeholder:text-[var(--color-bone-faint)] focus-visible:border-[var(--color-amber)] focus-visible:ring-[var(--color-amber)]/35"
                             aria-invalid={emailFieldError ? true : undefined}
                             aria-describedby={emailFieldError ? "email-error" : undefined}

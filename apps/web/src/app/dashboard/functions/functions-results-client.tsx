@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { FunctionExplorerItem } from "@/server/functions";
 import { formatDistanceToNow } from "date-fns";
-import { Activity, CheckCircle2, ExternalLink, Loader2, Save, Settings } from "lucide-react";
+import { Activity, CheckCircle2, ExternalLink, Globe, Loader2, Save, Settings } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CopyButton } from "./copy-button";
@@ -134,6 +134,15 @@ export function FunctionsResultsClient({
                   >
                     {fn.currentVersionId ? "Deployed" : "Saved"}
                   </Badge>
+                  {fn.servesHtml ? (
+                    <Badge
+                      variant="secondary"
+                      className="border-sky-400/40 bg-sky-500/15 text-[10px] font-semibold text-sky-200"
+                    >
+                      <Globe className="mr-1 h-3 w-3" />
+                      Web page
+                    </Badge>
+                  ) : null}
                   {fn.envVarCount > 0 ? (
                     <Badge
                       variant="secondary"
@@ -217,6 +226,19 @@ export function FunctionsResultsClient({
                   />
                 </div>
                 <div className="flex items-center gap-1.5">
+                  {fn.servesHtml && fn.deployedUrl ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                      className="h-7 border-sky-400/40 bg-sky-500/10 px-2 text-[11px] text-sky-200 shadow-sm"
+                    >
+                      <a href={fn.deployedUrl} target="_blank" rel="noreferrer noopener">
+                        <Globe className="mr-1 h-3 w-3" />
+                        Visit
+                      </a>
+                    </Button>
+                  ) : null}
                   <Button
                     variant="ghost"
                     size="sm"
@@ -279,6 +301,15 @@ export function FunctionsResultsClient({
                     >
                       {fn.currentVersionId ? "Deployed" : "Saved"}
                     </Badge>
+                    {fn.servesHtml ? (
+                      <Badge
+                        variant="secondary"
+                        className="border-sky-400/40 bg-sky-500/15 text-[10px] font-semibold text-sky-200"
+                      >
+                        <Globe className="mr-1 h-3 w-3" />
+                        Web page
+                      </Badge>
+                    ) : null}
                     {fn.envVarCount > 0 ? (
                       <Badge
                         variant="secondary"
@@ -356,6 +387,19 @@ export function FunctionsResultsClient({
                     disabled={!fn.deployedUrl}
                     title={fn.deployedUrl ? "Copy deployed endpoint" : "Host the function first"}
                   />
+                  {fn.servesHtml && fn.deployedUrl ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                      className="h-8 border-sky-400/40 bg-sky-500/10 text-sky-200 shadow-sm"
+                    >
+                      <a href={fn.deployedUrl} target="_blank" rel="noreferrer noopener">
+                        <Globe className="mr-1.5 h-3.5 w-3.5" />
+                        Visit
+                      </a>
+                    </Button>
+                  ) : null}
                   <Button
                     variant="ghost"
                     size="sm"

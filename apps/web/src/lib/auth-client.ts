@@ -1,5 +1,6 @@
 "use client";
 
+import { passkeyClient } from "@better-auth/passkey/client";
 import {
   deviceAuthorizationClient,
   magicLinkClient,
@@ -28,8 +29,9 @@ export const authClient = createAuthClient({
     organizationClient(),
     deviceAuthorizationClient(),
     oneTapClient({ clientId: googleClientId }),
+    passkeyClient(),
   ],
 });
 
-export const { signIn, signOut, useSession, useActiveOrganization, organization, oneTap } =
+export const { signIn, signOut, useSession, useActiveOrganization, organization, oneTap, passkey } =
   authClient;

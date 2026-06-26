@@ -1,4 +1,5 @@
 import { type BuildResult, type Message, build } from "esbuild";
+import { compileClientBundle } from "./client-bundler.js";
 
 export interface BundleAsset {
   path: string;
@@ -476,20 +477,32 @@ function __ofn_asset_mime(path) {
   const ext = (path.split(".").pop() || "").toLowerCase();
   return __OFN_ASSET_MIME[ext] || "application/octet-stream";
 }
-function __ofn_inject_base(html, runPath) {
-  if (!runPath) return html;
-  const tag = '<base href="' + runPath + (runPath.endsWith("/") ? "" : "/") + '">';
+function __ofn_inject_head(html, tags) {
+  if (!tags) return html;
   const head = html.match(/<head[^>]*>/i);
   if (head && head.index != null) {
     const at = head.index + head[0].length;
-    return html.slice(0, at) + tag + html.slice(at);
+    return html.slice(0, at) + tags + html.slice(at);
   }
   const htmlTag = html.match(/<html[^>]*>/i);
   if (htmlTag && htmlTag.index != null) {
     const at = htmlTag.index + htmlTag[0].length;
-    return html.slice(0, at) + "<head>" + tag + "</head>" + html.slice(at);
+    return html.slice(0, at) + "<head>" + tags + "</head>" + html.slice(at);
   }
-  return tag + html;
+  return tags + html;
+}
+function __ofn_inject_base(html, runPath) {
+  if (!runPath) return html;
+  const tag = '<base href="' + runPath + (runPath.endsWith("/") ? "" : "/") + '">';
+  return __ofn_inject_head(html, tag);
+}
+// Give every served page a tab icon. We only add the default when the document
+// declares no icon of its own, and point it at favicon.ico (resolved against the
+// injected <base>), so an uploaded favicon.ico just works on both the path-routed
+// and per-function-subdomain hosts. A missing favicon.ico 404s harmlessly.
+function __ofn_inject_favicon(html) {
+  if (/<link[^>]+rel\s*=\s*["'][^"']*icon[^"']*["']/i.test(html)) return html;
+  return __ofn_inject_head(html, '<link rel="icon" href="favicon.ico">');
 }
 async function __ofn_serve_asset(request) {
   // Only browser-style GETs serve static assets; everything else runs main()/email().
@@ -535,7 +548,8 @@ async function __ofn_serve_asset(request) {
     headers["cache-control"] = "no-store";
     if (!explicit) {
       const runPath = request.headers.get("x-hostfunc-run-path") || "";
-      const html = __ofn_inject_base(new TextDecoder().decode(bytes), runPath);
+      let html = __ofn_inject_base(new TextDecoder().decode(bytes), runPath);
+      html = __ofn_inject_favicon(html);
       body = new TextEncoder().encode(html);
     }
   } else {
@@ -589,6 +603,14 @@ export default {
           headers: result.headers,
         });
         passthrough.headers.set("x-hostfunc-wall-ms", String(elapsed));
+        // Dynamically-served HTML must run under the same sandbox as static
+        // index.html assets — otherwise a handler returning text/html executes
+        // as fully-trusted, same-origin script on the platform host. The CSP is
+        // set (not appended) so a handler cannot downgrade the platform posture.
+        if ((passthrough.headers.get("content-type") || "").indexOf("text/html") === 0) {
+          passthrough.headers.set("content-security-policy", __OFN_HTML_CSP);
+          passthrough.headers.set("x-content-type-options", "nosniff");
+        }
         return passthrough;
       }
 
@@ -722,7 +744,28 @@ export async function bundleFunction(opts: BundleOptions): Promise<BundleResult>
     throw new BundleError(`user code is ${codeBytes} bytes, exceeds ${maxCodeSize}`, []);
   }
 
-  const embed = planEmbeddedAssets(opts.assets ?? []);
+  // Precompile a client-side entry (client.tsx/ts/jsx) into a served client.js
+  // when the function ships one. The compiled output is synthetic (served, never
+  // persisted) and must embed in the bundle so it loads under the sandbox CSP.
+  const clientWarnings: string[] = [];
+  let assets = opts.assets ?? [];
+  try {
+    const client = await compileClientBundle(assets);
+    if (client) {
+      assets = [...assets, ...client.assets];
+      clientWarnings.push(...client.warnings);
+    }
+  } catch (e) {
+    if (e instanceof Error && "errors" in e) {
+      throw new BundleError(
+        `client bundle failed: ${e.message}`,
+        (e as { errors: Message[] }).errors,
+      );
+    }
+    throw e;
+  }
+
+  const embed = planEmbeddedAssets(assets);
   const wrapped = ENTRY_WRAPPER(normalizeUserCode(opts.code), embed.literal);
 
   let result: BuildResult;
@@ -775,7 +818,7 @@ export async function bundleFunction(opts: BundleOptions): Promise<BundleResult>
     code: codeFile.text,
     ...(sourceMapFile?.text ? { sourceMap: sourceMapFile.text } : {}),
     sizeBytes,
-    warnings: result.warnings.map((w) => w.text),
+    warnings: [...result.warnings.map((w) => w.text), ...clientWarnings],
     embeddedAssetPaths: embed.embeddedAssetPaths,
     skippedAssets: embed.skippedAssets,
   };

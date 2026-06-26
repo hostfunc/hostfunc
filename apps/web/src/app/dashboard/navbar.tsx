@@ -26,6 +26,7 @@ import {
   BadgeCheck,
   ChevronDown,
   Crown,
+  Fingerprint,
   LogOut,
   Plus,
   Settings,
@@ -295,6 +296,12 @@ export function DashboardNavbar({
                   <Link href="/dashboard/settings" className="w-full flex items-center">
                     <Settings className="mr-2 h-4 w-4 text-[var(--color-bone-faint)]" />
                     <span>Account Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="cursor-pointer">
+                  <Link href="/dashboard/account/security" className="w-full flex items-center">
+                    <Fingerprint className="mr-2 h-4 w-4 text-[var(--color-bone-faint)]" />
+                    <span>Security &amp; passkeys</span>
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuGroup>

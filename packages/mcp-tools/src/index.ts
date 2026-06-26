@@ -26,7 +26,7 @@ export const functionsExecuteInputSchema = z
     /** Deprecated alias for `orgSlug`. Kept so older MCP clients still work. */
     owner: z.string().optional(),
     slug: z.string(),
-    payload: z.record(z.unknown()).optional(),
+    payload: z.record(z.string(), z.unknown()).optional(),
   })
   .refine((value) => Boolean(value.orgSlug ?? value.owner), {
     message: "orgSlug (or legacy 'owner') is required",

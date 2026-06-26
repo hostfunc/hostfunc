@@ -112,6 +112,60 @@ describe("bundled worker HTML/asset serving", () => {
     expect(await res.json()).toEqual({ ok: true, via: "main" });
   });
 
+  it("sandboxes a text/html Response returned from main() (not just static assets)", async () => {
+    const HTML_RESPONSE_FN = `
+      export async function main() {
+        return new Response("<h1>dynamic</h1>", {
+          headers: { "content-type": "text/html; charset=utf-8" },
+        });
+      }
+    `;
+    const { code } = await bundleFunction({
+      code: HTML_RESPONSE_FN,
+      fnId: FN_ID,
+      versionId: VERSION_ID,
+    });
+    const res = await invoke({ code, files: {}, method: "POST" });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("text/html");
+    expect(res.headers.get("content-security-policy")).toContain("sandbox");
+    expect(res.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(await res.text()).toContain("dynamic");
+  });
+
+  it("injects a default favicon link into index.html when none is declared", async () => {
+    const { code } = await bundleFunction({ code: HTML_FN, fnId: FN_ID, versionId: VERSION_ID });
+    const res = await invoke({
+      code,
+      files: { "index.html": "<!doctype html><html><head></head><body>hi</body></html>" },
+      accept: "text/html",
+    });
+    const body = await res.text();
+    expect(body).toContain('<link rel="icon" href="favicon.ico">');
+  });
+
+  it("does not override a favicon the page already declares", async () => {
+    const { code } = await bundleFunction({ code: HTML_FN, fnId: FN_ID, versionId: VERSION_ID });
+    const res = await invoke({
+      code,
+      files: {
+        "index.html":
+          '<!doctype html><html><head><link rel="icon" href="/me.png"></head><body>hi</body></html>',
+      },
+      accept: "text/html",
+    });
+    const body = await res.text();
+    expect(body).toContain('href="/me.png"');
+    expect(body).not.toContain('href="favicon.ico"');
+  });
+
+  it("does not attach the HTML sandbox CSP to a JSON main() response", async () => {
+    const { code } = await bundleFunction({ code: HTML_FN, fnId: FN_ID, versionId: VERSION_ID });
+    const res = await invoke({ code, files: {}, method: "POST" });
+    expect(res.headers.get("content-type")).toContain("application/json");
+    expect(res.headers.get("content-security-policy")).toBeNull();
+  });
+
   it("serves a sibling asset by sub-path with the right content-type", async () => {
     const { code } = await bundleFunction({ code: HTML_FN, fnId: FN_ID, versionId: VERSION_ID });
     const res = await invoke({
