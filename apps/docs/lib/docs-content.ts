@@ -174,6 +174,16 @@ hostfunc logs --executionId <execution_id>`,
   }
 }`,
       },
+      {
+        title: "5. Share your function's status",
+        description:
+          "Every public function gets a live SVG status badge showing its last-24h success rate and p95 latency — embed it in a README or status page.",
+        bullets: [
+          "Works for public functions only — private functions return 404.",
+          "The badge aggregates the last 24 hours of executions and updates every 5 minutes.",
+        ],
+        code: "![status](https://<control-plane>/api/badge/<org>/<fn>)",
+      },
     ],
     related: [
       { label: "Functions", href: "/functions" },

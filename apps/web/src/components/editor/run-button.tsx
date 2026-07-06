@@ -12,7 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { isQuotaLimitError, openUpgradeModal } from "@/lib/upgrade-modal";
-import { Copy, Loader2, Play, TerminalSquare } from "lucide-react";
+import { Copy, Loader2, Play, TerminalSquare, Wand2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -28,6 +28,7 @@ export function RunButton({ fnId, currentCode }: { fnId: string; currentCode: st
   );
   const [prefillReason, setPrefillReason] = useState<string | null>(null);
   const [isPayloadTouched, setIsPayloadTouched] = useState(false);
+  const [isInferring, setIsInferring] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState<{
     ok: boolean;
@@ -77,6 +78,23 @@ export function RunButton({ fnId, currentCode }: { fnId: string; currentCode: st
       }
     })();
   }, [open, fnId, currentCode, isPayloadTouched, payloadJson]);
+
+  const handleExamplePayload = async () => {
+    try {
+      setIsInferring(true);
+      const inferred = await inferRunPayload({ fnId, code: currentCode });
+      setPayloadJson(inferred.payloadJson || "{}");
+      setPrefillSource(inferred.source);
+      setPrefillReason(inferred.reason ?? null);
+      // Mark touched so the auto-prefill effect doesn't overwrite the explicit fill.
+      setIsPayloadTouched(true);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "payload_inference_failed";
+      toast.error("Could not infer an example payload", { description: message });
+    } finally {
+      setIsInferring(false);
+    }
+  };
 
   const formattedResult = useMemo(() => {
     if (!result) return "";
@@ -176,9 +194,25 @@ export function RunButton({ fnId, currentCode }: { fnId: string; currentCode: st
 
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xs uppercase tracking-wider text-[var(--color-bone-faint)]">
-                JSON Payload
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs uppercase tracking-wider text-[var(--color-bone-faint)]">
+                  JSON Payload
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void handleExamplePayload()}
+                  disabled={isInferring}
+                  className="inline-flex items-center gap-1 rounded border border-[var(--color-border)] px-1.5 py-0.5 text-[10px] text-[var(--color-bone-muted)] transition hover:text-[var(--color-bone)] disabled:opacity-50"
+                  title="Fill with an example payload inferred from the function code"
+                >
+                  {isInferring ? (
+                    <Loader2 className="size-3 animate-spin" />
+                  ) : (
+                    <Wand2 className="size-3" />
+                  )}
+                  Example payload
+                </button>
+              </div>
               {prefillSource ? (
                 <span className="rounded-full border border-[var(--color-border)] bg-black/20 px-2 py-0.5 text-[10px] text-[var(--color-bone-muted)]">
                   Prefilled: {prefillSource === "ai_fallback" ? "AI" : prefillSource}

@@ -61,6 +61,7 @@ export function DashboardNavbar({
   user,
   organizations,
   activeOrganizationId,
+  onboarding,
 }: {
   user: { id: string; email: string; name?: string | null };
   organizations: Array<{
@@ -73,6 +74,8 @@ export function DashboardNavbar({
     isShared: boolean;
   }>;
   activeOrganizationId: string;
+  /** Omitted on surfaces that don't show the onboarding pill (e.g. new-workspace). */
+  onboarding?: { completedCount: number; totalCount: number; complete: boolean } | null;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -248,6 +251,17 @@ export function DashboardNavbar({
                 </Link>
               );
             })}
+
+            {onboarding && !onboarding.complete ? (
+              <Link
+                href="/dashboard#getting-started"
+                title="Finish setting up your workspace"
+                className="ml-1 flex items-center gap-1.5 rounded-full border border-[var(--color-amber)]/35 bg-[var(--color-amber)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--color-amber)] transition-colors hover:bg-[var(--color-amber)]/20"
+              >
+                <span className="size-1.5 animate-pulse rounded-full bg-[var(--color-amber)]" />
+                {onboarding.completedCount}/{onboarding.totalCount}
+              </Link>
+            ) : null}
           </nav>
         </div>
 

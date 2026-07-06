@@ -7,6 +7,7 @@ import { RangeSwitcher } from "@/components/dashboard/charts/range-switcher";
 import { StatusRadialChart } from "@/components/dashboard/charts/status-radial-chart";
 import { TopFunctionsBar } from "@/components/dashboard/charts/top-functions-bar";
 import { TriggerDonutChart } from "@/components/dashboard/charts/trigger-donut-chart";
+import { GettingStartedChecklist } from "@/components/dashboard/getting-started-checklist";
 import { FunctionLogo } from "@/components/function/function-logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { requireActiveOrg } from "@/lib/session";
 import { type OverviewRange, getDashboardOverview } from "@/server/dashboard-overview";
 import { getRecentExecutions } from "@/server/executions";
 import { listFunctionsForOrg } from "@/server/functions";
+import { getOnboardingState } from "@/server/onboarding";
 import { formatDistanceToNow } from "date-fns";
 import {
   Activity,
@@ -69,10 +71,11 @@ export default async function DashboardPage({
   const rawRange = typeof params.range === "string" ? params.range : undefined;
   const range: OverviewRange = isOverviewRange(rawRange) ? rawRange : "7d";
 
-  const [functions, overview, recentExecutions] = await Promise.all([
+  const [functions, overview, recentExecutions, onboarding] = await Promise.all([
     listFunctionsForOrg(orgId),
     getDashboardOverview(orgId, range),
     getRecentExecutions(orgId, 5),
+    getOnboardingState(orgId),
   ]);
 
   const recentFunctions = functions.slice(0, 6);
@@ -93,6 +96,8 @@ export default async function DashboardPage({
 
   return (
     <div className="animate-in space-y-8 fade-in duration-500">
+      {!onboarding.complete && <GettingStartedChecklist state={onboarding} />}
+
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
           {/* <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-[var(--color-amber)]">

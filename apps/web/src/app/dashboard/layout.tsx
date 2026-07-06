@@ -1,6 +1,7 @@
 import { PasskeyAutoEnroll } from "@/components/auth/passkey-auto-enroll";
 import { auth } from "@/lib/auth";
 import { getGithubConsentState, requireActiveOrg, requireSession } from "@/lib/session";
+import { getOnboardingState } from "@/server/onboarding";
 import { getSetupState } from "@/server/setup-state";
 import { db, schema } from "@hostfunc/db";
 import { eq } from "drizzle-orm";
@@ -42,6 +43,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   ) {
     redirect("/onboarding/github");
   }
+  // Drives the navbar's onboarding-progress pill; the dashboard page renders
+  // the full checklist. Fetched in parallel with the workspace memberships.
+  const onboardingPromise = getOnboardingState(orgId);
   const memberships = await db
     .select({
       organizationId: schema.organization.id,
@@ -74,6 +78,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     ]),
   );
 
+  const onboarding = await onboardingPromise;
+
   const organizations = memberships.map((membership) => ({
     id: membership.organization.id,
     name: membership.organization.name,
@@ -92,6 +98,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         user={baseSession.user}
         organizations={organizations}
         activeOrganizationId={orgId}
+        onboarding={{
+          completedCount: onboarding.completedCount,
+          totalCount: onboarding.totalCount,
+          complete: onboarding.complete,
+        }}
       />
       <main className="relative mx-auto max-w-screen-2xl px-6 py-8">
         {/* <UsageStatusBar
