@@ -35,7 +35,9 @@
     "esbuild": "^0.28.0"
   },
   "devDependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@types/node": "^25.6.0",
+    "@upstash/redis": "^1.38.0",
     "vitest": "^2.1.8"
   }
 }

@@ -7,12 +7,14 @@ const SDK_PAGES: Array<{ path: string; label: string }> = [
   { path: "/docs/sdk/ai", label: "@hostfunc/sdk/ai" },
   { path: "/docs/sdk/agent", label: "@hostfunc/sdk/agent" },
   { path: "/docs/sdk/vector", label: "@hostfunc/sdk/vector" },
+  { path: "/docs/sdk/kv", label: "@hostfunc/sdk/kv" },
 ];
 
 export const HOSTFUNC_FILE_SKELETON = `import fn, { secret } from "@hostfunc/sdk";
 // Optional: import { askAi } from "@hostfunc/sdk/ai";
 // Optional: import { runAgent } from "@hostfunc/sdk/agent";
 // Optional: import { upsert, query } from "@hostfunc/sdk/vector";
+// Optional: import { kv } from "@hostfunc/sdk/kv";
 
 export async function main(input: unknown) {
   // Your implementation goes here.
@@ -120,6 +122,7 @@ export function buildSdkKnowledgeBlock(): string {
       '- Chain functions with `await fn.executeFunction("orgSlug/fnSlug", payload)`.',
       '- Read required credentials with `await secret.getRequired("KEY")`; optional ones with `await secret.get("KEY")`.',
       '- Emit structured logs with `fn.log("info", message, fields)`; they appear in execution logs.',
+      '- Persist small state (counters, submissions, caches) with `kv` from `@hostfunc/sdk/kv` — no database setup needed. Use `kv.incr` for counters (atomic), never get + set.',
       "- When vendor SDKs are required (Discord, Slack, AWS, Stripe, OpenAI, etc.), import them normally — the packages list is managed by the editor and deploy pipeline.",
       "- Prefer small, idempotent functions composed with `fn.executeFunction` over single monolithic handlers.",
     ].join("\n"),

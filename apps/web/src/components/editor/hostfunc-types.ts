@@ -429,6 +429,59 @@ declare module "@hostfunc/sdk/vector" {
     deleteVectors: (ids: string[]) => Promise<DeleteResult>;
   };
 }
+
+declare module "@hostfunc/sdk/kv" {
+  export interface KvSetOptions {
+    /** Seconds until the key expires. Omit for no TTL. */
+    ttlSeconds?: number;
+  }
+
+  export interface KvListOptions {
+    /** Only return keys starting with this prefix. */
+    prefix?: string;
+    /** Max keys per page (1–1000, default 100). */
+    limit?: number;
+    /** Cursor from a previous page. */
+    cursor?: string;
+  }
+
+  export interface KvListResult {
+    keys: string[];
+    /** Pass back via \`options.cursor\` to fetch the next page. Null when done. */
+    cursor: string | null;
+  }
+
+  /**
+   * Built-in key-value storage scoped to this function. Values are JSON.
+   *
+   * No setup required — every function gets its own persistent store.
+   * Use it for counters, form submissions, small app state, and caching.
+   * \`kv.incr\` is atomic; a \`get\` followed by \`set\` is not, so never use
+   * read-modify-write for counters.
+   *
+   * @example
+   * import { kv } from "@hostfunc/sdk/kv";
+   *
+   * export async function main(input: { option: string }) {
+   *   const votes = await kv.incr("vote:" + input.option);
+   *   return { option: input.option, votes };
+   * }
+   */
+  export const kv: {
+    /** Read a value, or null when the key is missing or expired. */
+    get<T = unknown>(key: string): Promise<T | null>;
+    /** Write a JSON value, optionally expiring after \`ttlSeconds\`. */
+    set(key: string, value: unknown, options?: KvSetOptions): Promise<void>;
+    /** Remove a key. Resolves true when a key was actually deleted. */
+    delete(key: string): Promise<boolean>;
+    /** Atomically add \`delta\` (default 1) to a numeric value, creating it at 0 first. */
+    incr(key: string, delta?: number): Promise<number>;
+    /** Fetch up to 100 keys in one round-trip. Missing keys map to null. */
+    getMany<T = unknown>(keys: string[]): Promise<Record<string, T | null>>;
+    /** Page through keys, optionally filtered by prefix. */
+    list(options?: KvListOptions): Promise<KvListResult>;
+  };
+}
 `;
 
 /** Structured quick-reference shown in the SDK doc panel when hovering an import specifier. */
@@ -528,5 +581,27 @@ await upsert("docs", [{ id: input.docId, values: embedding }]);
 const { matches } = await query("docs", embedding, { topK: 5 });
 return matches.map((m) => ({ id: m.id, score: m.score }));`,
     tip: "Configure Pinecone or Upstash credentials in Dashboard → Settings → Integrations.",
+  },
+
+  "@hostfunc/sdk/kv": {
+    title: "@hostfunc/sdk/kv — Built-in key-value storage",
+    summary:
+      "Persistent JSON storage scoped to this function, with no setup. Use it for counters, form submissions, small app state, and caching.",
+    canonicalImport: 'import { kv } from "@hostfunc/sdk/kv";',
+    api: [
+      { symbol: "kv.get", sig: "(key) → Promise<T | null>" },
+      { symbol: "kv.set", sig: "(key, value, { ttlSeconds? }?) → Promise<void>" },
+      { symbol: "kv.delete", sig: "(key) → Promise<boolean>" },
+      { symbol: "kv.incr", sig: "(key, delta = 1) → Promise<number>  [atomic]" },
+      { symbol: "kv.getMany", sig: "(keys[]) → Promise<Record<string, T | null>>" },
+      { symbol: "kv.list", sig: "({ prefix?, limit?, cursor? }?) → Promise<KvListResult>" },
+    ],
+    example: `import { kv } from "@hostfunc/sdk/kv";
+
+export async function main(input: { option: string }) {
+  const votes = await kv.incr("vote:" + input.option);
+  return { option: input.option, votes };
+}`,
+    tip: "kv.incr is atomic — use it for counters instead of get + set.",
   },
 };

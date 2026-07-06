@@ -58,6 +58,7 @@ export const docsSections: DocsSection[] = [
       { name: "Custom Domains", href: "/custom-domains" },
       { name: "Marketplace", href: "/marketplace" },
       { name: "Executions", href: "/executions" },
+      { name: "Databases", href: "/databases" },
       { name: "Limits and Plans", href: "/limits" },
     ],
   },
@@ -77,6 +78,7 @@ export const docsSections: DocsSection[] = [
       { name: "AI module", href: "/sdk/ai" },
       { name: "Agent module", href: "/sdk/agent" },
       { name: "Vector module", href: "/sdk/vector" },
+      { name: "Storage (KV)", href: "/sdk/kv" },
     ],
   },
 ];
@@ -683,6 +685,119 @@ export async function main(input: { customerId: string }) {
       { label: "CLI logs", href: "/cli" },
     ],
   },
+  "/databases": {
+    title: "Connect to a database",
+    summary:
+      "Functions run on an edge runtime with `fetch()` but no raw TCP sockets, so classic drivers like `pg` or `mysql2` cannot open connections. HTTP-based serverless drivers are purpose-built for this and work perfectly.",
+    highlights: [
+      "Use HTTP-based serverless drivers — Neon, Supabase, Upstash Redis, and Turso all speak HTTPS.",
+      'Store connection strings and keys as function secrets (Settings → Secrets) and read them with `secret.getRequired("KEY")` — never hardcode credentials.',
+      'Each provider below has a ready-made template in the picker ("data" category) — fork one instead of starting blank.',
+      "For small state (counters, form submissions, caches) you don't need an external database — the built-in KV storage needs zero setup.",
+    ],
+    guideSections: [
+      {
+        title: "How it works",
+        description:
+          'npm driver imports are bundled at deploy time by the platform (esbuild), so `import { neon } from "@neondatabase/serverless"` just works in the editor — no package.json needed. The drivers below talk to their databases over HTTPS, which is exactly what the runtime provides.',
+        bullets: [
+          "TCP drivers (`pg`, `mysql2`, `ioredis`) will not work — they need raw sockets the runtime does not provide.",
+          "Egress and subrequest limits apply per execution (free tier: 1MB egress, 20 subrequests) — see Limits and Plans.",
+        ],
+      },
+      {
+        title: "Neon (serverless Postgres)",
+        description:
+          "Neon's serverless driver runs tagged-template SQL queries over HTTPS. Template: “Neon Postgres CRUD”.",
+        bullets: [
+          "Secret: `NEON_DATABASE_URL` — copy it from the Neon dashboard → Connection Details.",
+        ],
+        code: `import { secret } from "@hostfunc/sdk";
+import { neon } from "@neondatabase/serverless";
+
+export async function main(input: { limit?: number }) {
+  const sql = neon(await secret.getRequired("NEON_DATABASE_URL"));
+  const items = await sql\`SELECT id, title FROM items ORDER BY created_at DESC LIMIT \${input.limit ?? 10}\`;
+  return { items };
+}`,
+      },
+      {
+        title: "Supabase",
+        description:
+          "The Supabase client talks to PostgREST over fetch, so reads and writes work without sockets. Template: “Supabase todos”.",
+        bullets: [
+          "Secrets: `SUPABASE_URL` and `SUPABASE_ANON_KEY` — both are under project Settings → API.",
+          "New tables have Row Level Security enabled — add policies that allow the anon key, or disable RLS for demo tables.",
+        ],
+        code: `import { secret } from "@hostfunc/sdk";
+import { createClient } from "@supabase/supabase-js";
+
+export async function main() {
+  const supabase = createClient(
+    await secret.getRequired("SUPABASE_URL"),
+    await secret.getRequired("SUPABASE_ANON_KEY"),
+  );
+  const { data, error } = await supabase.from("todos").select("*").limit(20);
+  if (error) throw new Error(error.message);
+  return { todos: data };
+}`,
+      },
+      {
+        title: "Upstash Redis",
+        description:
+          "Upstash exposes Redis over a REST API, so every command is a fetch call. Template: “Upstash Redis cache”.",
+        bullets: [
+          "Secrets: `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` — shown on the database's REST API card.",
+        ],
+        code: `import { secret } from "@hostfunc/sdk";
+import { Redis } from "@upstash/redis";
+
+export async function main(input: { key?: string }) {
+  const redis = new Redis({
+    url: await secret.getRequired("UPSTASH_REDIS_REST_URL"),
+    token: await secret.getRequired("UPSTASH_REDIS_REST_TOKEN"),
+  });
+  const hits = await redis.incr(\`hits:\${input.key ?? "home"}\`);
+  return { hits };
+}`,
+      },
+      {
+        title: "Turso (libSQL)",
+        description:
+          "Turso needs zero dependencies — send raw `fetch` requests to `<url>/v2/pipeline` with a bearer token. Template: “Turso (libSQL) events”.",
+        bullets: [
+          "Secrets: `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` — create the token with `turso db tokens create`.",
+        ],
+        code: `import { secret } from "@hostfunc/sdk";
+
+export async function main() {
+  const url = await secret.getRequired("TURSO_DATABASE_URL");
+  const token = await secret.getRequired("TURSO_AUTH_TOKEN");
+  const res = await fetch(\`\${url}/v2/pipeline\`, {
+    method: "POST",
+    headers: { authorization: \`Bearer \${token}\`, "content-type": "application/json" },
+    body: JSON.stringify({
+      requests: [
+        { type: "execute", stmt: { sql: "SELECT datetime('now') AS now" } },
+        { type: "close" },
+      ],
+    }),
+  });
+  return await res.json();
+}`,
+      },
+      {
+        title: "When you don't need a database",
+        description:
+          "Counters, form submissions, and caches fit comfortably in the built-in per-function KV storage — no account, no secrets, no connection string. Reach for an external database when you need relational queries, shared data across functions, or more than the per-function key limit.",
+      },
+    ],
+    related: [
+      { label: "Storage (KV)", href: "/sdk/kv" },
+      { label: "Limits and Plans", href: "/limits" },
+      { label: "Security", href: "/security" },
+    ],
+  },
   "/security": {
     title: "Security and Access",
     summary:
@@ -947,6 +1062,7 @@ hostfunc secrets set CLAUDE_API_KEY <value>`,
       "Import AI helpers from `@hostfunc/sdk/ai` (`askAi`, `streamAi`, `createEmbedding`).",
       "Import agent helpers from `@hostfunc/sdk/agent` (`createAgent`, `runAgent`).",
       "Import vector helpers from `@hostfunc/sdk/vector` (`upsert`, `query`, `deleteVectors`, `getNamespace`).",
+      "Import key-value storage from `@hostfunc/sdk/kv` (`get`, `set`, `delete`, `incr`, `getMany`, `list`).",
     ],
     sdkGuide: {
       quickstart:
@@ -1044,6 +1160,7 @@ export async function main(input: { customerId: string }) {
       { label: "AI module", href: "/sdk/ai" },
       { label: "Agent module", href: "/sdk/agent" },
       { label: "Vector module", href: "/sdk/vector" },
+      { label: "Storage (KV)", href: "/sdk/kv" },
     ],
   },
   "/sdk/ai": {
@@ -1216,6 +1333,196 @@ const results = await query("profiles", embedding, { topK: 5 });`,
     related: [
       { label: "SDK overview", href: "/sdk" },
       { label: "AI module", href: "/sdk/ai" },
+    ],
+  },
+  "/sdk/kv": {
+    title: "Storage (KV)",
+    summary:
+      "Use `@hostfunc/sdk/kv` for built-in key-value storage scoped to each function. Values are JSON, persistence is automatic, and there is zero setup — every function gets its own store.",
+    highlights: [
+      "Zero setup — every function gets its own persistent store; forked functions get their own empty one.",
+      "`kv.get`/`kv.set`/`kv.delete` for JSON values, with optional per-key TTL (clamped to 1 year).",
+      "`kv.incr` is atomic — use it for counters instead of a `get` followed by a `set`.",
+      "`kv.getMany` batch-reads up to 100 keys; `kv.list` pages through keys by prefix.",
+      "Limits: keys 1–512 chars, values up to 64KB serialized, 1,000 keys per function (plan-dependent).",
+    ],
+    guideSections: [
+      {
+        title: "Ready-made templates",
+        description:
+          'The template picker\'s "storage" category ships working functions built on KV — fork one instead of starting blank.',
+        bullets: [
+          "Live poll — atomic vote counters with `kv.incr`.",
+          "Guestbook — prefix-scanned entries with inverted-timestamp sort keys for newest-first listing.",
+          "Link shortener, Page-view counter, Waitlist signup, and Feedback widget.",
+        ],
+      },
+    ],
+    sdkGuide: {
+      quickstart:
+        'Import with `import { kv } from "@hostfunc/sdk/kv";`. Keys are strings (1–512 chars); values are any JSON-serializable data up to 64KB serialized. No configuration or integration setup is required.',
+      apiReference: [
+        {
+          name: "kv.get",
+          signature: "await kv.get<T = unknown>(key: string): Promise<T | null>",
+          description: "Read one value. JSON is parsed back into the stored shape.",
+          args: [
+            {
+              name: "key",
+              type: "string",
+              required: true,
+              description: "Key to read (1–512 chars).",
+            },
+          ],
+          returns: "The stored value, or `null` when the key is missing or expired.",
+        },
+        {
+          name: "kv.set",
+          signature:
+            "await kv.set(key: string, value: unknown, options?: { ttlSeconds?: number }): Promise<void>",
+          description: "Write a JSON-serializable value, creating or overwriting the key.",
+          args: [
+            {
+              name: "key",
+              type: "string",
+              required: true,
+              description: "Key to write (1–512 chars).",
+            },
+            {
+              name: "value",
+              type: "unknown",
+              required: true,
+              description: "Any JSON-serializable value, up to 64KB serialized.",
+            },
+            {
+              name: "options.ttlSeconds",
+              type: "number",
+              required: false,
+              description: "Optional expiry in seconds; the key reads as missing after it elapses.",
+            },
+          ],
+          returns: "Resolves once the write is stored.",
+          notes: ["TTL is clamped to a maximum of 1 year."],
+        },
+        {
+          name: "kv.delete",
+          signature: "await kv.delete(key: string): Promise<boolean>",
+          description: "Remove a key.",
+          args: [{ name: "key", type: "string", required: true, description: "Key to delete." }],
+          returns: "`true` when a key was deleted, `false` when it did not exist.",
+        },
+        {
+          name: "kv.incr",
+          signature: "await kv.incr(key: string, delta = 1): Promise<number>",
+          description:
+            "Atomically increment a numeric value. Missing keys are created at 0 first, then the delta is applied.",
+          args: [
+            { name: "key", type: "string", required: true, description: "Counter key." },
+            {
+              name: "delta",
+              type: "number",
+              required: false,
+              description: "Amount to add (defaults to 1).",
+            },
+          ],
+          returns: "The new value after the increment.",
+          throws: ["`kv_not_a_number` (409) when the existing value is not numeric."],
+          notes: [
+            "The increment is atomic — safe under concurrent invocations, unlike a `get` followed by a `set`.",
+            "Incrementing an expired key restarts it from 0 with no TTL.",
+          ],
+        },
+        {
+          name: "kv.getMany",
+          signature:
+            "await kv.getMany<T = unknown>(keys: string[]): Promise<Record<string, T | null>>",
+          description: "Batch-read up to 100 keys in one call.",
+          args: [
+            {
+              name: "keys",
+              type: "string[]",
+              required: true,
+              description: "Keys to read (up to 100).",
+            },
+          ],
+          returns: "A record keyed by the requested keys; missing or expired keys map to `null`.",
+        },
+        {
+          name: "kv.list",
+          signature:
+            "await kv.list(options?: { prefix?: string; limit?: number; cursor?: string }): Promise<{ keys: string[]; cursor: string | null }>",
+          description: "Page through keys in ascending key order, optionally filtered by prefix.",
+          args: [
+            {
+              name: "options.prefix",
+              type: "string",
+              required: false,
+              description: "Only return keys starting with this prefix.",
+            },
+            {
+              name: "options.limit",
+              type: "number",
+              required: false,
+              description: "Page size, 1–1000 (defaults to 100).",
+            },
+            {
+              name: "options.cursor",
+              type: "string",
+              required: false,
+              description: "Cursor from a previous page.",
+            },
+          ],
+          returns:
+            "`{ keys, cursor }` — pass `cursor` back to fetch the next page; `null` means no more pages.",
+        },
+      ],
+      codeExamples: [
+        {
+          title: "Live poll with atomic counters",
+          description: "Use `kv.incr` for votes and `kv.getMany` to read all tallies at once.",
+          code: `import { kv } from "@hostfunc/sdk/kv";
+
+const OPTIONS = ["tabs", "spaces"];
+
+export async function main(input: { action?: string; option?: string }) {
+  if (input.action === "vote" && OPTIONS.includes(input.option ?? "")) {
+    const votes = await kv.incr(\`vote:\${input.option}\`);
+    return { ok: true, votes };
+  }
+  const counts = await kv.getMany<number>(OPTIONS.map((o) => \`vote:\${o}\`));
+  return { results: OPTIONS.map((o) => ({ option: o, votes: counts[\`vote:\${o}\`] ?? 0 })) };
+}`,
+        },
+        {
+          title: "Prefix listing, newest first",
+          description:
+            "Store entries under a shared prefix with an inverted-timestamp sort key so `kv.list` (ascending) returns newest entries first.",
+          code: `import { kv } from "@hostfunc/sdk/kv";
+
+export async function main(input: { message?: string }) {
+  if (input.message) {
+    const sortKey = String(9_999_999_999_999 - Date.now()).padStart(13, "0");
+    await kv.set(\`entry:\${sortKey}\`, { message: input.message, at: new Date().toISOString() });
+    return { ok: true };
+  }
+  const { keys } = await kv.list({ prefix: "entry:", limit: 20 });
+  const entries = await kv.getMany<{ message: string; at: string }>(keys);
+  return { entries: keys.map((key) => entries[key]).filter((entry) => entry !== null) };
+}`,
+        },
+      ],
+      bestPractices: [
+        "Use `kv.incr` for counters — a `get` followed by a `set` is not transactional and loses updates under concurrent invocations.",
+        "Adopt key-prefix conventions like `entry:<id>` and scan one collection at a time with `kv.list({ prefix })`.",
+        "`kv.list` returns keys in ascending order — for newest-first listings, store an inverted-timestamp sort key (see the Guestbook template).",
+        "Set `ttlSeconds` on cache-style entries so stale data expires instead of counting against the per-function key limit.",
+        "Keep values under 64KB serialized — store IDs or references to large payloads, not the payloads themselves.",
+      ],
+    },
+    related: [
+      { label: "SDK overview", href: "/sdk" },
+      { label: "Connect to a database", href: "/databases" },
+      { label: "Limits and Plans", href: "/limits" },
     ],
   },
 };

@@ -30,6 +30,16 @@ const config: NextConfig = {
 
   // Better Auth needs to know about server-only modules
   serverExternalPackages: ["postgres", "drizzle-orm", "esbuild"],
+  // The deploy bundler resolves user-code imports (DB drivers etc.) from this
+  // app's node_modules at runtime via esbuild — nothing imports these statically,
+  // so trace them into the standalone output explicitly.
+  outputFileTracingIncludes: {
+    "/**": [
+      "./node_modules/@neondatabase/serverless/**",
+      "./node_modules/@supabase/supabase-js/**",
+      "./node_modules/@upstash/redis/**",
+    ],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

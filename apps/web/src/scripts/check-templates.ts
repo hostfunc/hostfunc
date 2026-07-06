@@ -7,16 +7,20 @@
  * the invariants instead: unique kebab-case ids, a known category, the right
  * exported entry point, an SDK import wherever the SDK is used, declared
  * secrets that are actually read via `secret.getRequired`, and a cron
- * schedule present iff the trigger is a cron.
+ * schedule present iff the trigger is a cron. Finally, every template is run
+ * through the real deploy bundler, which proves its imports resolve and the
+ * output fits the platform size limits.
  *
  * Run: pnpm --filter @hostfunc/web templates:check
  */
+import { BundleError, bundleFunction } from "@hostfunc/executor-cloudflare";
 import { FUNCTION_TEMPLATES, type TemplateCategory } from "../lib/templates";
 
 const CATEGORIES: readonly TemplateCategory[] = [
   "utilities",
   "ai",
   "data",
+  "storage",
   "integrations",
   "notifications",
   "webhooks",
@@ -57,6 +61,10 @@ for (const template of FUNCTION_TEMPLATES) {
     fail("code references fn/secret but never imports from @hostfunc/sdk");
   }
 
+  if (/\bkv\./.test(code) && !code.includes('from "@hostfunc/sdk/kv"')) {
+    fail("code references kv but never imports from @hostfunc/sdk/kv");
+  }
+
   for (const key of template.requiredSecrets) {
     if (!code.includes(`getRequired("${key}")`)) {
       fail(`requiredSecrets lists ${key}, but it is not read via secret.getRequired`);
@@ -82,6 +90,28 @@ for (const template of FUNCTION_TEMPLATES) {
   }
 }
 
+// Run each template through the real deploy bundler. This catches unresolvable
+// imports (e.g. a driver missing from apps/web dependencies) and size overruns
+// that the structural checks above can't see.
+for (const template of FUNCTION_TEMPLATES) {
+  try {
+    await bundleFunction({
+      code: template.code,
+      fnId: `template-${template.id}`,
+      versionId: "check",
+      assets: (template.assets ?? []).map((asset) => ({
+        path: asset.path,
+        mime: asset.mime,
+        content: Buffer.from(asset.content, "utf8"),
+      })),
+    });
+  } catch (error) {
+    const detail =
+      error instanceof BundleError || error instanceof Error ? error.message : String(error);
+    failures.push(`[${template.id}] failed to bundle: ${detail}`);
+  }
+}
+
 if (failures.length > 0) {
   process.stderr.write(`✗ ${failures.length} template issue(s):\n`);
   for (const failure of failures) {
@@ -90,4 +120,6 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-process.stdout.write(`✓ ${FUNCTION_TEMPLATES.length} templates passed structural checks.\n`);
+process.stdout.write(
+  `✓ ${FUNCTION_TEMPLATES.length} templates passed structural and bundle checks.\n`,
+);

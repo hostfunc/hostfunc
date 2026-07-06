@@ -29,6 +29,10 @@ export interface PlanLimits {
   maxCallDepth: number;
   maxSecretsPerFunction: number;
   maxTeamMembers: number;
+  /** Max keys in a function's kv store. Optional — code falls back to a default. */
+  maxKvKeysPerFunction?: number;
+  /** Max serialized size of a single kv value in bytes. Optional — code falls back to a default. */
+  maxKvValueBytes?: number;
 }
 
 export const plan = pgTable("plan", {
