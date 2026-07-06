@@ -1,11 +1,13 @@
 import { DeployedSecretsBanner } from "@/components/editor/deployed-secrets-banner";
 import { type AiContextSummary, FunctionEditor } from "@/components/editor/function-editor";
 import { FunctionLogo } from "@/components/function/function-logo";
+import { InvokeSnippet } from "@/components/functions/invoke-snippet";
 import { Button } from "@/components/ui/button";
 import { hasOrgPermission } from "@/lib/permissions";
 import { getActiveMembership } from "@/lib/session";
 import { listContextsForFunction } from "@/server/fn-ai-context";
 import { listFunctionAssets } from "@/server/fn-assets";
+import { buildRunUrl, getFnRunTarget } from "@/server/fn-run-url";
 import {
   getCurrentVersionCodeForFunction,
   getDraft,
@@ -43,6 +45,8 @@ export default async function FunctionEditorPage({
     sourceUri: row.sourceUri,
   }));
   const assets = await listFunctionAssets(fnId);
+  const runTarget = await getFnRunTarget({ fnId, orgId });
+  const runUrl = runTarget ? buildRunUrl(runTarget.orgSlug, runTarget.fnSlug) : null;
 
   return (
     <div className="mt-2 flex h-[calc(100dvh-7rem)] flex-col">
@@ -57,6 +61,7 @@ export default async function FunctionEditorPage({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {runUrl ? <InvokeSnippet runUrl={runUrl} /> : null}
           <Button
             variant="outline"
             size="sm"

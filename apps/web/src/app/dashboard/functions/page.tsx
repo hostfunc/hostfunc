@@ -9,6 +9,25 @@ import { filterCount, parseFunctionFilters } from "./search-params";
 
 export const dynamic = "force-dynamic";
 
+/** Templates from `@/lib/templates` suggested to first-time users, each showing off a capability. */
+const STARTER_TEMPLATE_SUGGESTIONS = [
+  {
+    templateId: "hello-world",
+    name: "Deploy the Hello world template",
+    blurb: "The 10-line starter — typed JSON input, structured logging, JSON out over HTTP.",
+  },
+  {
+    templateId: "html-page",
+    name: "Deploy the HTML page template",
+    blurb: "Hosts a live, styled web page from an editable index.html at your public URL.",
+  },
+  {
+    templateId: "hacker-news-digest",
+    name: "Deploy the Hacker News digest template",
+    blurb: "Runs on a cron schedule — pulls the top 10 HN stories every day at 13:00 UTC.",
+  },
+] as const;
+
 export default async function FunctionsExplorerPage({
   searchParams,
 }: {
@@ -110,12 +129,35 @@ export default async function FunctionsExplorerPage({
               </Button>
             </div>
           ) : (
-            <Button asChild>
-              <Link href="/dashboard/new">
-                <Plus className="mr-2 h-4 w-4" />
-                Create your first function
-              </Link>
-            </Button>
+            <div className="flex flex-col items-center gap-5">
+              <Button asChild>
+                <Link href="/dashboard/new">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create your first function
+                </Link>
+              </Button>
+              <div className="w-full max-w-2xl">
+                <p className="mb-3 text-xs uppercase tracking-wider text-[var(--color-bone-faint)]">
+                  Or start from a template
+                </p>
+                <div className="grid gap-3 text-left sm:grid-cols-3">
+                  {STARTER_TEMPLATE_SUGGESTIONS.map((suggestion) => (
+                    <Link
+                      key={suggestion.templateId}
+                      href={`/dashboard/new?template=${suggestion.templateId}`}
+                      className="group rounded-xl border border-[var(--color-border)] bg-white/[0.02] p-4 transition hover:border-[var(--color-bone-faint)] hover:bg-white/[0.04]"
+                    >
+                      <p className="text-sm font-medium text-[var(--color-bone)] group-hover:text-white">
+                        {suggestion.name}
+                      </p>
+                      <p className="mt-1 text-xs text-[var(--color-bone-muted)]">
+                        {suggestion.blurb}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
         </div>
       )}

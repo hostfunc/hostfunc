@@ -37,8 +37,16 @@ export function DeployButton({ fnId, onDeploy }: { fnId: string; onDeploy: () =>
         versionId: result.versionId,
         runUrl: result.runUrl,
       });
-      toast.success("Deployed", {
-        description: result.versionId.slice(0, 16),
+      toast.success("Deployed — your function is live", {
+        description: result.runUrl,
+        duration: 10_000,
+        action: {
+          label: "Copy URL",
+          onClick: () => {
+            void navigator.clipboard.writeText(result.runUrl);
+            toast.success("URL copied");
+          },
+        },
       });
       toast.warning("Heads up: don't ship secrets in code", {
         description:
