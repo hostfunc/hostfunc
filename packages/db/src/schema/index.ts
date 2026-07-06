@@ -12,4 +12,5 @@ export * from "./fnAiContext.js";
 export * from "./marketplace.js";
 export * from "./fnAssets.js";
 export * from "./customDomains.js";
+export * from "./kv.js";
 export * from "./relations.js";

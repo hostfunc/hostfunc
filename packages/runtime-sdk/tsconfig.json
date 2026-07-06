@@ -8,12 +8,12 @@
     "moduleResolution": "Bundler",
     "incremental": true,
     "tsBuildInfoFile": "./.tsbuildinfo",
-    "baseUrl": ".",
     "paths": {
       "@hostfunc/sdk": ["./src/index.ts"],
       "@hostfunc/sdk/ai": ["./src/ai/index.ts"],
       "@hostfunc/sdk/agent": ["./src/agent/index.ts"],
-      "@hostfunc/sdk/vector": ["./src/vector/index.ts"]
+      "@hostfunc/sdk/vector": ["./src/vector/index.ts"],
+      "@hostfunc/sdk/kv": ["./src/kv/index.ts"]
     }
   },
   "include": ["src/**/*"],

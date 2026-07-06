@@ -18,6 +18,12 @@ export interface BundleOptions {
   assets?: BundleAsset[];
   /** Hard upper bound for the user-authored code. Defaults to 1_000_000. */
   maxSizeBytes?: number;
+  /**
+   * Directory bare imports resolve from. Defaults to process.cwd(), which at
+   * deploy time is the control-plane app — so user code can import any npm
+   * package the control plane ships (e.g. @neondatabase/serverless).
+   */
+  resolveDir?: string;
 }
 
 export interface SkippedAsset {
@@ -403,6 +409,47 @@ const __ofn_vector_module = {
   },
 };
 
+const __ofn_kv_module = {
+  async get(key) {
+    const result = await __ofn_post_internal("/api/internal/kv/get", { key });
+    return result && result.found ? result.value : null;
+  },
+  async set(key, value, options) {
+    const body = { key, value };
+    if (options && options.ttlSeconds !== undefined) body.ttlSeconds = options.ttlSeconds;
+    await __ofn_post_internal("/api/internal/kv/set", body);
+  },
+  async delete(key) {
+    const result = await __ofn_post_internal("/api/internal/kv/delete", { key });
+    return Boolean(result && result.deleted);
+  },
+  async incr(key, delta) {
+    const result = await __ofn_post_internal("/api/internal/kv/incr", {
+      key,
+      delta: delta === undefined ? 1 : delta,
+    });
+    return result ? result.value : 0;
+  },
+  async getMany(keys) {
+    const result = await __ofn_post_internal("/api/internal/kv/get-many", { keys });
+    const values = (result && result.values) || {};
+    const out = {};
+    for (const key of keys) out[key] = key in values ? values[key] : null;
+    return out;
+  },
+  async list(options) {
+    const body = {};
+    if (options && options.prefix !== undefined) body.prefix = options.prefix;
+    if (options && options.limit !== undefined) body.limit = options.limit;
+    if (options && options.cursor !== undefined) body.cursor = options.cursor;
+    const result = await __ofn_post_internal("/api/internal/kv/list", body);
+    return {
+      keys: (result && result.keys) || [],
+      cursor: result && result.cursor != null ? result.cursor : null,
+    };
+  },
+};
+
 async function __ofn_resolve_slug(ctx, owner, fnSlug) {
   if (!ctx.controlPlane || !ctx.token) return null;
   try {
@@ -443,6 +490,7 @@ const upsert = __ofn_vector_module.upsert;
 const query = __ofn_vector_module.query;
 const deleteVectors = __ofn_vector_module.deleteVectors;
 const getNamespace = __ofn_vector_module.getNamespace;
+const kv = __ofn_kv_module;
 
 // User code begins
 ${userCode}
@@ -775,6 +823,7 @@ export async function bundleFunction(opts: BundleOptions): Promise<BundleResult>
         contents: wrapped,
         loader: "ts",
         sourcefile: `${opts.fnId}.ts`,
+        resolveDir: opts.resolveDir ?? process.cwd(),
       },
       bundle: true,
       write: false,
@@ -827,7 +876,7 @@ export async function bundleFunction(opts: BundleOptions): Promise<BundleResult>
 function normalizeUserCode(code: string): string {
   return code
     .replace(
-      /^\s*import\s+[^;]*["']@hostfunc\/(?:fn|sdk(?:\/(?:ai|agent|vector))?)["'];?\s*$/gm,
+      /^\s*import\s+[^;]*["']@hostfunc\/(?:fn|sdk(?:\/(?:ai|agent|vector|kv))?)["'];?\s*$/gm,
       "",
     )
     .replace(/\bexport\s+default\s+async\s+function\s+main\b/g, "async function main")

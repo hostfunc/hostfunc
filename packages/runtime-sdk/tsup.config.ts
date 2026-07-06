@@ -6,6 +6,7 @@ export default defineConfig({
     ai: "src/ai/index.ts",
     agent: "src/agent/index.ts",
     vector: "src/vector/index.ts",
+    kv: "src/kv/index.ts",
   },
   format: ["esm", "cjs"],
   dts: true,

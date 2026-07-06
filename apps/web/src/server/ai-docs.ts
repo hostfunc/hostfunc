@@ -9,6 +9,10 @@ const ALLOWED_HOSTS = new Set([
   "developer.mozilla.org",
   "nodejs.org",
   "developers.cloudflare.com",
+  "neon.tech",
+  "supabase.com",
+  "upstash.com",
+  "docs.turso.tech",
 ]);
 
 const CACHE_TTL_MS = 5 * 60 * 1000;

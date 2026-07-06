@@ -14,6 +14,9 @@ import {
 import { CloudflareApi, CloudflareApiCallError } from "./api.js";
 import { BundleError, type BundleResult, bundleFunction } from "./bundler.js";
 
+export { BundleError, bundleFunction } from "./bundler.js";
+export type { BundleAsset, BundleOptions, BundleResult } from "./bundler.js";
+
 export interface CloudflareConfig {
   accountId: string;
   apiToken: string;

@@ -1,2 +1,8 @@
 // .vscode/settings.json
-{ "hostfunc.baseUrl": "http://localhost:3000" }
+{
+  "hostfunc.baseUrl": "http://localhost:3000",
+  // Use the repo's TypeScript (5.9), not VS Code's bundled one — newer bundled
+  // versions flag options the workspace compiler doesn't recognize (and their
+  // quick-fixes, e.g. ignoreDeprecations: "6.0", break `pnpm typecheck`).
+  "typescript.tsdk": "node_modules/typescript/lib"
+}
