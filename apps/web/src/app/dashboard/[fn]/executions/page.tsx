@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { type LogLevel, parseLogLevels } from "@/lib/log-levels";
 import { requireActiveOrg } from "@/lib/session";
 import { listExecutions } from "@/server/executions";
 import { getFunctionForOrg } from "@/server/functions";
@@ -13,6 +14,8 @@ interface SearchParams {
   trigger?: string;
   from?: string;
   to?: string;
+  q?: string;
+  level?: string;
 }
 
 export default async function ExecutionsPage({
@@ -33,6 +36,8 @@ export default async function ExecutionsPage({
     triggerKind?: Array<"http" | "cron" | "email" | "mcp" | "fn_call">;
     from?: string;
     to?: string;
+    q?: string;
+    logLevel?: LogLevel[];
   } = { fnId };
   if (search.status) {
     filters.status = search.status.split(",") as Array<
@@ -46,6 +51,12 @@ export default async function ExecutionsPage({
   }
   if (search.from) filters.from = search.from;
   if (search.to) filters.to = search.to;
+  const query = search.q?.trim();
+  if (query) filters.q = query;
+  if (search.level) {
+    const levels = parseLogLevels(search.level);
+    if (levels.length > 0) filters.logLevel = levels;
+  }
 
   const { items } = await listExecutions({
     orgId,
@@ -64,13 +75,21 @@ export default async function ExecutionsPage({
         </p>
       </div>
       <ExecutionsFilters />
+      {query ? (
+        <p className="px-1 text-xs text-[var(--color-bone-muted)]">
+          Showing executions matching{" "}
+          <span className="font-medium text-[var(--color-bone)]">&ldquo;{query}&rdquo;</span>
+        </p>
+      ) : null}
       {items.length === 0 ? (
         <div className="grid place-items-center rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-ink-elevated)]/45 py-16 text-center">
           <h3 className="text-base font-medium text-[var(--color-bone)]">
             No executions match these filters
           </h3>
           <p className="mt-1 text-sm text-[var(--color-bone-muted)]">
-            Try widening the time range or removing status filters.
+            {query
+              ? "Try a different search term, or widen the time range."
+              : "Try widening the time range or removing status filters."}
           </p>
         </div>
       ) : (

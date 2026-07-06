@@ -1,7 +1,7 @@
 import "server-only";
 
 import { db, schema } from "@hostfunc/db";
-import { and, asc, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, exists, gte, ilike, inArray, lt, or, sql } from "drizzle-orm";
 
 export interface DashboardStats {
   totalFunctions: number;
@@ -58,12 +58,22 @@ export async function getRecentExecutions(orgId: string, limit = 10) {
     .limit(limit);
 }
 
+export type LogLevel = "debug" | "info" | "warn" | "error";
+
 export interface ExecutionFilters {
   fnId?: string;
   status?: Array<"ok" | "fn_error" | "limit_exceeded" | "infra_error">;
   triggerKind?: Array<"http" | "cron" | "email" | "mcp" | "fn_call">;
   from?: string;
   to?: string;
+  /** Case-insensitive text search across log messages and the error message. */
+  q?: string;
+  /** Only match executions that logged at one of these levels. */
+  logLevel?: LogLevel[];
+}
+
+function escapeLikePattern(term: string): string {
+  return term.replace(/([\\%_])/g, "\\$1");
 }
 
 export interface ListExecutionsInput {
@@ -101,6 +111,29 @@ export async function listExecutions(
   if (filters.from) where.push(gte(schema.execution.startedAt, new Date(filters.from)));
   if (filters.to) where.push(lt(schema.execution.startedAt, new Date(filters.to)));
   if (input.cursor) where.push(lt(schema.execution.startedAt, new Date(input.cursor)));
+
+  const term = filters.q?.trim();
+  if (term || filters.logLevel?.length) {
+    // EXISTS keeps this bounded by the org+time indexes on execution; ILIKE on
+    // execution_log.message is acceptable at current volume (a pg_trgm GIN
+    // index — or the planned ClickHouse move — is the escape hatch at scale).
+    const pattern = term ? `%${escapeLikePattern(term)}%` : null;
+    const logConditions = [eq(schema.executionLog.executionId, schema.execution.id)];
+    if (filters.logLevel?.length) {
+      logConditions.push(inArray(schema.executionLog.level, filters.logLevel));
+    }
+    if (pattern) logConditions.push(ilike(schema.executionLog.message, pattern));
+    const logExists = exists(
+      db
+        .select({ one: sql`1` })
+        .from(schema.executionLog)
+        .where(and(...logConditions)),
+    );
+    const clause = pattern
+      ? or(logExists, ilike(schema.execution.errorMessage, pattern))
+      : logExists;
+    if (clause) where.push(clause);
+  }
 
   const rows = await db
     .select({
@@ -157,6 +190,43 @@ export async function getExecution(orgId: string, executionId: string) {
     .where(and(eq(schema.execution.id, executionId), eq(schema.execution.orgId, orgId)))
     .limit(1);
   return rows[0] ?? null;
+}
+
+export interface ChildExecution {
+  id: string;
+  fnId: string;
+  fnSlug: string;
+  status: "ok" | "fn_error" | "limit_exceeded" | "infra_error";
+  triggerKind: string;
+  wallMs: number;
+  callDepth: number;
+  startedAt: Date;
+  endedAt: Date | null;
+}
+
+/** Direct children of an execution (fn_call composition) for the waterfall view. */
+export async function getChildExecutions(
+  orgId: string,
+  executionId: string,
+): Promise<ChildExecution[]> {
+  return db
+    .select({
+      id: schema.execution.id,
+      fnId: schema.execution.fnId,
+      fnSlug: schema.fn.slug,
+      status: schema.execution.status,
+      triggerKind: schema.execution.triggerKind,
+      wallMs: schema.execution.wallMs,
+      callDepth: schema.execution.callDepth,
+      startedAt: schema.execution.startedAt,
+      endedAt: schema.execution.endedAt,
+    })
+    .from(schema.execution)
+    .innerJoin(schema.fn, eq(schema.fn.id, schema.execution.fnId))
+    .where(
+      and(eq(schema.execution.orgId, orgId), eq(schema.execution.parentExecutionId, executionId)),
+    )
+    .orderBy(asc(schema.execution.startedAt));
 }
 
 export async function listLogsForExecution(orgId: string, executionId: string) {

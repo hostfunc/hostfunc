@@ -13,7 +13,7 @@ import {
   getFunctionPackagesForOrg,
 } from "@/server/functions";
 import { getFunctionGithubBinding } from "@/server/github-integrations";
-import { BookOpen, Settings } from "lucide-react";
+import { BookOpen, ChartLine, Settings } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -66,6 +66,17 @@ export default async function FunctionEditorPage({
             <Link href="/docs/functions">
               <BookOpen className="mr-2 h-4 w-4" />
               Docs
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            asChild
+            className="border-[var(--color-border)] bg-transparent text-[var(--color-bone)] hover:bg-white/[0.04]"
+          >
+            <Link href={`/dashboard/${fnId}/analytics`}>
+              <ChartLine className="mr-2 h-4 w-4" />
+              Analytics
             </Link>
           </Button>
           <Button
