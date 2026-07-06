@@ -57,6 +57,11 @@ export default async function FunctionSettingsLayout({
       icon: "activity",
     },
     {
+      title: "Analytics",
+      href: `/dashboard/${fn}/analytics`,
+      icon: "chartLine",
+    },
+    {
       title: "Lineage",
       href: `/dashboard/${fn}/settings/lineage`,
       icon: "gitBranch",

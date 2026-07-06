@@ -1,3 +1,4 @@
+import { type LogLevel, parseLogLevels } from "@/lib/log-levels";
 import { requireActiveOrg } from "@/lib/session";
 import { listExecutions } from "@/server/executions";
 import type { NextRequest } from "next/server";
@@ -12,12 +13,16 @@ export async function GET(req: NextRequest) {
   const trigger = req.nextUrl.searchParams.get("trigger");
   const from = req.nextUrl.searchParams.get("from") ?? undefined;
   const to = req.nextUrl.searchParams.get("to") ?? undefined;
+  const q = req.nextUrl.searchParams.get("q")?.trim();
+  const level = req.nextUrl.searchParams.get("level");
   const filters: {
     fnId: string;
     status?: Array<"ok" | "fn_error" | "limit_exceeded" | "infra_error">;
     triggerKind?: Array<"http" | "cron" | "email" | "mcp" | "fn_call">;
     from?: string;
     to?: string;
+    q?: string;
+    logLevel?: LogLevel[];
   } = { fnId };
   if (status) {
     filters.status = status.split(",") as Array<
@@ -31,6 +36,11 @@ export async function GET(req: NextRequest) {
   }
   if (from) filters.from = from;
   if (to) filters.to = to;
+  if (q) filters.q = q;
+  if (level) {
+    const levels = parseLogLevels(level);
+    if (levels.length > 0) filters.logLevel = levels;
+  }
 
   const input: {
     orgId: string;

@@ -75,6 +75,22 @@ const RANGE_HOURS: Record<OverviewRange, number> = {
   "30d": 24 * 30,
 };
 
+/** Org-wide when fnId is omitted; scoped to one function when present. */
+interface OverviewScope {
+  orgId: string;
+  fnId?: string;
+}
+
+function scopeConditions(scope: OverviewScope, from: Date, to: Date) {
+  const conditions = [
+    eq(schema.execution.orgId, scope.orgId),
+    gte(schema.execution.startedAt, from),
+    lt(schema.execution.startedAt, to),
+  ];
+  if (scope.fnId) conditions.push(eq(schema.execution.fnId, scope.fnId));
+  return and(...conditions);
+}
+
 function rangeBucket(range: OverviewRange): BucketKind {
   return range === "24h" ? "hour" : "day";
 }
@@ -131,7 +147,11 @@ interface AggregateResult {
   activeFunctions: number;
 }
 
-async function fetchAggregate(orgId: string, from: Date, to: Date): Promise<AggregateResult> {
+async function fetchAggregate(
+  scope: OverviewScope,
+  from: Date,
+  to: Date,
+): Promise<AggregateResult> {
   const rows = await db
     .select({
       total: sql<number>`count(*)::int`,
@@ -141,13 +161,7 @@ async function fetchAggregate(orgId: string, from: Date, to: Date): Promise<Aggr
       activeFns: sql<number>`count(distinct ${schema.execution.fnId})::int`,
     })
     .from(schema.execution)
-    .where(
-      and(
-        eq(schema.execution.orgId, orgId),
-        gte(schema.execution.startedAt, from),
-        lt(schema.execution.startedAt, to),
-      ),
-    );
+    .where(scopeConditions(scope, from, to));
   const row = rows[0];
   return {
     totalExecutions: Number(row?.total ?? 0),
@@ -159,7 +173,7 @@ async function fetchAggregate(orgId: string, from: Date, to: Date): Promise<Aggr
 }
 
 async function fetchSeries(
-  orgId: string,
+  scope: OverviewScope,
   from: Date,
   to: Date,
   kind: BucketKind,
@@ -178,13 +192,7 @@ async function fetchSeries(
       p95: sql<number>`coalesce(percentile_cont(0.95) within group (order by ${schema.execution.wallMs}), 0)::int`,
     })
     .from(schema.execution)
-    .where(
-      and(
-        eq(schema.execution.orgId, orgId),
-        gte(schema.execution.startedAt, from),
-        lt(schema.execution.startedAt, to),
-      ),
-    )
+    .where(scopeConditions(scope, from, to))
     .groupBy(sql`1`)
     .orderBy(sql`1 asc`);
 
@@ -199,7 +207,7 @@ async function fetchSeries(
 }
 
 async function fetchTriggerBreakdown(
-  orgId: string,
+  scope: OverviewScope,
   from: Date,
   to: Date,
 ): Promise<TriggerBreakdown[]> {
@@ -210,13 +218,7 @@ async function fetchTriggerBreakdown(
       errors: sql<number>`count(*) filter (where ${schema.execution.status} != 'ok')::int`,
     })
     .from(schema.execution)
-    .where(
-      and(
-        eq(schema.execution.orgId, orgId),
-        gte(schema.execution.startedAt, from),
-        lt(schema.execution.startedAt, to),
-      ),
-    )
+    .where(scopeConditions(scope, from, to))
     .groupBy(schema.execution.triggerKind)
     .orderBy(sql`count(*) desc`);
   return rows.map((row) => ({
@@ -226,20 +228,14 @@ async function fetchTriggerBreakdown(
   }));
 }
 
-async function fetchStatusMix(orgId: string, from: Date, to: Date): Promise<StatusMix> {
+async function fetchStatusMix(scope: OverviewScope, from: Date, to: Date): Promise<StatusMix> {
   const rows = await db
     .select({
       status: schema.execution.status,
       count: sql<number>`count(*)::int`,
     })
     .from(schema.execution)
-    .where(
-      and(
-        eq(schema.execution.orgId, orgId),
-        gte(schema.execution.startedAt, from),
-        lt(schema.execution.startedAt, to),
-      ),
-    )
+    .where(scopeConditions(scope, from, to))
     .groupBy(schema.execution.status);
   const out: StatusMix = { ok: 0, fn_error: 0, limit_exceeded: 0, infra_error: 0 };
   for (const row of rows) {
@@ -251,7 +247,7 @@ async function fetchStatusMix(orgId: string, from: Date, to: Date): Promise<Stat
 }
 
 async function fetchTopFunctions(
-  orgId: string,
+  scope: OverviewScope,
   from: Date,
   to: Date,
   limit = 5,
@@ -266,13 +262,7 @@ async function fetchTopFunctions(
     })
     .from(schema.execution)
     .leftJoin(schema.fn, eq(schema.fn.id, schema.execution.fnId))
-    .where(
-      and(
-        eq(schema.execution.orgId, orgId),
-        gte(schema.execution.startedAt, from),
-        lt(schema.execution.startedAt, to),
-      ),
-    )
+    .where(scopeConditions(scope, from, to))
     .groupBy(schema.execution.fnId, schema.fn.slug)
     .orderBy(sql`count(*) desc`)
     .limit(limit);
@@ -285,7 +275,7 @@ async function fetchTopFunctions(
   }));
 }
 
-async function fetchHeatmap(orgId: string, from: Date, to: Date): Promise<HeatPoint[]> {
+async function fetchHeatmap(scope: OverviewScope, from: Date, to: Date): Promise<HeatPoint[]> {
   const rows = await db
     .select({
       dow: sql<number>`extract(dow from ${schema.execution.startedAt})::int`,
@@ -293,13 +283,7 @@ async function fetchHeatmap(orgId: string, from: Date, to: Date): Promise<HeatPo
       count: sql<number>`count(*)::int`,
     })
     .from(schema.execution)
-    .where(
-      and(
-        eq(schema.execution.orgId, orgId),
-        gte(schema.execution.startedAt, from),
-        lt(schema.execution.startedAt, to),
-      ),
-    )
+    .where(scopeConditions(scope, from, to))
     .groupBy(sql`1`, sql`2`);
   return rows.map((row) => ({
     dow: Number(row.dow ?? 0),
@@ -311,7 +295,9 @@ async function fetchHeatmap(orgId: string, from: Date, to: Date): Promise<HeatPo
 export async function getDashboardOverview(
   orgId: string,
   range: OverviewRange,
+  options?: { fnId?: string },
 ): Promise<OverviewBundle> {
+  const scope: OverviewScope = { orgId, ...(options?.fnId ? { fnId: options.fnId } : {}) };
   const hours = RANGE_HOURS[range];
   const bucketKind = rangeBucket(range);
   const to = new Date();
@@ -321,13 +307,13 @@ export async function getDashboardOverview(
 
   const [aggregate, prevAggregate, series, triggerBreakdown, statusMix, topFunctions, heatmap] =
     await Promise.all([
-      fetchAggregate(orgId, from, to),
-      fetchAggregate(orgId, prevFrom, prevTo),
-      fetchSeries(orgId, from, to, bucketKind),
-      fetchTriggerBreakdown(orgId, from, to),
-      fetchStatusMix(orgId, from, to),
-      fetchTopFunctions(orgId, from, to),
-      range === "24h" ? Promise.resolve<HeatPoint[]>([]) : fetchHeatmap(orgId, from, to),
+      fetchAggregate(scope, from, to),
+      fetchAggregate(scope, prevFrom, prevTo),
+      fetchSeries(scope, from, to, bucketKind),
+      fetchTriggerBreakdown(scope, from, to),
+      fetchStatusMix(scope, from, to),
+      fetchTopFunctions(scope, from, to),
+      range === "24h" ? Promise.resolve<HeatPoint[]>([]) : fetchHeatmap(scope, from, to),
     ]);
 
   const errorRate =

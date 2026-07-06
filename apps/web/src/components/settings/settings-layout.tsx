@@ -6,6 +6,7 @@ import {
   Activity,
   Blocks,
   Bot,
+  ChartLine,
   CreditCard,
   GitBranch,
   Globe,
@@ -30,6 +31,7 @@ const SETTINGS_ICONS = {
   globe: Globe,
   zap: Zap,
   activity: Activity,
+  chartLine: ChartLine,
   gitBranch: GitBranch,
   sparkles: Sparkles,
 } as const satisfies Record<string, LucideIcon>;
