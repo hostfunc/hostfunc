@@ -74,6 +74,10 @@ export class CloudflareExecutor implements ExecutorBackend {
         moduleCode: bundle.code,
         ...(bundle.sourceMap ? { sourceMap: bundle.sourceMap } : {}),
         tags: [`org:${input.orgId}`, `fn:${input.functionId}`],
+        // No FN_ASSETS_KV binding: user code runs in this isolate and could
+        // read/enumerate/overwrite other tenants' asset blobs through a shared
+        // KV binding. Non-embedded assets are served from the DB via the
+        // control-plane asset route, scoped to this function+version.
         bindings: [
           { type: "plain_text", name: "HOSTFUNC_FN_ID", text: input.functionId },
           { type: "plain_text", name: "HOSTFUNC_VERSION_ID", text: input.versionId },
@@ -81,39 +85,8 @@ export class CloudflareExecutor implements ExecutorBackend {
           ...(input.runtimeApiKey
             ? [{ type: "plain_text" as const, name: "HOSTFUNC_API_KEY", text: input.runtimeApiKey }]
             : []),
-          ...(this.cfg.assetsKvId
-            ? [
-                {
-                  type: "kv_namespace" as const,
-                  name: "FN_ASSETS_KV",
-                  namespace_id: this.cfg.assetsKvId,
-                },
-              ]
-            : []),
         ],
       });
-
-      // Embedded assets travel inside the bundle; only assets too large to
-      // embed still need a KV upload (and only when a KV namespace is wired up).
-      const skippedPaths = new Set(bundle.skippedAssets.map((s) => s.path));
-      const assetsForKv = (input.assets ?? []).filter((a) => skippedPaths.has(a.path));
-      if (this.cfg.assetsKvId && assetsForKv.length > 0) {
-        const keyPrefix = `${input.functionId}@${input.versionId}`;
-        for (const asset of assetsForKv) {
-          const buf =
-            asset.content instanceof Uint8Array
-              ? asset.content
-              : new Uint8Array(asset.content as Buffer);
-          await this.api.putKvBytes(this.cfg.assetsKvId, `${keyPrefix}/${asset.path}`, buf, {
-            contentType: asset.mime,
-          });
-        }
-      } else if (!this.cfg.assetsKvId && bundle.skippedAssets.length > 0) {
-        const skipped = bundle.skippedAssets.map((s) => s.path).join(", ");
-        bundle.warnings.push(
-          `${bundle.skippedAssets.length} asset(s) exceed the embed budget and FN_ASSETS_KV is not configured — they will not be served: ${skipped}`,
-        );
-      }
 
       const deployResult: DeployResult & {
         sourceMap?: string;

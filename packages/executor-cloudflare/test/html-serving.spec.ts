@@ -18,16 +18,27 @@ const HTML_FN = `
   }
 `;
 
-/** Builds a mock FN_ASSETS_KV from {assetPath: text} for fn_html@ver_html. */
-function mockAssetsKv(files: Record<string, string>) {
-  const map = new Map<string, ArrayBuffer>();
-  for (const [path, body] of Object.entries(files)) {
-    const bytes = new TextEncoder().encode(body);
-    map.set(`${FN_ID}@${VERSION_ID}/${path}`, bytes.buffer as ArrayBuffer);
-  }
-  return {
-    get: vi.fn(async (key: string, _type: string) => map.get(key) ?? null),
-  };
+/**
+ * Serves `files` from the control-plane asset route — the path the shim uses
+ * for non-embedded assets now that no shared FN_ASSETS_KV binding is exposed to
+ * the user isolate.
+ */
+function stubAssetFetch(files: Record<string, string>) {
+  const prefix = `${CONTROL_PLANE}/api/internal/assets/${FN_ID}/${VERSION_ID}/`;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: string | URL | Request) => {
+      const url =
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.startsWith(prefix)) {
+        const path = decodeURIComponent(url.slice(prefix.length));
+        const body = files[path];
+        if (body === undefined) return new Response("not found", { status: 404 });
+        return new Response(body, { status: 200 });
+      }
+      return new Response("not found", { status: 404 });
+    }),
+  );
 }
 
 async function loadWorker(code: string): Promise<WorkerModule> {
@@ -75,13 +86,23 @@ async function invoke({
   const init: RequestInit = { method, headers };
   if (method === "POST" || method === "PUT") init.body = JSON.stringify({});
   const request = new Request(`${RUNTIME_URL}${runPath}`, init);
-  const env = noKv ? {} : { FN_ASSETS_KV: mockAssetsKv(files) };
-  return mod.default.fetch(request, env, {});
+  // Embedded assets never hit the network; non-embedded ones are fetched from
+  // the control plane. `noKv` is retained for the embedded-asset cases.
+  if (!noKv) stubAssetFetch(files);
+  return mod.default.fetch(request, {}, {});
 }
 
 describe("bundled worker HTML/asset serving", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("does not expose a shared asset KV binding in the worker bundle", async () => {
+    const { code } = await bundleFunction({ code: HTML_FN, fnId: FN_ID, versionId: VERSION_ID });
+    // User code shares this isolate — a shared KV binding would let it read,
+    // enumerate, or overwrite other tenants' asset blobs.
+    expect(code).not.toContain("FN_ASSETS_KV");
   });
 
   it("serves index.html for a browser navigation, with CSP and an injected <base>", async () => {
