@@ -469,6 +469,18 @@ export async function getCurrentVersionAssetBlobByFn(input: {
   return getVersionAssetBlob({ versionId: fnRow.currentVersionId, path: input.path });
 }
 
+/** Resolve which function/org owns a version, for authorization scoping. */
+export async function getVersionOwner(
+  versionId: string,
+): Promise<{ fnId: string; orgId: string } | null> {
+  const rows = await db
+    .select({ fnId: schema.fnVersion.fnId, orgId: schema.fnVersion.orgId })
+    .from(schema.fnVersion)
+    .where(compat(sql`${schema.fnVersion.id} = ${versionId}`) as never)
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export function ensureFunctionVisibility(visibility: string, requiredPublic: boolean) {
   if (requiredPublic && visibility !== "public") {
     throw new AssetError("forbidden", "function is not public", 403);

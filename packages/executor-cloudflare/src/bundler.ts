@@ -89,18 +89,15 @@ const __ofn_assets_module = {
   async bytes(path) {
     const key = this._key(path);
     // Assets embedded into the bundle at deploy time take priority — they need
-    // no KV binding and no control-plane round-trip.
+    // no control-plane round-trip.
     if (Object.prototype.hasOwnProperty.call(__OFN_EMBEDDED_ASSETS, key)) {
       return __ofn_b64_to_bytes(__OFN_EMBEDDED_ASSETS[key]);
     }
-    const env = __ofn_state.env;
-    const ctx = __ofn_ctx();
-    const versionId = ctx.versionId || __HOSTFUNC_VERSION_ID__;
-    if (env && env.FN_ASSETS_KV && typeof env.FN_ASSETS_KV.get === "function" && versionId) {
-      const kvKey = (ctx.fnId || __HOSTFUNC_FN_ID__) + "@" + versionId + "/" + key;
-      const buf = await env.FN_ASSETS_KV.get(kvKey, "arrayBuffer");
-      if (buf) return new Uint8Array(buf);
-    }
+    // Non-embedded (large) assets are fetched from the control plane, which
+    // serves them from the DB scoped to this function+version via the exec
+    // token. We deliberately do NOT bind a shared asset KV namespace into the
+    // user isolate — user code could otherwise read, enumerate, or overwrite
+    // other tenants' asset blobs through the raw binding.
     const res = await this._fetchFromControlPlane(key);
     if (!res) return null;
     const buf = await res.arrayBuffer();
