@@ -31,4 +31,8 @@ export const fnKv = pgTable(
     orgIdx: index("fn_kv_org_idx").on(t.orgId),
     expiresIdx: index("fn_kv_expires_idx").on(t.fnId, t.expiresAt),
   }),
-);
+  // RLS enabled with no policies: the app reaches this table only as the
+  // table-owning postgres role (which bypasses RLS), so this is deny-by-default
+  // for Supabase's PostgREST anon/authenticated roles — matching every other
+  // table and keeping the security advisor clean.
+).enableRLS();
