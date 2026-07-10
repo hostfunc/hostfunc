@@ -36,6 +36,16 @@ Supabase directly. (Exposing the DB layer publicly would be Supabase's own
 [custom-domain add-on](https://supabase.com/docs/guides/platform/custom-domains)
 on the project host — out of scope here and not how hostfunc serves its API.)
 
+The Data API surface is locked three independent ways: every `public` table has
+RLS enabled with **no policies** (deny-all for PostgREST `anon`/`authenticated`,
+see migration `0012_enable_rls`), all grants and default privileges for those
+roles are revoked (migration `0022_revoke_data_api_grants`), and the Data API is
+disabled entirely in the Supabase project settings. Storage (workspace logos) is
+a separate service and is unaffected. Consequently the Supabase security advisor
+still lists INFO-level `rls_enabled_no_policy` findings on every table — that is
+the expected, accepted state; the only way to clear them is writing real
+per-tenant RLS policies, which remain a deferred follow-up (see `ROADMAP.md`).
+
 ### 1. DNS
 
 In the `hostfunc.io` Cloudflare zone, add:
