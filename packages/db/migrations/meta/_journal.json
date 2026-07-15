@@ -155,6 +155,13 @@
       "when": 1783501193537,
       "tag": "0021_blushing_virginia_dare",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1783674643194,
+      "tag": "0022_revoke_data_api_grants",
+      "breakpoints": true
     }
   ]
 }

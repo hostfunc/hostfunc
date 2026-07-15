@@ -32,6 +32,7 @@ import { AnimatedEditor } from "@/components/marketing/animated-editor";
 import { ArchitectureFlow } from "@/components/marketing/architecture-flow";
 import { ConnectorStrip } from "@/components/marketing/connector-strip";
 import { GoogleOneTap } from "@/components/marketing/google-one-tap";
+import { HeroFlowField } from "@/components/marketing/hero-flow-field";
 import { LineageBuilder } from "@/components/marketing/lineage-builder";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { SiteHeader } from "@/components/marketing/site-header";
@@ -77,7 +78,8 @@ export default function HomePage() {
       <SiteHeader />
 
       {/* ─────────────────────────────────── HERO ─────────────────────────────────── */}
-      <section className="relative overflow-hidden">
+      <section className="relative isolate overflow-hidden">
+        <HeroFlowField />
         <div className="gradient-radial-amber absolute inset-x-0 top-0 -z-10 h-[600px]" />
 
         <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:py-40">
